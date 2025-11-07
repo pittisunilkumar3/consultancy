@@ -50,7 +50,7 @@
                                     <td>{{ $question->order }}</td>
                                     <td>
                                         <div class="d-flex g-12">
-                                            <a href="#" class="sf-btn-primary-xs edit-btn" data-question="{{ $question->id }}">
+                                            <a href="#" class="sf-btn-primary-xs edit-btn" data-id="{{ $question->id }}">
                                                 <i class="fa-solid fa-pen-to-square"></i>
                                             </a>
                                             <a href="#" class="sf-btn-danger-xs delete-btn" data-question="{{ $question->id }}">

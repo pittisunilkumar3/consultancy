@@ -11,11 +11,27 @@ class QuestionController extends Controller
     /**
      * Display a listing of questions.
      */
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
-        $questions = Question::orderBy('order')->get();
+        // server-side datatable response
+        if ($request->ajax()) {
+            $data = Question::orderBy('order');
+            return datatables()->of($data)
+                ->addIndexColumn()
+                ->editColumn('required', function ($row) {
+                    return $row->required ? '<div class="zBadge">' . __('Yes') . '</div>' : '<div class="zBadge zBadge--danger">' . __('No') . '</div>';
+                })
+                ->addColumn('action', function ($row) {
+                    $edit = '<a href="#" class="sf-btn-primary-xs edit-btn" data-id="' . $row->id . '"><i class="fa-solid fa-pen-to-square"></i></a>';
+                    $delete = '<a href="#" class="sf-btn-danger-xs delete-btn" data-question="' . $row->id . '"><i class="fa-solid fa-trash-can"></i></a>';
+                    return '<div class="d-flex g-12">' . $edit . $delete . '</div>';
+                })
+                ->rawColumns(['required', 'action'])
+                ->make(true);
+        }
 
-        // set sidebar active variables and page title
+        // set sidebar active variables and page title for normal view
+        $questions = Question::orderBy('order')->get();
         $showQuestions = 'show';
         $activeQuestion = 'active';
         $pageTitle = __('Questions');
