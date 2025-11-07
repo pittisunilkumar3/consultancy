@@ -197,7 +197,7 @@
                         </a>
                         <div class="collapse {{@$showQuestions}}" id="collapseQuestions" data-bs-parent="#sidebarMenu">
                             <ul class="zSidebar-submenu">
-                                <li><a class="{{ @$activeQuestion }}" href="{{ Route::has('admin.questions.index') ? route('admin.questions.index') : '#' }}">{{__('Questions')}}</a></li>
+                                <li><a class="{{ @$activeQuestion }}" href="{{route('admin.questions.index')}}">{{__('Questions')}}</a></li>
                                 <li><a class="{{ @$activeQuestionStructure }}" href="{{ Route::has('admin.questions.structure.index') ? route('admin.questions.structure.index') : '#' }}">{{__('Questions Structure')}}</a></li>
                             </ul>
                         </div>
