@@ -75,10 +75,17 @@
                         </select>
                     </div>
                     <div class="col-12 options-wrapper d-none">
-                        <label for="options" class="zForm-label">{{ __('Options') }} <span class="text-danger">*</span></label>
-                        <textarea name="options" id="options" class="form-control zForm-control" rows="4" 
-                            placeholder="{{ __('Enter one option per line') }}"></textarea>
-                        <small class="form-text text-muted">{{ __('Enter each option on a new line. For key-value pairs, use pipe (|) separator: e.g., "key|Display Text"') }}</small>
+                        <label class="zForm-label">{{ __('Options') }} <span class="text-danger">*</span></label>
+                        <div class="option-list border rounded p-2 mb-2" id="optionList" data-draggable="true">
+                            <!-- Option rows inserted here -->
+                        </div>
+                        <div class="d-flex gap-2 mb-2">
+                            <button type="button" id="addOptionBtn" class="btn btn-sm btn-outline-primary">
+                                <i class="fa-solid fa-plus"></i> {{ __('Add Option') }}
+                            </button>
+                            <small class="form-text text-muted align-self-center">{{ __('Add options and drag to reorder. For select type you can set value and label.') }}</small>
+                        </div>
+                        <input type="hidden" name="options" id="options" value="">
                     </div>
                     <div class="col-12">
                         <label for="order" class="zForm-label">{{ __('Order') }}</label>

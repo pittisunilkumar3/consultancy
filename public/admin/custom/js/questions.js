@@ -15,41 +15,119 @@
             if (['select', 'radio', 'checkbox'].includes(type)) {
                 $options.removeClass('d-none');
                 if (type === 'select') {
-                    $options.find('small').text('Enter each option on a new line. For key-value pairs, use pipe (|) separator: e.g., "value|Display Text"');
+                    $options.find('small').text('Enter options and drag to reorder. For select: set value and label.');
                 } else {
-                    $options.find('small').text('Enter each option on a new line.');
+                    $options.find('small').text('Enter options and drag to reorder.');
                 }
             } else {
                 $options.addClass('d-none');
             }
+            // update option row inputs (show/hide value field for select)
+            if (typeof updateOptionInputsForType === 'function') {
+                updateOptionInputsForType(type);
+            }
+        });
+        // Option list UI: add/remove/reorder and serialize to hidden input before submit
+        function createOptionRow(value = '', label = '') {
+            var $row = $(
+                '<div class="option-item d-flex align-items-center mb-2 p-2 bg-light rounded" draggable="true">' +
+                    '<span class="handle me-2"><i class="fa-solid fa-grip-lines"></i></span>' +
+                    '<input type="text" class="form-control form-control-sm option-label me-2" placeholder="Label" value="' + $('<div/>').text(label).html() + '"/>' +
+                    '<input type="text" class="form-control form-control-sm option-value me-2 d-none" placeholder="Value" value="' + $('<div/>').text(value).html() + '"/>' +
+                    '<button type="button" class="btn btn-sm btn-outline-secondary move-up me-1" title="Move up"><i class="fa-solid fa-angle-up"></i></button>' +
+                    '<button type="button" class="btn btn-sm btn-outline-secondary move-down me-1" title="Move down"><i class="fa-solid fa-angle-down"></i></button>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger remove-option" title="Remove"><i class="fa-solid fa-trash"></i></button>' +
+                '</div>'
+            );
+
+            // show value input for select type only; visibility controlled elsewhere
+            return $row;
+        }
+
+        // Add option button
+        $(document).on('click', '#addOptionBtn', function () {
+            var $list = $('#optionList');
+            var $row = createOptionRow('', '');
+            $list.append($row);
+            // focus label
+            $row.find('.option-label').focus();
         });
 
-        // Process options before form submit
+        // Remove option
+        $(document).on('click', '.remove-option', function () {
+            $(this).closest('.option-item').remove();
+        });
+
+        // Move up/down
+        $(document).on('click', '.move-up', function () {
+            var $row = $(this).closest('.option-item');
+            $row.prev('.option-item').before($row);
+        });
+        $(document).on('click', '.move-down', function () {
+            var $row = $(this).closest('.option-item');
+            $row.next('.option-item').after($row);
+        });
+
+        // Simple HTML5 drag-and-drop for option items
+        var dragSrcEl = null;
+        $(document).on('dragstart', '.option-item', function (e) {
+            dragSrcEl = this;
+            e.originalEvent.dataTransfer.effectAllowed = 'move';
+            e.originalEvent.dataTransfer.setData('text/html', this.outerHTML);
+            $(this).addClass('dragging');
+        });
+        $(document).on('dragend', '.option-item', function () {
+            $(this).removeClass('dragging');
+        });
+        $(document).on('dragover', '#optionList', function (e) {
+            e.preventDefault();
+            e.originalEvent.dataTransfer.dropEffect = 'move';
+            var $target = $(e.target).closest('.option-item');
+            if ($target.length && dragSrcEl && $target[0] !== dragSrcEl) {
+                var rect = $target[0].getBoundingClientRect();
+                var next = (e.originalEvent.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+                if (next) $target.after(dragSrcEl);
+                else $target.before(dragSrcEl);
+            }
+        });
+
+        // Toggle showing value input based on select type
+        function updateOptionInputsForType(type) {
+            var $list = $('#optionList');
+            if (type === 'select') {
+                $list.find('.option-value').removeClass('d-none');
+                $list.find('.option-label').attr('placeholder', 'Label');
+            } else {
+                $list.find('.option-value').addClass('d-none');
+                $list.find('.option-label').attr('placeholder', 'Option');
+            }
+        }
+
+        // Serialize options into hidden #options before submit
         $('#add-modal form').on('submit', function() {
             var type = $('#type').val();
             if (['select', 'radio', 'checkbox'].includes(type)) {
-                var options = $('#options').val().split('\n')
-                    .map(line => line.trim())
-                    .filter(line => line.length > 0);
-                
-                if (options.length === 0) {
+                var items = [];
+                $('#optionList .option-item').each(function () {
+                    var label = $(this).find('.option-label').val().trim();
+                    var value = $(this).find('.option-value').val().trim();
+                    if (!label) return; // skip empty
+                    if (type === 'select') {
+                        if (!value) value = label;
+                        items.push({ value: value, label: label });
+                    } else {
+                        items.push(label);
+                    }
+                });
+
+                if (items.length === 0) {
                     toastr.error('Please add at least one option for ' + type + ' type questions.');
                     return false;
                 }
 
-                // Convert to array of objects for select type with key|value format
-                if (type === 'select') {
-                    options = options.map(line => {
-                        var parts = line.split('|');
-                        if (parts.length === 2) {
-                            return { value: parts[0].trim(), label: parts[1].trim() };
-                        }
-                        return { value: line, label: line };
-                    });
-                }
-
-                // Store as JSON string
-                $('#options').val(JSON.stringify(options));
+                $('#options').val(JSON.stringify(items));
+            } else {
+                $('#options').val('');
             }
         });
 
@@ -133,6 +211,9 @@
                 $form.trigger('reset');
                 $form.find('[name="type"]').val('text').trigger('change');
                 $form.find('[name="options"]').val('');
+                // clear dynamic option rows as well
+                $('#optionList').empty();
+                updateOptionInputsForType('text');
                 $title.text('Add New Question');
                 $submitText.text('Create');
             } else {
@@ -156,22 +237,24 @@
                     $form.find('[name="order"]').val(data.order);
                     $form.find('[name="required"]').prop('checked', data.required ? true : false);
                     
-                    // Handle options for select/radio/checkbox
+                    // Handle options for select/radio/checkbox - populate optionList UI
+                    $('#optionList').empty();
                     if (data.options && ['select', 'radio', 'checkbox'].includes(data.type)) {
-                        var optionsText = '';
                         if (data.type === 'select') {
-                            // Convert array of objects back to key|value format
-                            optionsText = data.options.map(opt => {
-                                if (typeof opt === 'object' && opt.value && opt.label) {
-                                    return opt.value + '|' + opt.label;
-                                }
-                                return opt.value || opt;
-                            }).join('\n');
+                            // data.options expected as array of {value,label}
+                            data.options.forEach(function (opt) {
+                                var val = (typeof opt === 'object' && opt.value) ? opt.value : (opt || '');
+                                var lbl = (typeof opt === 'object' && opt.label) ? opt.label : (opt || '');
+                                $('#optionList').append(createOptionRow(val, lbl));
+                            });
                         } else {
-                            // For radio/checkbox, just one option per line
-                            optionsText = Array.isArray(data.options) ? data.options.join('\n') : '';
+                            // radio/checkbox: array of strings
+                            (Array.isArray(data.options) ? data.options : []).forEach(function (opt) {
+                                $('#optionList').append(createOptionRow('', opt));
+                            });
                         }
-                        $form.find('[name="options"]').val(optionsText);
+                        // ensure option inputs reflect type (show/hide value inputs)
+                        updateOptionInputsForType(data.type);
                     }
                     // set update action
                     $form.prop('action', $('#questionsUpdateBase').val() + '/' + id);
@@ -245,6 +328,8 @@
             // explicitly hide options and clear options textarea to avoid leftover state
             $form.find('[name="type"]').val('text').trigger('change');
             $form.find('[name="options"]').val('');
+            // clear dynamic option rows
+            $('#optionList').empty();
             $form.find('.is-invalid').removeClass('is-invalid');
             $form.find('.error-message').remove();
         });
