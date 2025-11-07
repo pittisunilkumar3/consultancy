@@ -31,4 +31,9 @@ class University extends Model
         'core_benefits_icon' => 'array',
         'gallery_image' => 'array'
     ];
+
+    public function country()
+    {
+        return $this->belongsTo(Country::class, 'country_id');
+    }
 }

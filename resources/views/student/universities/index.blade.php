@@ -44,7 +44,7 @@
                     <!-- Universities Tab -->
                     <div class="tab-pane fade show active" id="universities-tab-pane" role="tabpanel"
                          aria-labelledby="universities-tab" tabindex="0">
-                        <form class="searchForm" method="GET" action="{{ route('universities.list') }}" target="_blank">
+                        <form class="universitySearchForm" method="GET" action="{{ route('student.universities.index') }}">
                             <div class="hero-banner-filterInut">
                                 <div class="item">
                                     <label for="inputStudyDestination" class="zForm-label">
@@ -56,7 +56,7 @@
                                         <option class="d-none" disabled
                                                 selected>{{ __('Select Destination') }}</option>
                                         @foreach($countryData as $data)
-                                            <option value="{{ $data->id }}">{{ $data->name }}</option>
+                                            <option value="{{ $data->id }}" {{ in_array($data->id, request('country', [])) ? 'selected' : '' }}>{{ $data->name }}</option>
                                         @endforeach
                                     </select>
                                     <div class="error-message country-error text-danger d-none">
@@ -219,12 +219,79 @@
             </div>
 
             <!-- Search Results Section -->
+            @if($showResults)
+            <div class="mt-5" id="search-results-section">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fs-20 fw-600 mb-0">{{ __('Search Results') }}</h5>
+                    @if($universityData->total() > 0)
+                        <span class="text-muted">
+                            {{ __('Showing') }} {{ $universityData->firstItem() ?? 0 }} - {{ $universityData->lastItem() ?? 0 }} 
+                            {{ __('of') }} {{ $universityData->total() }} {{ __('universities') }}
+                        </span>
+                    @endif
+                </div>
+
+                @if($universityData->count() > 0)
+                    <div class="row rg-15">
+                        @foreach($universityData as $university)
+                            <div class="col-xl-3 col-md-4 col-sm-6">
+                                <div class="course-item-two">
+                                    <a href="{{ route('universities.details', $university->slug) }}" class="img" target="_blank">
+                                        <img src="{{getFileUrl($university->thumbnail_image)}}" 
+                                             alt="{{$university->name}}" style="height: 180px; object-fit: cover; width: 100%;"/>
+                                    </a>
+                                    <div class="course-content">
+                                        <div class="text-content">
+                                            <a href="{{ route('universities.details', $university->slug) }}" 
+                                               class="title" target="_blank">{{$university->name}}</a>
+                                            @if($university->country)
+                                                <p class="author">{{$university->country->name}}</p>
+                                            @endif
+                                        </div>
+                                        <ul class="list zList-pb-6">
+                                            @if($university->world_ranking)
+                                                <li class="item">
+                                                    <div class="icon d-flex">
+                                                        <img src="{{asset('assets/images/icon/world-ranking.svg')}}" alt=""/>
+                                                    </div>
+                                                    <p class="text">{{__('World Ranking')}}: {{$university->world_ranking}}</p>
+                                                </li>
+                                            @endif
+                                            @if($university->international_student)
+                                                <li class="item">
+                                                    <div class="icon d-flex">
+                                                        <img src="{{asset('assets/images/icon/international-students.svg')}}" alt=""/>
+                                                    </div>
+                                                    <p class="text">{{__('International Students')}}: {{$university->international_student}}</p>
+                                                </li>
+                                            @endif
+                                        </ul>
+                                        <a href="{{route('universities.details', $university->slug)}}" 
+                                           class="link" target="_blank">{{__('View Details')}}<i class="fa-solid fa-arrow-right"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="mt-4">
+                        {{ $universityData->links('layouts.partial.common_pagination_with_count') }}
+                    </div>
+                @else
+                    <div class="alert alert-info">
+                        {{ __('No universities found matching your search criteria.') }}
+                    </div>
+                @endif
+            </div>
+            @else
             <div class="mt-5" id="search-results-section">
                 <h5 class="fs-20 fw-600 mb-4">{{ __('Search Results') }}</h5>
                 <div class="alert alert-info">
-                    {{ __('Please select a country and search to view results. Results will open in a new tab.') }}
+                    {{ __('Please select a country and click search to view results.') }}
                 </div>
             </div>
+            @endif
         </div>
     </div>
 @endsection
@@ -247,7 +314,7 @@
                     onChange: function(option, checked) {
                         // Get the selected country values
                         const countryId = $('.country-select').val();
-                        const $form = $('.country-select').closest('.searchForm');
+                        const $form = $('.country-select').closest('.universitySearchForm');
                         const baseUrl = $form.find('.universityCountryRoute').val();
                         
                         $form.find('.country-error').addClass('d-none');
@@ -316,18 +383,29 @@
                 }
 
                 // Form submission validation
-                $('.searchForm').on('submit', function(e) {
+                $('.universitySearchForm').on('submit', function(e) {
                     const countrySelected = $(this).find('.country-select').val();
                     $(this).find('.country-error').addClass('d-none');
 
                     if (!countrySelected || countrySelected.length === 0) {
                         e.preventDefault();
                         $(this).find('.country-error').removeClass('d-none');
-                    } else {
-                        $(this).find('.searchButton').prop('disabled', true);
-                        $(this).find('.searchButton .spinner-border').removeClass('d-none');
+                        return false;
                     }
+                    
+                    // Show loading spinner
+                    $(this).find('.searchButton').prop('disabled', true);
+                    $(this).find('.searchButton .spinner-border').removeClass('d-none');
                 });
+
+                // If there are existing search results, scroll to them
+                @if($showResults && $universityData->count() > 0)
+                    setTimeout(function() {
+                        $('html, body').animate({
+                            scrollTop: $("#search-results-section").offset().top - 100
+                        }, 500);
+                    }, 300);
+                @endif
             });
 
         })(jQuery);
