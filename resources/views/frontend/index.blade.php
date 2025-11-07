@@ -53,7 +53,7 @@
                     <div class="tab-content" id="myTabContent">
                         <div class="tab-pane fade show active" id="universities-tab-pane" role="tabpanel"
                              aria-labelledby="universities-tab" tabindex="0">
-                            <form class="searchForm" method="GET" action="{{ route('universities.list') }}">
+                            <form class="searchForm" method="GET" action="{{ auth()->check() ? route('student.universities.index') : route('login') }}">
                                 <div class="hero-banner-filterInut">
                                     <div class="item">
                                         <label for="inputStudyDestination" class="zForm-label">
@@ -91,7 +91,7 @@
                         </div>
                         <div class="tab-pane fade" id="courses-tab-pane" role="tabpanel" aria-labelledby="courses-tab"
                              tabindex="0">
-                            <form class="searchForm" method="GET" action="{{ route('subject.list') }}">
+                            <form class="searchForm" method="GET" action="{{ auth()->check() ? route('student.universities.index', ['tab' => 'subject']) : route('login') }}">
                                 <div class="hero-banner-filterInut hero-banner-filterInputThree">
                                     <div class="item">
                                         <label for="inputStudyDestination" class="zForm-label">
@@ -139,7 +139,7 @@
                         </div>
                         <div class="tab-pane fade" id="scholarships-tab-pane" role="tabpanel"
                              aria-labelledby="scholarships-tab" tabindex="0">
-                            <form class="searchForm" method="GET" action="{{ route('scholarship.list') }}">
+                            <form class="searchForm" method="GET" action="{{ auth()->check() ? route('student.universities.index', ['tab' => 'scholarship']) : route('login') }}">
                                 <div class="hero-banner-filterInut">
                                     <div class="item">
                                         <label for="inputStudyDestination"
@@ -179,7 +179,7 @@
                         </div>
                         <div class="tab-pane fade" id="events-tab-pane" role="tabpanel" aria-labelledby="events-tab"
                              tabindex="0">
-                            <form class="searchForm" method="GET" action="{{ route('event.list') }}">
+                            <form class="searchForm" method="GET" action="{{ auth()->check() ? route('student.universities.index', ['tab' => 'event']) : route('login') }}">
                                 <div class="hero-banner-filterInut hero-banner-filterInputThree">
                                     <div class="item">
                                         <label for="inputStudyDestination"
