@@ -44,18 +44,38 @@ class QuestionController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $rules = [
             'question' => 'required|string|max:255',
             'type' => 'required|string|in:text,textarea,number,file,select,radio,checkbox',
             'order' => 'nullable|integer|min:0',
             'required' => 'nullable|boolean'
-        ]);
+        ];
+
+        // Require options for select/radio/checkbox types
+        if (in_array($request->type, ['select', 'radio', 'checkbox'])) {
+            $rules['options'] = 'required|json';
+        }
+
+        $request->validate($rules);
+
+        // Decode options JSON if present
+        $options = null;
+        if ($request->filled('options')) {
+            $options = json_decode($request->options, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid options format'
+                ], 422);
+            }
+        }
 
         $question = Question::create([
             'question' => $request->question,
             'type' => $request->type,
             'order' => $request->order ?? 0,
-            'required' => $request->required ? true : false
+            'required' => $request->required ? true : false,
+            'options' => $options
         ]);
 
         return response()->json([
@@ -82,19 +102,39 @@ class QuestionController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $request->validate([
+        $rules = [
             'question' => 'required|string|max:255',
             'type' => 'required|string|in:text,textarea,number,file,select,radio,checkbox',
             'order' => 'nullable|integer|min:0',
             'required' => 'nullable|boolean'
-        ]);
+        ];
+
+        // Require options for select/radio/checkbox types
+        if (in_array($request->type, ['select', 'radio', 'checkbox'])) {
+            $rules['options'] = 'required|json';
+        }
+
+        $request->validate($rules);
+
+        // Decode options JSON if present
+        $options = null;
+        if ($request->filled('options')) {
+            $options = json_decode($request->options, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid options format'
+                ], 422);
+            }
+        }
 
         $question = Question::findOrFail($id);
         $question->update([
             'question' => $request->question,
             'type' => $request->type,
             'order' => $request->order ?? 0,
-            'required' => $request->required ? true : false
+            'required' => $request->required ? true : false,
+            'options' => $options
         ]);
 
         return response()->json([

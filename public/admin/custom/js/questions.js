@@ -8,6 +8,51 @@
         var csrf = $('meta[name="csrf-token"]').attr('content');
         var indexUrl = $('#questionsIndexRoute').val();
 
+        // Show/hide options field based on question type
+        $('#type').on('change', function() {
+            var type = $(this).val();
+            var $options = $('.options-wrapper');
+            if (['select', 'radio', 'checkbox'].includes(type)) {
+                $options.removeClass('d-none');
+                if (type === 'select') {
+                    $options.find('small').text('Enter each option on a new line. For key-value pairs, use pipe (|) separator: e.g., "value|Display Text"');
+                } else {
+                    $options.find('small').text('Enter each option on a new line.');
+                }
+            } else {
+                $options.addClass('d-none');
+            }
+        });
+
+        // Process options before form submit
+        $('#add-modal form').on('submit', function() {
+            var type = $('#type').val();
+            if (['select', 'radio', 'checkbox'].includes(type)) {
+                var options = $('#options').val().split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0);
+                
+                if (options.length === 0) {
+                    toastr.error('Please add at least one option for ' + type + ' type questions.');
+                    return false;
+                }
+
+                // Convert to array of objects for select type with key|value format
+                if (type === 'select') {
+                    options = options.map(line => {
+                        var parts = line.split('|');
+                        if (parts.length === 2) {
+                            return { value: parts[0].trim(), label: parts[1].trim() };
+                        }
+                        return { value: line, label: line };
+                    });
+                }
+
+                // Store as JSON string
+                $('#options').val(JSON.stringify(options));
+            }
+        });
+
         var table = null;
         if ($.fn.DataTable) {
             table = $('#questionsDataTable').DataTable({
@@ -103,9 +148,27 @@
                     var data = res.data;
                     var $form = $('#add-modal').find('form.ajax');
                     $form.find('[name="question"]').val(data.question);
-                    $form.find('[name="type"]').val(data.type);
+                    $form.find('[name="type"]').val(data.type).trigger('change');
                     $form.find('[name="order"]').val(data.order);
                     $form.find('[name="required"]').prop('checked', data.required ? true : false);
+                    
+                    // Handle options for select/radio/checkbox
+                    if (data.options && ['select', 'radio', 'checkbox'].includes(data.type)) {
+                        var optionsText = '';
+                        if (data.type === 'select') {
+                            // Convert array of objects back to key|value format
+                            optionsText = data.options.map(opt => {
+                                if (typeof opt === 'object' && opt.value && opt.label) {
+                                    return opt.value + '|' + opt.label;
+                                }
+                                return opt.value || opt;
+                            }).join('\n');
+                        } else {
+                            // For radio/checkbox, just one option per line
+                            optionsText = Array.isArray(data.options) ? data.options.join('\n') : '';
+                        }
+                        $form.find('[name="options"]').val(optionsText);
+                    }
                     // set update action
                     $form.prop('action', $('#questionsUpdateBase').val() + '/' + id);
                     $form.data('method', 'POST');

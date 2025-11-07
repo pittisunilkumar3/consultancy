@@ -96,6 +96,12 @@
                             <option value="checkbox">{{ __('Checkbox') }}</option>
                         </select>
                     </div>
+                    <div class="col-12 options-wrapper d-none">
+                        <label for="options" class="zForm-label">{{ __('Options') }} <span class="text-danger">*</span></label>
+                        <textarea name="options" id="options" class="form-control zForm-control" rows="4" 
+                            placeholder="{{ __('Enter one option per line') }}"></textarea>
+                        <small class="form-text text-muted">{{ __('Enter each option on a new line. For key-value pairs, use pipe (|) separator: e.g., "key|Display Text"') }}</small>
+                    </div>
                     <div class="col-12">
                         <label for="order" class="zForm-label">{{ __('Order') }}</label>
                         <input type="number" name="order" id="order" class="form-control zForm-control" value="0">
