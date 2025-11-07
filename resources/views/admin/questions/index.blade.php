@@ -77,7 +77,7 @@
                     <i class="fa-solid fa-times"></i>
                 </button>
             </div>
-            <form class="ajax" action="{{ route('admin.questions.store') }}" method="post">
+            <form class="ajax-custom" action="{{ route('admin.questions.store') }}" method="post">
                 @csrf
                 <div class="row rg-20">
                     <div class="col-12">
@@ -113,6 +113,13 @@
     </div>
 </div>
 <!-- Add Modal section end -->
+
+    <input type="hidden" id="questionsIndexRoute" value="{{ route('admin.questions.index') }}">
+    <input type="hidden" id="questionsStoreRoute" value="{{ route('admin.questions.store') }}">
+    <input type="hidden" id="questionsShowBase" value="{{ url('admin/questions/show') }}">
+    <input type="hidden" id="questionsUpdateBase" value="{{ url('admin/questions/update') }}">
+    <input type="hidden" id="questionsDeleteBase" value="{{ url('admin/questions/delete') }}">
+
 @endsection
 
 @push('script')
