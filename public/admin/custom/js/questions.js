@@ -129,6 +129,10 @@
             var $title = $(this).find('h5').first();
             var $submitText = $form.find('button[type=submit] span').last();
             if ($form.prop('action') === storeUrl || !$form.prop('action')) {
+                // Creating new question - ensure form is reset and options hidden
+                $form.trigger('reset');
+                $form.find('[name="type"]').val('text').trigger('change');
+                $form.find('[name="options"]').val('');
                 $title.text('Add New Question');
                 $submitText.text('Create');
             } else {
@@ -238,6 +242,9 @@
             $form.removeData('method');
             // reset fields
             $form.trigger('reset');
+            // explicitly hide options and clear options textarea to avoid leftover state
+            $form.find('[name="type"]').val('text').trigger('change');
+            $form.find('[name="options"]').val('');
             $form.find('.is-invalid').removeClass('is-invalid');
             $form.find('.error-message').remove();
         });

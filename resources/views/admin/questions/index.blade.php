@@ -14,55 +14,33 @@
     <div class="p-sm-30 p-15">
         <div class="p-sm-25 p-15 bd-one bd-c-stroke bd-ra-10 bg-white">
             <div class="">
-                @if($questions->isEmpty())
-                    <p class="text-center py-4">{{ __('No questions yet. Use Add Question to create questions dynamically.') }}</p>
-                @else
-                    <table class="table zTable zTable-last-item-right pt-15" id="questionsDataTable">
-                        <thead>
-                            <tr>
-                                <th>
-                                    <div>{{ __('#Sl') }}</div>
-                                </th>
-                                <th>
-                                    <div>{{ __('Question') }}</div>
-                                </th>
-                                <th>
-                                    <div>{{ __('Type') }}</div>
-                                </th>
-                                <th>
-                                    <div>{{ __('Required') }}</div>
-                                </th>
-                                <th>
-                                    <div>{{ __('Order') }}</div>
-                                </th>
-                                <th>
-                                    <div>{{ __('Action') }}</div>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($questions as $question)
-                                <tr>
-                                    <td>{{ $question->id }}</td>
-                                    <td>{{ $question->question }}</td>
-                                    <td>{{ $question->type }}</td>
-                                    <td>{{ $question->required ? __('Yes') : __('No') }}</td>
-                                    <td>{{ $question->order }}</td>
-                                    <td>
-                                        <div class="d-flex g-12">
-                                            <a href="#" class="sf-btn-primary-xs edit-btn" data-id="{{ $question->id }}">
-                                                <i class="fa-solid fa-pen-to-square"></i>
-                                            </a>
-                                            <a href="#" class="sf-btn-danger-xs delete-btn" data-question="{{ $question->id }}">
-                                                <i class="fa-solid fa-trash-can"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                @endif
+                <table class="table zTable zTable-last-item-right pt-15" id="questionsDataTable">
+                    <thead>
+                        <tr>
+                            <th>
+                                <div>{{ __('#Sl') }}</div>
+                            </th>
+                            <th>
+                                <div>{{ __('Question') }}</div>
+                            </th>
+                            <th>
+                                <div>{{ __('Type') }}</div>
+                            </th>
+                            <th>
+                                <div>{{ __('Required') }}</div>
+                            </th>
+                            <th>
+                                <div>{{ __('Order') }}</div>
+                            </th>
+                            <th>
+                                <div>{{ __('Action') }}</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{-- DataTables will populate rows via AJAX (server-side processing) --}}
+                    </tbody>
+                </table>
             </div>
                 </div>
             </div>
