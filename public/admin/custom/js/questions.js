@@ -16,11 +16,49 @@
                 responsive: true,
                 processing: true,
                 serverSide: true,
-                ajax: {
-                    url: indexUrl,
-                    type: 'GET'
-                },
+                ajax: (function () {
+                    if (!indexUrl) {
+                        console.error('questionsDataTable: indexUrl is not defined');
+                        return null;
+                    }
+
+                    return {
+                        url: indexUrl,
+                        type: 'GET',
+                        error: function (xhr, textStatus, errorThrown) {
+                            // Log useful info for debugging and show a user-friendly message
+                            console.error('DataTable ajax error:', textStatus, errorThrown);
+                            console.error(xhr && xhr.responseText ? xhr.responseText : xhr);
+
+                            var msg = 'Error loading table data.';
+                            // If session expired or CSRF we may get 419/401 and HTML redirect to login
+                            if (xhr && xhr.status === 419) {
+                                msg = 'Session expired. Please refresh the page and log in again.';
+                                if (window.toastr) toastr.error(msg);
+                                setTimeout(function () { location.reload(); }, 1200);
+                                return;
+                            }
+
+                            if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                                msg = xhr.responseJSON.message;
+                            } else if (xhr && xhr.status >= 500) {
+                                msg = 'Server error while loading list.';
+                            }
+
+                            if (window.toastr) toastr.error(msg);
+                        }
+                    };
+                })(),
                 dom: '<>tr<"tableBottom"<"row align-items-center"<"col-sm-6"<"tableInfo"i>><"col-sm-6"<"tablePagi"p>>>><"clear">',
+                language: {
+                    paginate: {
+                        previous: "<i class='fa-solid fa-angles-left'></i>",
+                        next: "<i class='fa-solid fa-angles-right'></i>",
+                    },
+                    info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                    infoEmpty: "Showing 0 to 0 of 0 entries",
+                    lengthMenu: "Show _MENU_ entries",
+                },
                 columns: [
                     {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                     {data: 'question', name: 'question'},
@@ -32,59 +70,26 @@
             });
         }
 
-        // AJAX submit for Add/Update Question form (use specific class so global handlers don't double-submit)
-        $('#add-modal').on('submit', 'form.ajax-custom', function (e) {
-            e.preventDefault();
-            // stop other delegated handlers (like common.js) from running
-            e.stopImmediatePropagation();
-            var $form = $(this);
-            var url = $form.prop('action');
-            var method = ($form.data('method') || 'POST').toUpperCase();
+        // Wire the modal form into the global common.js flow so responses are handled consistently
+        // switch existing ajax-custom -> ajax and use the builtin 'settingCommonHandler'
+        // ensure the form has the expected classes/handler in case blade didn't set them
+        var $modalForm = $('#add-modal form');
+        if (!$modalForm.hasClass('ajax')) {
+            $modalForm.removeClass('ajax-custom').addClass('ajax').attr('data-handler', 'settingCommonHandler');
+        }
 
-            // clear previous validation messages
-            $form.find('.is-invalid').removeClass('is-invalid');
-            $form.find('.error-message').remove();
-
-            $.ajax({
-                url: url,
-                method: method,
-                data: $form.serialize(),
-                headers: { 'X-CSRF-TOKEN': csrf },
-                success: function (res) {
-                    if (res && res.status) {
-                        // close modal (Bootstrap)
-                        $('#add-modal').modal('hide');
-                        // use toastr for feedback
-                        if (window.toastr) toastr.success(res.message || 'Question saved');
-                        else alert(res.message || 'Question saved');
-                        // reload or refresh datatable
-                        if (table) table.ajax.reload(null, false);
-                        else location.reload();
-                    } else {
-                        if (window.toastr) toastr.error((res && res.message) || 'Could not save question');
-                        else alert((res && res.message) || 'Could not save question');
-                    }
-                },
-                error: function (xhr) {
-                    if (xhr && xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
-                        var errors = xhr.responseJSON.errors;
-                        $.each(errors, function (field, messages) {
-                            var $input = $form.find("[name='" + field + "']");
-                            if (!$input.length) {
-                                $input = $form.find("[name^='" + field + "']");
-                            }
-                            $input.addClass('is-invalid');
-                            $input.closest('div').append('<span class="text-danger p-2 fs-12 z-index-10 position-relative error-message">' + messages[0] + '</span>');
-                        });
-                        if (window.toastr) toastr.error('Please review the form and fix errors');
-                    } else {
-                        var msg = 'Something went wrong';
-                        if (xhr && xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
-                        if (window.toastr) toastr.error(msg);
-                        else alert(msg);
-                    }
-                }
-            });
+        // When the modal is shown, update its title and submit button text depending on Create vs Update
+        $('#add-modal').on('show.bs.modal', function () {
+            var $form = $(this).find('form.ajax');
+            var $title = $(this).find('h5').first();
+            var $submitText = $form.find('button[type=submit] span').last();
+            if ($form.prop('action') === storeUrl || !$form.prop('action')) {
+                $title.text('Add New Question');
+                $submitText.text('Create');
+            } else {
+                $title.text('Edit Question');
+                $submitText.text('Update');
+            }
         });
 
         // Edit handler - populate modal and set form action to update
@@ -96,7 +101,7 @@
             $.get(showUrl, function (res) {
                 if (res && res.status) {
                     var data = res.data;
-                    var $form = $('#add-modal').find('form.ajax-custom');
+                    var $form = $('#add-modal').find('form.ajax');
                     $form.find('[name="question"]').val(data.question);
                     $form.find('[name="type"]').val(data.type);
                     $form.find('[name="order"]').val(data.order);
@@ -164,7 +169,7 @@
 
         // Reset modal form when hidden
         $('#add-modal').on('hidden.bs.modal', function () {
-            var $form = $(this).find('form.ajax-custom');
+            var $form = $(this).find('form.ajax');
             // reset action and method
             $form.prop('action', storeUrl);
             $form.removeData('method');

@@ -77,7 +77,7 @@
                     <i class="fa-solid fa-times"></i>
                 </button>
             </div>
-            <form class="ajax-custom" action="{{ route('admin.questions.store') }}" method="post">
+            <form class="ajax" data-handler="settingCommonHandler" action="{{ route('admin.questions.store') }}" method="post">
                 @csrf
                 <div class="row rg-20">
                     <div class="col-12">
@@ -107,7 +107,10 @@
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="mt-20 sf-btn-primary">{{ __('Create') }}</button>
+                <button type="submit" class="mt-20 sf-btn-primary d-flex align-items-center">
+                    <span class="spinner-border spinner-border-sm d-none me-2" role="status"></span>
+                    <span>{{ __('Create') }}</span>
+                </button>
             </form>
         </div>
     </div>
