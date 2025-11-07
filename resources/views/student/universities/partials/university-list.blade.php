@@ -1,35 +1,52 @@
-<div class="row rg-15">
-    @forelse($universities as $university)
-        <div class="col-xl-3 col-md-4 col-sm-6">
-            <div class="course-item-one">
-                <div class="course-info">
-                    <div class="img">
-                        <img src="{{getFileUrl($university->logo)}}" alt="{{$university->name}}" style="height: 200px; object-fit: cover; width: 100%;"/>
-                    </div>
-                    <div class="content">
-                        <h5 class="title mb-2">{{$university->name}}</h5>
-                        @if($university->country)
-                            <p class="fs-15 fw-500 lh-20 text-para-text pb-10">
-                                <i class="fas fa-map-marker-alt"></i> {{$university->country->name}}
-                            </p>
-                        @endif
-                        @if($university->address)
-                            <p class="fs-14 fw-400 lh-18 text-muted pb-10">{{Str::limit($university->address, 50)}}</p>
-                        @endif
+@if($universityData->count() > 0)
+    <div class="row rg-15">
+        @foreach($universityData as $university)
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <div class="course-item-two">
+                    <a href="{{ route('universities.details', $university->slug) }}" class="img" target="_blank">
+                        <img src="{{getFileUrl($university->thumbnail_image)}}" 
+                             alt="{{$university->name}}" style="height: 180px; object-fit: cover; width: 100%;"/>
+                    </a>
+                    <div class="course-content">
+                        <div class="text-content">
+                            <a href="{{ route('universities.details', $university->slug) }}" 
+                               class="title" target="_blank">{{$university->name}}</a>
+                            @if($university->country)
+                                <p class="author">{{$university->country->name}}</p>
+                            @endif
+                        </div>
+                        <ul class="list zList-pb-6">
+                            @if($university->world_ranking)
+                                <li class="item">
+                                    <div class="icon d-flex">
+                                        <img src="{{asset('assets/images/icon/world-ranking.svg')}}" alt=""/>
+                                    </div>
+                                    <p class="text">{{__('World Ranking')}}: {{$university->world_ranking}}</p>
+                                </li>
+                            @endif
+                            @if($university->international_student)
+                                <li class="item">
+                                    <div class="icon d-flex">
+                                        <img src="{{asset('assets/images/icon/international-students.svg')}}" alt=""/>
+                                    </div>
+                                    <p class="text">{{__('International Students')}}: {{$university->international_student}}</p>
+                                </li>
+                            @endif
+                        </ul>
+                        <a href="{{route('universities.details', $university->slug)}}" 
+                           class="link" target="_blank">{{__('View Details')}}<i class="fa-solid fa-arrow-right"></i></a>
                     </div>
                 </div>
-                <div class="course-action">
-                    <a href="{{ route('universities.details', $university->slug) }}" class="link" target="_blank">{{ __('View Details') }}</a>
-                </div>
             </div>
-        </div>
-    @empty
-        <div class="col-xl-12">
-            <div class="p-lg-50 p-md-30 p-sm-25 p-15 bd-one bd-c-stroke bd-ra-5 bg-white">
-                <span class="course-info">{{__('No universities found')}}</span>
-            </div>
-        </div>
-    @endforelse
-</div>
+        @endforeach
+    </div>
 
-{{ $universities->links('layouts.partial.common_pagination_with_count') }}
+    <!-- Pagination -->
+    <div class="mt-4">
+        {{ $universityData->links('layouts.partial.common_pagination_with_count') }}
+    </div>
+@else
+    <div class="alert alert-info">
+        {{ __('No universities found matching your search criteria.') }}
+    </div>
+@endif
