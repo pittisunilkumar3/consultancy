@@ -168,6 +168,40 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('student.career-corner.index') }}"
+                       class="d-flex align-items-center cg-10 {{ @$activeCareerCorner }}">
+                        <div class="d-flex">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M6.66667 7.5V5.83333C6.66667 4.44928 6.66667 3.75725 7.04466 3.27874C7.24897 3.02108 7.52108 2.82223 7.83333 2.70224C8.45893 2.5 9.24022 2.5 10.8333 2.5C12.4264 2.5 13.2077 2.5 13.8333 2.70224C14.1456 2.82223 14.4177 3.02108 14.622 3.27874C15 3.75725 15 4.44928 15 5.83333V7.5M13.75 17.5V15M8.75 17.5V15M2.5 7.5H17.5M2.91667 7.5L3.77375 13.8204C3.97288 15.3071 4.07245 16.0504 4.45933 16.5919C4.59693 16.7924 4.76242 16.9709 4.95089 17.1216C5.51944 17.5 6.27036 17.5 7.77222 17.5H14.2278C15.7296 17.5 16.4806 17.5 17.0491 17.1216C17.2376 16.9709 17.4031 16.7924 17.5407 16.5919C17.9275 16.0504 18.0271 15.3071 18.2263 13.8204L19.0833 7.5"
+                                    stroke="white" stroke-width="1.25" stroke-linecap="round"
+                                    stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <span class="">{{ __('Career Corner') }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('student.universities.index') }}"
+                       class="d-flex align-items-center cg-10 {{ @$activeUniversities }}">
+                        <div class="d-flex">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M2.5 8.33335L10 3.33335L17.5 8.33335M2.5 8.33335V16.6667L10 18.3334M2.5 8.33335L10 13.3334M17.5 8.33335V16.6667L10 18.3334M17.5 8.33335L10 13.3334M10 13.3334V18.3334"
+                                    stroke="white" stroke-width="1.25" stroke-linecap="round"
+                                    stroke-linejoin="round"/>
+                                <path
+                                    d="M14.1667 6.66669V3.33335H15.8333V5.41669"
+                                    stroke="white" stroke-width="1.25" stroke-linecap="round"
+                                    stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <span class="">{{ __('Universities') }}</span>
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('student.transactions') }}"
                        class="d-flex align-items-center cg-10 {{ @$activeTransaction }}">
                         <div class="d-flex">

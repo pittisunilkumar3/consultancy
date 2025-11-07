@@ -75,6 +75,14 @@ Route::group(['prefix' => 'my-courses', 'as' => 'my_courses.'], function () {
     Route::get('view/{enrollment_id}', [MyCourseController::class, 'view'])->name('view');
 });
 
+Route::group(['prefix' => 'career-corner', 'as' => 'career-corner.'], function () {
+    Route::get('', [\App\Http\Controllers\Student\CareerCornerController::class, 'index'])->name('index');
+});
+
+Route::group(['prefix' => 'universities', 'as' => 'universities.'], function () {
+    Route::get('', [\App\Http\Controllers\Student\UniversityController::class, 'index'])->name('index');
+});
+
 Route::get('service-orders', [ServiceOrderController::class, 'index'])->name('service_orders');
 Route::get('service-orders-documents/{service_order_id}', [ServiceOrderController::class, 'documents'])->name('service_orders.documents');
 Route::get('service-orders-onboarding/{service_order_id}', [OnboardingController::class, 'onboarding'])->name('service_orders.onboarding');
