@@ -64,7 +64,7 @@
                     </div>
                     <div class="col-12">
                         <label for="type" class="zForm-label">{{ __('Type') }} <span class="text-danger">*</span></label>
-                        <select name="type" id="type" class="form-select zForm-control">
+                        <select name="type" id="type" class="form-select zForm-control sf-select-without-search">
                             <option value="text">{{ __('Text') }}</option>
                             <option value="textarea">{{ __('Textarea') }}</option>
                             <option value="number">{{ __('Number') }}</option>
@@ -117,5 +117,7 @@
 @endsection
 
 @push('script')
+    <!-- SortableJS for drag-handle ordering of options -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="{{ asset('admin/custom/js/questions.js') }}"></script>
 @endpush

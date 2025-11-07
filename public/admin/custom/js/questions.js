@@ -30,17 +30,16 @@
         // Option list UI: add/remove/reorder and serialize to hidden input before submit
         function createOptionRow(value = '', label = '') {
             var $row = $(
-                '<div class="option-item d-flex align-items-center mb-2 p-2 bg-light rounded" draggable="true">' +
-                    '<span class="handle me-2"><i class="fa-solid fa-grip-lines"></i></span>' +
+                '<div class="option-item d-flex align-items-center mb-2 p-2 bg-white bd-one bd-ra-6">' +
+                    '<span class="handle me-2 text-muted" style="cursor:grab"><i class="fa-solid fa-grip-lines"></i></span>' +
                     '<input type="text" class="form-control form-control-sm option-label me-2" placeholder="Label" value="' + $('<div/>').text(label).html() + '"/>' +
                     '<input type="text" class="form-control form-control-sm option-value me-2 d-none" placeholder="Value" value="' + $('<div/>').text(value).html() + '"/>' +
-                    '<button type="button" class="btn btn-sm btn-outline-secondary move-up me-1" title="Move up"><i class="fa-solid fa-angle-up"></i></button>' +
-                    '<button type="button" class="btn btn-sm btn-outline-secondary move-down me-1" title="Move down"><i class="fa-solid fa-angle-down"></i></button>' +
-                    '<button type="button" class="btn btn-sm btn-outline-danger remove-option" title="Remove"><i class="fa-solid fa-trash"></i></button>' +
+                    '<div class="btn-group ms-auto" role="group" aria-label="actions">' +
+                        '<button type="button" class="btn btn-sm btn-outline-danger remove-option" title="Remove"><i class="fa-solid fa-trash"></i></button>' +
+                    '</div>' +
                 '</div>'
             );
 
-            // show value input for select type only; visibility controlled elsewhere
             return $row;
         }
 
@@ -58,38 +57,18 @@
             $(this).closest('.option-item').remove();
         });
 
-        // Move up/down
-        $(document).on('click', '.move-up', function () {
-            var $row = $(this).closest('.option-item');
-            $row.prev('.option-item').before($row);
-        });
-        $(document).on('click', '.move-down', function () {
-            var $row = $(this).closest('.option-item');
-            $row.next('.option-item').after($row);
-        });
-
-        // Simple HTML5 drag-and-drop for option items
-        var dragSrcEl = null;
-        $(document).on('dragstart', '.option-item', function (e) {
-            dragSrcEl = this;
-            e.originalEvent.dataTransfer.effectAllowed = 'move';
-            e.originalEvent.dataTransfer.setData('text/html', this.outerHTML);
-            $(this).addClass('dragging');
-        });
-        $(document).on('dragend', '.option-item', function () {
-            $(this).removeClass('dragging');
-        });
-        $(document).on('dragover', '#optionList', function (e) {
-            e.preventDefault();
-            e.originalEvent.dataTransfer.dropEffect = 'move';
-            var $target = $(e.target).closest('.option-item');
-            if ($target.length && dragSrcEl && $target[0] !== dragSrcEl) {
-                var rect = $target[0].getBoundingClientRect();
-                var next = (e.originalEvent.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
-                if (next) $target.after(dragSrcEl);
-                else $target.before(dragSrcEl);
+        // Initialize SortableJS on option list (drag-handle only)
+        try {
+            if (typeof Sortable !== 'undefined') {
+                new Sortable(document.getElementById('optionList'), {
+                    handle: '.handle',
+                    animation: 150,
+                    ghostClass: 'sortable-ghost'
+                });
             }
-        });
+        } catch (e) {
+            console.warn('SortableJS not available, falling back to basic ordering.');
+        }
 
         // Toggle showing value input based on select type
         function updateOptionInputsForType(type) {
@@ -216,6 +195,8 @@
                 updateOptionInputsForType('text');
                 $title.text('Add New Question');
                 $submitText.text('Create');
+                // update niceSelect UI if available
+                try { $('.sf-select-without-search').niceSelect('update'); } catch (e) {}
             } else {
                 $title.text('Edit Question');
                 $submitText.text('Update');
@@ -234,6 +215,7 @@
                     var $form = $('#add-modal').find('form.ajax');
                     $form.find('[name="question"]').val(data.question);
                     $form.find('[name="type"]').val(data.type).trigger('change');
+                    try { $form.find('.sf-select-without-search').niceSelect('update'); } catch(e) {}
                     $form.find('[name="order"]').val(data.order);
                     $form.find('[name="required"]').prop('checked', data.required ? true : false);
                     
