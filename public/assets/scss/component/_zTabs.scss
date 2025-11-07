@@ -1,0 +1,140 @@
+.zTab {
+    &-reset {
+        --bs-nav-link-padding-x: 0;
+        --bs-nav-link-padding-y: 0;
+        --bs-nav-link-font-weight: 400;
+        --bs-nav-link-color: #fff;
+        --bs-nav-tabs-border-width: 0;
+        --bs-nav-tabs-border-color: #fff;
+        --bs-nav-tabs-border-radius: 0;
+        --bs-nav-tabs-link-active-color: #fff;
+        --bs-nav-tabs-link-active-bg: #fff;
+        flex-wrap: nowrap;
+        border-bottom: none;
+    }
+    &-wrap {
+        display: flex;
+        justify-content: center;
+        margin-top: calc(-1 * toRem(49));
+    }
+    &-one {
+        display: inline-flex;
+        flex-wrap: wrap;
+        row-gap: toRem(10);
+        border: toRem(1) solid $stroke;
+        border-radius: toRem(40);
+        padding: toRem(6);
+        margin-bottom: toRem(20);
+        background-color: $white;
+        @media screen and (max-width: 575px) {
+            width: 100%;
+            gap: toRem(10);
+            justify-content: flex-start;
+            padding: toRem(15) toRem(10);
+        }
+        .nav {
+            &-link {
+                position: relative;
+                padding: toRem(6) toRem(15);
+                background-color: transparent;
+                border-radius: toRem(50);
+                border: toRem(1) solid transparent !important;
+                white-space: nowrap;
+                @include fontFamily(16, $fw_regular, 28, $para-text);
+                @media screen and (max-width: 575px) {
+                    padding: toRem(5) toRem(10);
+                    border-color: $stroke;
+                }
+                &.active {
+                    background-color: $primary-light;
+                    color: $brand-primary;
+                    border-color: $primary-light;
+                }
+            }
+        }
+    }
+    &-two {
+        display: flex;
+        justify-content: center;
+        gap: toRem(24);
+        margin-bottom: toRem(40);
+        @media screen and (max-width: 575px) {
+            gap: toRem(10);
+            margin-bottom: toRem(20);
+        }
+        .nav {
+            &-item {
+                flex: 1 1 auto;
+            }
+            &-link {
+                position: relative;
+                width: 100%;
+                padding: toRem(18);
+                background-color: $white;
+                border-radius: toRem(50);
+                white-space: nowrap;
+                @include fontFamily(18, $fw_semiBold, 28, $para-text);
+                text-align: center;
+                @media screen and (max-width: 575px) {
+                    padding: toRem(5);
+                }
+                &.active {
+                    background-color: $button-alt;
+                    color: $title-text;
+                }
+            }
+        }
+    }
+    &-three {
+        .nav {
+            &-link {
+                position: relative;
+                padding: toRem(0) toRem(15) toRem(29);
+                background-color: transparent;
+                border-radius: 0;
+                white-space: nowrap;
+                @include fontFamily(14, $fw_semiBold, 24, $para-text);
+                display: flex;
+                align-items: center;
+                gap: toRem(10);
+                &::before {
+                    content: "";
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    width: 0%;
+                    height: toRem(2);
+                    background-color: $brand-primary;
+                    transition: all 0.3s;
+                }
+                &.active {
+                    background-color: transparent;
+                    color: $brand-primary;
+                    &::before {
+                        width: 100%;
+                    }
+                    svg {
+                        circle {
+                            stroke: $brand-primary;
+                        }
+                        path {
+                            fill: $brand-primary;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    &-four {
+        .nav {
+            &-link {
+                text-align: left;
+                color: $title-text;
+                &.active {
+                    background-color: transparent !important;
+                    color: $brand-primary;
+                }
+            }
+        }
+    }
+}

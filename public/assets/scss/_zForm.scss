@@ -1,0 +1,201 @@
+/* Form */
+.zForm-label {
+    margin-bottom: toRem(14);
+    font-size: toRem(16);
+    font-weight: $fw_medium;
+    line-height: toRem(24);
+    color: $form-label-text;
+    span {
+        color: $red;
+    }
+    &-alt {
+        margin-bottom: toRem(14);
+        font-size: toRem(16);
+        font-weight: $fw_medium;
+        line-height: toRem(24);
+        color: $form-label-text;
+        span {
+            color: $red;
+        }
+    }
+}
+.zForm-control {
+    display: block;
+    width: 100%;
+    padding: toRem(12) toRem(16);
+    font-size: toRem(14);
+    font-weight: $fw_regular;
+    line-height: toRem(20);
+    color: $title-text;
+    background-color: $white;
+    background-clip: padding-box;
+    border: toRem(1) solid $form-border;
+    border-radius: toRem(50);
+    appearance: none;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    &:focus,
+    &:hover {
+        border: toRem(1) solid $red;
+        color: $title-text !important;
+        background-color: $white !important;
+        box-shadow: 0 0 0 rgb(0 0 0 / 0);
+    }
+    &::placeholder {
+        font-size: toRem(14);
+        font-weight: $fw_regular;
+        line-height: toRem(20);
+        color: $para-text;
+    }
+    &-alt {
+        display: block;
+        width: 100%;
+        padding: toRem(12) toRem(16);
+        font-size: toRem(14);
+        font-weight: $fw_regular;
+        line-height: toRem(20);
+        color: $title-text;
+        background-color: $white;
+        background-clip: padding-box;
+        border: toRem(1) solid $form-border;
+        border-radius: toRem(50);
+        appearance: none;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        &:focus,
+        &:hover {
+            border: toRem(1) solid $red;
+            color: $title-text !important;
+            background-color: $white !important;
+            box-shadow: 0 0 0 rgb(0 0 0 / 0);
+        }
+        &::placeholder {
+            font-size: toRem(14);
+            font-weight: $fw_regular;
+            line-height: toRem(20);
+            color: $para-text;
+        }
+    }
+}
+textarea {
+    &.zForm-control {
+        border-radius: 20px;
+    }
+    &.zForm-control-alt {
+        resize: none;
+        min-height: toRem(156);
+        border-radius: 20px;
+    }
+}
+.passShowHideInput {
+    padding-right: toRem(50);
+}
+.landingBook-form {
+    .zForm-label {
+        &-alt {
+            font-size: toRem(18);
+            line-height: toRem(30);
+        }
+    }
+}
+/* Checkbox */
+.zForm-wrap-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: toRem(13);
+    input {
+        &.form-check-input {
+            margin-top: toRem(5);
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+            border: toRem(1) solid $stroke-3;
+            border-radius: toRem(2);
+            background-color: $white;
+            &:checked {
+                background-color: $red !important;
+                border-color: $red !important;
+            }
+        }
+    }
+    label {
+        @include fontFamily(16, $fw_regular, 28, $para-text);
+        a {
+            color: $brand-primary;
+        }
+    }
+    &-2 {
+        display: flex;
+        align-items: center;
+        gap: toRem(13);
+        input {
+            &.form-check-input {
+                margin-top: 0;
+                box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+                border: 1px solid $para-text;
+                border-radius: toRem(4);
+                background-color: $white;
+                &:checked {
+                    background-color: $red;
+                    border-color: $red;
+                }
+            }
+        }
+        label {
+            @include fontFamily(18, $fw_medium, 28, $para-text);
+            a {
+                color: $brand-primary;
+            }
+        }
+    }
+}
+/* Radio */
+.zForm-wrap-radio {
+    display: flex;
+    align-items: center;
+    gap: toRem(12);
+    input {
+        &.form-check-input {
+            margin-top: 0;
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+            border: toRem(2) solid $stroke;
+            background-color: $white;
+            background-size: toRem(8);
+            &:checked {
+                --bs-form-check-bg-image: url("../images/icon/radio-circle.svg");
+                background-color: $white;
+                border-color: $red;
+            }
+        }
+    }
+    label {
+        @include fontFamily(14, $fw_medium, 24, $para-text);
+    }
+}
+/* Switch */
+.zCheck {
+    &.form-switch {
+        min-height: 27px;
+        input.form-check-input {
+            width: 53px;
+            height: 27px;
+            margin-top: 0;
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+            border: 1px solid $secondary;
+            border-radius: 100px;
+            background-color: $scroll-track;
+            background-image: url(../images/icon/switch-circle.svg);
+            background-size: 23px;
+            background-position-x: 3px;
+            &:checked {
+                background-color: $button;
+                border-color: $button;
+                // background-image: url(../images/icon/switch-default-check.svg);
+                // background-size: 12px;
+                background-position-x: 26px;
+            }
+        }
+    }
+    label {
+        font-size: 13px;
+        font-weight: $fw_medium;
+        line-height: 16px;
+        color: #000;
+    }
+}

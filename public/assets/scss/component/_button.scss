@@ -1,0 +1,425 @@
+.sf {
+    &-btn {
+        &-primary {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: toRem(10);
+            padding: toRem(8.5) toRem(30);
+            border: toRem(1) solid $button;
+            border-radius: toRem(50);
+            background-color: $button;
+            @include fontFamily(16, $fw_bold, 28, $title-text);
+            transition: all 0.3s;
+            svg {
+                path,
+                ellipse {
+                    transition: all 0.3s;
+                }
+            }
+            &:hover {
+                background-color: $button-primary-color !important;
+                border-color: $button-primary-color !important;
+                color: $white !important;
+                svg {
+                    path,
+                    ellipse {
+                        stroke: $white;
+                    }
+                }
+            }
+            &-alt {
+                display: inline-flex;
+                justify-content: center;
+                align-items: center;
+                gap: toRem(10);
+                padding: toRem(12) toRem(30);
+                border: toRem(1) solid $button;
+                border-radius: toRem(50);
+                background-color: $button;
+                @include fontFamily(18, $fw_bold, 28, $title-text);
+                transition: all 0.3s;
+                svg {
+                    path,
+                    ellipse {
+                        transition: all 0.3s;
+                    }
+                }
+                &:hover {
+                    background-color: $button-primary-color !important;
+                    border-color: $button-primary-color !important;
+                    color: $white !important;
+                    svg {
+                        path,
+                        ellipse {
+                            stroke: $white;
+                        }
+                    }
+                }
+            }
+        }
+        &-secondary {
+            display: inline-block;
+            padding: toRem(8.5) toRem(30);
+            border: toRem(1) solid $btn-secondary;
+            border-radius: toRem(50);
+            background-color: $btn-secondary;
+            @include fontFamily(15, $fw_bold, 28, $title-text);
+            transition: all 0.3s;
+            &:hover {
+                background-color: $white !important;
+            }
+        }
+        &-brand {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: toRem(10);
+            padding: toRem(12) toRem(30);
+            border: toRem(1) solid $button-primary-color;
+            border-radius: toRem(50);
+            background-color: $button-primary-color;
+            @include fontFamily(18, $fw_bold, 28, $white);
+            transition: all 0.3s;
+            svg {
+                path,
+                ellipse {
+                    transition: all 0.3s;
+                }
+            }
+            &:hover {
+                background-color: $button !important;
+                border-color: $button !important;
+                color: $white !important;
+                svg {
+                    path,
+                    ellipse {
+                        stroke: $white;
+                    }
+                }
+            }
+            &-alt {
+                display: inline-flex;
+                justify-content: center;
+                align-items: center;
+                gap: toRem(10);
+                padding: toRem(8) toRem(30);
+                border: toRem(1) solid $button-primary-color;
+                border-radius: toRem(50);
+                background-color: $button-primary-color;
+                @include fontFamily(18, $fw_bold, 28, $white);
+                transition: all 0.3s;
+                svg {
+                    path,
+                    ellipse {
+                        transition: all 0.3s;
+                    }
+                }
+                &:hover {
+                    background-color: $button !important;
+                    border-color: $button !important;
+                    color: $title-text !important;
+                    svg {
+                        path,
+                        ellipse {
+                            stroke: $white;
+                        }
+                    }
+                }
+            }
+        }
+        &-disabled {
+            pointer-events: none !important;
+            opacity: 0.4;
+        }
+        &-icon {
+            &-primary {
+                display: inline-flex;
+                justify-content: center;
+                align-items: center;
+                gap: toRem(12);
+                padding: toRem(10) toRem(11) toRem(10) toRem(23);
+                border: toRem(1) solid $button;
+                border-radius: toRem(50);
+                background-color: $button;
+                @include fontFamily(
+                    16,
+                    $fw_semiBold,
+                    24,
+                    $title-text !important
+                );
+                transition: all 0.3s;
+                .icon {
+                    position: relative;
+                    width: toRem(32);
+                    height: toRem(32);
+                    border-radius: 50%;
+                    background-color: $title-text;
+                    display: flex;
+                    justify-content: flex-end;
+                    align-items: center;
+                    overflow: hidden;
+                    transition: all 0.3s;
+                    img {
+                        position: absolute;
+                        top: 50%;
+                        width: toRem(16);
+                        height: toRem(16);
+                        transition: all 0.3s;
+                        &:nth-child(1) {
+                            left: -50%;
+                            transform: translate(-50%, -50%);
+                        }
+                        &:nth-child(2) {
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                        }
+                    }
+                }
+                &:hover {
+                    .icon {
+                        justify-content: flex-start;
+                        img {
+                            &:nth-child(1) {
+                                left: 50%;
+                                transform: translate(-50%, -50%);
+                            }
+                            &:nth-child(2) {
+                                left: 150%;
+                                transform: translate(-50%, -50%);
+                            }
+                        }
+                    }
+                }
+            }
+            &-white {
+                display: inline-flex;
+                justify-content: center;
+                align-items: center;
+                gap: toRem(12);
+                padding: toRem(9) toRem(11) toRem(9) toRem(23);
+                border: toRem(1) solid $stroke;
+                border-radius: toRem(50);
+                background-color: $white;
+                @include fontFamily(16, $fw_medium, 24, $title-text !important);
+                transition: all 0.3s;
+                .icon {
+                    position: relative;
+                    width: toRem(32);
+                    height: toRem(32);
+                    border-radius: 50%;
+                    background-color: $title-text;
+                    display: flex;
+                    justify-content: flex-end;
+                    align-items: center;
+                    overflow: hidden;
+                    transition: all 0.3s;
+                    img {
+                        position: absolute;
+                        top: 50%;
+                        width: toRem(16);
+                        height: toRem(16);
+                        transition: all 0.3s;
+                        &:nth-child(1) {
+                            left: -50%;
+                            transform: translate(-50%, -50%);
+                        }
+                        &:nth-child(2) {
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                        }
+                    }
+                }
+                &:hover {
+                    .icon {
+                        justify-content: flex-start;
+                        img {
+                            &:nth-child(1) {
+                                left: 50%;
+                                transform: translate(-50%, -50%);
+                            }
+                            &:nth-child(2) {
+                                left: 150%;
+                                transform: translate(-50%, -50%);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+.flipBtn {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    // padding: 12px 30px;
+    // border-radius: 5px;
+    // background-color: $button-primary-color;
+    // font-size: 15px;
+    // font-weight: 700;
+    // line-height: 28px;
+    // color: $white !important;
+    // transition: all 0.3s;
+    span {
+        white-space: nowrap;
+        &:nth-child(2) {
+            opacity: 0;
+        }
+        &:first-child {
+            top: 50%;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            transform: translateY(-50%);
+            transition: all 0.3s;
+        }
+        &:last-child {
+            top: 100%;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        &:first-child,
+        &:last-child {
+            position: absolute;
+        }
+    }
+    &:hover {
+        span {
+            &:first-child {
+                top: -30%;
+                transform: translateY(-50%);
+            }
+            &:last-child {
+                top: 50%;
+                transform: translateY(-50%);
+            }
+        }
+    }
+    .innerWrap {
+        span {
+            &:nth-child(2) {
+                opacity: 0;
+            }
+            &:first-child {
+                top: 50%;
+                transform: translateY(-50%);
+                transition: all 0.3s;
+            }
+            &:last-child {
+                top: 100%;
+                left: 0;
+                width: 100%;
+                text-align: center;
+                transition: all 0.3s;
+            }
+            &:first-child,
+            &:last-child {
+                position: absolute;
+            }
+        }
+        &:hover {
+            span {
+                &:first-child {
+                    top: -30%;
+                    transform: translateY(-50%);
+                }
+                &:last-child {
+                    top: 50%;
+                    transform: translateY(-50%);
+                }
+            }
+        }
+    }
+    &-icon {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        .item {
+            &:nth-child(2) {
+                opacity: 0;
+            }
+            &:first-child {
+                top: 50%;
+                transform: translateY(-50%);
+                transition: all 0.3s;
+            }
+            &:last-child {
+                top: 100%;
+                left: 0;
+                width: 100%;
+                text-align: center;
+                transition: all 0.3s;
+            }
+            &:first-child,
+            &:last-child {
+                position: absolute;
+            }
+        }
+        &:hover {
+            .item {
+                &:first-child {
+                    top: -30%;
+                    transform: translateY(-50%);
+                }
+                &:last-child {
+                    top: 50%;
+                    transform: translateY(-50%);
+                }
+            }
+        }
+    }
+}
+
+.sf {
+    &-flipBtn {
+        &-primary {
+            padding: toRem(8.5) toRem(30);
+            border: toRem(1) solid $button;
+            border-radius: toRem(50);
+            background-color: $button;
+            @include fontFamily(16, $fw_semiBold, 24, $title-text !important);
+            transition: all 0.3s;
+            &:has(.innerWrap) {
+                padding: 0;
+                display: inline-flex;
+                align-items: center;
+                .innerWrap {
+                    padding: toRem(8.5) toRem(30);
+                }
+            }
+        }
+        &-brand {
+            padding: toRem(8.5) toRem(30);
+            border: toRem(1) solid $button-primary-color;
+            border-radius: toRem(50);
+            background-color: $button-primary-color;
+            @include fontFamily(16, $fw_bold, 28, $white !important);
+            transition: all 0.3s;
+            &-alt {
+                padding: toRem(8) toRem(30);
+                border: toRem(1) solid $button-primary-color;
+                border-radius: toRem(50);
+                background-color: $button-primary-color;
+                @include fontFamily(16, $fw_bold, 28, $white !important);
+                transition: all 0.3s;
+            }
+        }
+        &-secondary {
+            padding: toRem(8.5) toRem(30);
+            border: toRem(1) solid $btn-secondary;
+            border-radius: toRem(50);
+            background-color: $btn-secondary;
+            @include fontFamily(16, $fw_bold, 28, $title-text !important);
+            transition: all 0.3s;
+        }
+    }
+}
+.trackProgress-btn {
+    @media screen and (max-width: 1199px) {
+        padding: toRem(6) toRem(15);
+    }
+}

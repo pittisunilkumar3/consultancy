@@ -1,0 +1,58 @@
+/* Font size */
+$fs-array: 0;
+@each $fs in $fs-array {
+  .fs-#{$fs} {
+    font-size: toRem($fs) !important;
+  }
+}
+@for $fs from 10 through 30 {
+  .fs-#{$fs} {
+    font-size: toRem($fs) !important;
+  }
+}
+$fs-sm-array: 36;
+@each $fs-sm in $fs-sm-array {
+  .fs-sm-#{$fs-sm} {
+    @media screen and (min-width: 576px) {
+      font-size: toRem($fs-sm) !important;
+    }
+  }
+}
+/* Font weight */
+$fw-array: 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000;
+@each $fw in $fw-array {
+  .fw-#{$fw} {
+    font-weight: #{$fw};
+  }
+}
+/* Line Height */
+$lh-array: 0;
+@each $lh in $lh-array {
+  .lh-#{$lh} {
+    line-height: toRem($lh) !important;
+  }
+}
+@for $lh from 10 through 34 {
+  .lh-#{$lh} {
+    line-height: toRem($lh) !important;
+  }
+}
+$lh-sm-array: 46;
+@each $lh-sm in $lh-sm-array {
+  .lh-sm-#{$lh-sm} {
+    @media screen and (min-width: 576px) {
+      line-height: toRem($lh-sm) !important;
+    }
+  }
+}
+/* Letter Spacing */
+$ls-array: 1;
+@each $ls in $ls-array {
+  .ls-#{$ls} {
+    letter-spacing: toRem($ls);
+  }
+}
+/* text justify */
+.text-justify {
+  text-align: justify;
+}

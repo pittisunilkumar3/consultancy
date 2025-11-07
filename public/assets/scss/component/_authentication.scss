@@ -1,0 +1,177 @@
+.zMain {
+    &-signLog {
+        // &-wrap {
+        //   min-height: 100vh;
+        //   max-height: 100vh;
+        // }
+        &-content {
+            // max-width: toRem(757);
+            margin: 0 auto;
+            @media screen and (min-width: 992px) {
+                height: 100%;
+            }
+            @media screen and (max-width: 991px) {
+                height: 100%;
+            }
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        // &-img {
+        //   height: 100vh;
+        //   &[data-background] {
+        //     background-size: contain;
+        //   }
+        // }
+    }
+}
+
+.signLog-section {
+    @media screen and (min-width: 992px) {
+        min-height: 100vh;
+    }
+    @media screen and (max-width: 991px) {
+        min-height: 100vh;
+        // padding: toRem(50) 0;
+    }
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    background-color: $white;
+    // overflow-y: hidden;
+    @media screen and (max-width: 991px) {
+        grid-template-columns: repeat(1, 1fr);
+    }
+    .left,
+    .right {
+        // width: 50%;
+        min-height: 100vh;
+        height: 100%;
+    }
+    .left {
+        background-color: $secondary;
+        padding: 30px 92px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        // border-radius: toRem(20);
+        @media screen and (max-width: 1399px) {
+            padding: 30px;
+        }
+        @media screen and (max-width: 991px) {
+            justify-content: center;
+            width: 100%;
+        }
+        @media screen and (max-width: 575px) {
+            padding: 10px;
+        }
+        .wrap {
+            width: 100%;
+            height: 100%;
+        }
+    }
+    .right {
+        position: relative;
+        padding: toRem(50) toRem(20);
+        text-align: center;
+        .logo {
+            display: inline-block;
+            max-width: toRem(166);
+        }
+        .title {
+            @include fontFamilyAlt(32, $fw_bold, 1.2, $white);
+            max-width: toRem(731);
+            margin: 0 auto;
+            padding-top: toRem(30);
+        }
+        @media screen and (max-width: 991px) {
+            display: none;
+        }
+    }
+}
+
+/* passShowHide */
+.passShowHide {
+    position: relative;
+    button {
+        border: none;
+        padding: 0;
+        background-color: transparent;
+        position: absolute;
+        top: toRem(18);
+        right: toRem(25);
+        color: $para-text;
+        font-weight: 400;
+    }
+}
+/* OTP */
+.otp-input-fields {
+    display: flex;
+    gap: toRem(10);
+    input {
+        flex: 1 1 auto;
+        max-width: toRem(117);
+        width: 100%;
+        height: toRem(52);
+        border: toRem(1) solid $stroke;
+        border-radius: toRem(5);
+        background-color: $white;
+        @include fontFamily(36, $fw_bold, 46, $para-text);
+        text-align: center;
+        @media screen and (max-width: 575px) {
+            height: toRem(70);
+        }
+        &:focus,
+        &:hover {
+            border-color: $brand-primary;
+        }
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+    }
+}
+/* Other Auth */
+.otherAuthWrap {
+    width: 100%;
+    max-width: toRem(559);
+    margin: 0 auto;
+    padding-top: toRem(50);
+    .text {
+        position: relative;
+        text-align: center;
+        @include fontFamily(18, $fw_medium, 28, $title-text);
+        margin-bottom: toRem(20) !important;
+        span {
+            position: relative;
+            display: inline-block;
+            background-color: $secondary;
+            padding: 0 toRem(19);
+        }
+        &::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            width: 100%;
+            height: toRem(1);
+            background-color: $stroke-2;
+        }
+    }
+    .authList {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: toRem(10);
+        .item {
+            width: 70px;
+            height: 70px;
+            border: toRem(1) solid $stroke;
+            border-radius: 50%;
+            background-color: $white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    }
+}

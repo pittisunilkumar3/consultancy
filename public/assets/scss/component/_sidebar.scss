@@ -1,0 +1,188 @@
+.zSidebar {
+    &-logo {
+        padding: toRem(24) toRem(25) toRem(40);
+        display: block;
+        // img {
+        //     max-width: toRem(166);
+        //     max-height: toRem(29);
+        // }
+    }
+    &-menu {
+        > li {
+            position: relative;
+            // padding: 0 toRem(12);
+            &.sidebar-divider {
+                border-top: toRem(1) solid $sidebar-divider;
+                // padding: toRem(10) toRem(11) toRem(9) toRem(23);
+                margin: toRem(12) toRem(30) toRem(12) toRem(10);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            // &:not(&.sidebar-divider) {
+            //   margin-bottom: toRem(5);
+            //   &.sidebar-divider {
+            //     border-top: toRem(1) solid $stroke;
+            //     padding-top: toRem(30);
+            //     margin-top: toRem(30);
+            //     display: flex;
+            //     justify-content: space-between;
+            //     align-items: center;
+            //   }
+            // }
+            &:first-child {
+                &.sidebar-divider {
+                    padding-top: 0;
+                    border-top: none;
+                }
+            }
+            // &:not(:first-child) {
+            //   &.sidebar-divider {
+            //     border-top: toRem(1) solid $stroke;
+            //     padding: toRem(10) toRem(12) toRem(9);
+            //     margin: 0 toRem(12);
+            //     display: flex;
+            //     justify-content: space-between;
+            //     align-items: center;
+            //   }
+            // }
+            // &:last-child {
+            //   margin-bottom: 0;
+            // }
+            svg {
+                max-width: 16px;
+                max-height: 16px;
+            }
+            > a {
+                position: relative;
+                padding: toRem(13) toRem(15) toRem(13) toRem(25);
+                border-left: toRem(4) solid $sidebar-bg;
+                svg {
+                    path,
+                    circle,
+                    rect {
+                        stroke: $white;
+                    }
+                }
+                span {
+                    @include fontFamily(15, $fw_bold, 20, $white);
+                }
+                &::before {
+                    position: absolute;
+                    content: "";
+                    width: 0.5em;
+                    height: 0.5em;
+                    border-width: 1px 0 0 1px;
+                    border-style: solid;
+                    border-color: $white;
+                    right: 1em;
+                    transform: rotate(135deg) translate(0, -50%);
+                    transform-origin: top;
+                    top: 50%;
+                    opacity: 0;
+                    visibility: hidden;
+                    transition: all 0.3s ease-out;
+                }
+                ~ div .zSidebar-submenu {
+                    padding: toRem(10) 0 toRem(10) toRem(55);
+                    li {
+                        padding-bottom: toRem(6);
+                        &:last-child {
+                            padding-bottom: 0;
+                        }
+                        a {
+                            position: relative;
+                            padding-left: toRem(12);
+                            display: block;
+                            @include fontFamily(14, $fw_bold, 19, $white);
+                            &::before {
+                                content: "";
+                                position: absolute;
+                                top: toRem(7);
+                                left: 0;
+                                width: toRem(5);
+                                height: toRem(5);
+                                border-radius: 50%;
+                                background-color: $white;
+                            }
+                            &:hover,
+                            &.active {
+                                color: $button;
+                                &::before {
+                                    background-color: $button;
+                                }
+                            }
+                        }
+                    }
+                }
+                &.has-subMenu-arrow {
+                    &::before {
+                        opacity: 1;
+                        visibility: visible;
+                    }
+                }
+                &:has(~ div ul.zSidebar-submenu li) {
+                    &::before {
+                        opacity: 1;
+                        visibility: visible;
+                    }
+                }
+                &[aria-expanded="true"] {
+                    &::before {
+                        transform: rotate(227deg);
+                    }
+                }
+                // &::after {
+                //   content: "";
+                //   position: absolute;
+                //   top: 50%;
+                //   left: -14px;
+                //   transform: translateY(-50%);
+                //   width: toRem(2);
+                //   height: toRem(25);
+                //   border-radius: 0 toRem(10) toRem(10) 0;
+                //   background-color: $brand-primary;
+                //   transition: all 0.3s;
+                // }
+                &:hover,
+                &.active {
+                    border-color: $button;
+                    background-color: $sidebar-bg;
+                    svg {
+                        path,
+                        circle,
+                        rect {
+                            stroke: $button;
+                        }
+                    }
+                    span {
+                        color: $button;
+                    }
+                    &::before {
+                        border-color: $button;
+                    }
+                    // &::after {
+                    //   left: -12px;
+                    // }
+                }
+                // &.active {
+                //   ~ .collapse {
+                //     display: block !important;
+                //   }
+                // }
+            }
+        }
+    }
+    &-fixed {
+        max-height: calc(100% - toRem(85));
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow-y: scroll;
+        scrollbar-width: none;
+        &::-webkit-scrollbar {
+            display: none !important;
+        }
+    }
+}

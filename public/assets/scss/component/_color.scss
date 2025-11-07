@@ -1,0 +1,55 @@
+$theme-colors: (
+    "white": var(--white),
+    "white-10": var(--white-10),
+    "white-20": var(--white-20),
+    "white-90": var(--white-90),
+    "black": var(--black),
+    "scroll-track": var(--scroll-track),
+    "scroll-thumb": var(--scroll-thumb),
+    "brand-primary": var(--brand-primary),
+    "secondary": var(--secondary),
+    "tertiary": var(--tertiary),
+    "button": var(--button),
+    "button-alt": var(--button-alt),
+    "title-text": var(--title-text),
+    "para-text": var(--para-text),
+    "stroke": var(--stroke),
+    "stroke-2": var(--stroke-2),
+    "stroke-3": var(--stroke-3),
+    "primary-light": var(--primary-light),
+    "red": var(--red),
+    "red-light": var(--red-light),
+    "green": var(--green),
+    "hold-text": var(--hold-text),
+    "hold-bg": var(--hold-bg),
+    "refunded-text": var(--refunded-text),
+    "refunded-bg": var(--refunded-bg),
+    "gray-40": var(--gray-40),
+    "gray-50": var(--gray-50),
+    "gray-90": var(--gray-90),
+    "dark-90": var(--dark-90),
+    "blue": var(--blue),
+    "blue-alt": var(--blue-alt),
+    "form-label-text": var(--form-label-text),
+    "form-border": var(--form-border),
+    "secondary-bg": var(--secondary-bg),
+    "btn-secondary": var(--btn-secondary),
+    "warning-50": var(--warning-50),
+);
+@each $key, $color in $theme-colors {
+    .text-#{$key} {
+        color: $color !important;
+    }
+}
+/* Background Color */
+@each $key, $color in $theme-colors {
+    .bg-#{$key} {
+        background-color: $color !important;
+    }
+}
+/* Border Color */
+@each $key, $color in $theme-colors {
+    .bd-c-#{$key} {
+        border-color: $color !important;
+    }
+}

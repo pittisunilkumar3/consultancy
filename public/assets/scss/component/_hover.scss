@@ -1,0 +1,9 @@
+.hover {
+  &-color {
+    &-brand-primary {
+      &:hover {
+        color: $brand-primary !important;
+      }
+    }
+  }
+}
