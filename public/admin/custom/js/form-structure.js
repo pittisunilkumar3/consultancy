@@ -48,7 +48,7 @@
             }
         });
 
-        // Initialize main form canvas
+        // Initialize main form canvas - allows sections and standalone items
         Sortable.create(document.getElementById('formCanvas'), {
             group: {
                 name: 'shared',
@@ -56,7 +56,8 @@
                 put: true
             },
             animation: 150,
-            handle: '.handle',
+            handle: '.handle, .section-handle',
+            filter: '.section-content, .option-list',
             // Auto-scroll options
             scroll: true,
             scrollSensitivity: 100,
@@ -77,7 +78,32 @@
             },
             onAdd: function(evt) {
                 const item = evt.item;
-                if ($(item).data('source') === 'available') {
+                // If it's a section, initialize its sortable
+                if ($(item).hasClass('form-section')) {
+                    const $sectionContent = $(item).find('.section-content');
+                    if ($sectionContent.length && !$sectionContent.data('sortable-initialized')) {
+                        initSortable($sectionContent[0], {
+                            group: {
+                                name: 'shared',
+                                pull: true,
+                                put: true
+                            },
+                            animation: 150,
+                            handle: '.handle',
+                            ghostClass: 'sortable-ghost',
+                            scroll: true,
+                            scrollSensitivity: 100,
+                            scrollSpeed: 10,
+                            onAdd: function(evt) {
+                                const item = evt.item;
+                                if ($(item).data('source') === 'available') {
+                                    initializeNewItem(item);
+                                }
+                            }
+                        });
+                        $sectionContent.data('sortable-initialized', true);
+                    }
+                } else if ($(item).data('source') === 'available') {
                     initializeNewItem(item);
                 }
             }
@@ -88,14 +114,38 @@
 
         // Save button handler
         $('#saveStructure').on('click', function() {
-            const items = serializeStructure();
-            saveStructure(items);
+            const data = serializeStructure();
+            saveStructure(data);
+        });
+
+        // Create section button handler
+        $('#createSection').on('click', function() {
+            createNewSection();
         });
 
         // Remove item handler
         $(document).on('click', '.remove-item', function() {
             $(this).closest('.question-item').remove();
         });
+
+        // Section handlers
+        $(document).on('click', '.section-toggle', function() {
+            const $section = $(this).closest('.form-section');
+            const $content = $section.find('.section-content');
+            const $icon = $(this).find('i');
+            
+            $content.toggleClass('collapsed');
+            $icon.toggleClass('fa-chevron-down fa-chevron-up');
+        });
+
+        $(document).on('click', '.section-remove', function() {
+            if (confirm('Are you sure you want to remove this section? All questions in this section will also be removed.')) {
+                $(this).closest('.form-section').remove();
+            }
+        });
+
+        // Initialize section content areas as sortable
+        initSectionSortables();
     });
 
     // Load structure and available questions
@@ -301,15 +351,145 @@
         }));
     }
 
+    // Create a new section
+    function createNewSection() {
+        const $template = $($('#sectionTemplate').html());
+        const $canvas = $('#formCanvas');
+        $canvas.append($template);
+        
+        // Initialize sortable for the section content
+        const $sectionContent = $template.find('.section-content');
+        initSortable($sectionContent[0], {
+            group: {
+                name: 'shared',
+                pull: true,
+                put: true
+            },
+            animation: 150,
+            handle: '.handle',
+            ghostClass: 'sortable-ghost',
+            scroll: true,
+            scrollSensitivity: 100,
+            scrollSpeed: 10,
+            onAdd: function(evt) {
+                const item = evt.item;
+                if ($(item).data('source') === 'available') {
+                    initializeNewItem(item);
+                }
+            }
+        });
+        
+        // Focus on the section name input
+        $template.find('.section-name-input').focus();
+    }
+
+    // Initialize sortables for all section content areas
+    function initSectionSortables() {
+        $('.section-content').each(function() {
+            if (!$(this).data('sortable-initialized')) {
+                initSortable(this, {
+                    group: {
+                        name: 'shared',
+                        pull: true,
+                        put: true
+                    },
+                    animation: 150,
+                    handle: '.handle',
+                    ghostClass: 'sortable-ghost',
+                    scroll: true,
+                    scrollSensitivity: 100,
+                    scrollSpeed: 10,
+                    onAdd: function(evt) {
+                        const item = evt.item;
+                        if ($(item).data('source') === 'available') {
+                            initializeNewItem(item);
+                        }
+                    }
+                });
+                $(this).data('sortable-initialized', true);
+            }
+        });
+    }
+
+    // Render a section
+    function renderSection(sectionData) {
+        const $template = $($('#sectionTemplate').html());
+        $template.attr('data-section-id', sectionData.id || '');
+        $template.find('.section-name-input').val(sectionData.name || '');
+        
+        const $sectionContent = $template.find('.section-content');
+        
+        // Render items in this section
+        if (sectionData.items && sectionData.items.length > 0) {
+            sectionData.items.forEach((item) => {
+                const $item = $(renderQuestionItem(item.question));
+                renderNestedItems($item, item, 0);
+                $sectionContent.append($item);
+            });
+        }
+        
+        // Initialize sortable for section content
+        initSortable($sectionContent[0], {
+            group: {
+                name: 'shared',
+                pull: true,
+                put: true
+            },
+            animation: 150,
+            handle: '.handle',
+            ghostClass: 'sortable-ghost',
+            scroll: true,
+            scrollSensitivity: 100,
+            scrollSpeed: 10,
+            onAdd: function(evt) {
+                const item = evt.item;
+                if ($(item).data('source') === 'available') {
+                    initializeNewItem(item);
+                }
+            }
+        });
+        
+        // Set collapsed state
+        if (sectionData.is_expanded_by_default === false) {
+            $sectionContent.addClass('collapsed');
+            $template.find('.section-toggle i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+        }
+        
+        return $template;
+    }
+
     // Render the current structure
-    function renderStructure(items) {
+    function renderStructure(data) {
         const $canvas = $('#formCanvas').empty();
         
-        items.forEach((item) => {
-            const $item = $(renderQuestionItem(item.question));
-            renderNestedItems($item, item, 0);
-            $canvas.append($item);
+        // Data can be array of sections/items or legacy format
+        if (!Array.isArray(data)) {
+            data = [];
+        }
+        
+        data.forEach((element) => {
+            if (element.type === 'section') {
+                // Render section
+                const $section = renderSection(element);
+                $canvas.append($section);
+            } else if (element.type === 'items' || element.items) {
+                // Render standalone items (legacy format or items without section)
+                const items = element.items || [];
+                items.forEach((item) => {
+                    const $item = $(renderQuestionItem(item.question));
+                    renderNestedItems($item, item, 0);
+                    $canvas.append($item);
+                });
+            } else if (element.question) {
+                // Legacy format - single item
+                const $item = $(renderQuestionItem(element.question));
+                renderNestedItems($item, element, 0);
+                $canvas.append($item);
+            }
         });
+        
+        // Initialize section sortables
+        initSectionSortables();
     }
 
     // Recursively render nested items for radio questions
@@ -423,27 +603,59 @@
 
     // Serialize the current structure for saving
     function serializeStructure() {
-        const items = [];
+        const sections = [];
+        const standaloneItems = [];
         
-        const $topLevelItems = $('#formCanvas > .question-item');
-        
-        $topLevelItems.each(function(index) {
-            const item = serializeItem($(this), index, 0);
-            items.push(item);
+        // Process all elements in canvas (sections and standalone items)
+        $('#formCanvas > *').each(function(index) {
+            const $element = $(this);
+            
+            if ($element.hasClass('form-section')) {
+                // This is a section
+                const sectionName = $element.find('.section-name-input').val().trim();
+                if (!sectionName) {
+                    // Skip sections without names
+                    return;
+                }
+                
+                const sectionData = {
+                    name: sectionName,
+                    description: null,
+                    is_collapsible: true,
+                    is_expanded_by_default: !$element.find('.section-content').hasClass('collapsed'),
+                    items: []
+                };
+                
+                // Serialize items in this section
+                const $sectionContent = $element.find('.section-content');
+                $sectionContent.children('.question-item').each(function(itemIndex) {
+                    const item = serializeItem($(this), itemIndex, 0);
+                    sectionData.items.push(item);
+                });
+                
+                sections.push(sectionData);
+            } else if ($element.hasClass('question-item')) {
+                // This is a standalone item (not in a section)
+                const item = serializeItem($element, standaloneItems.length, 0);
+                standaloneItems.push(item);
+            }
         });
 
-        return items;
+        return {
+            sections: sections,
+            items: standaloneItems
+        };
     }
 
     // Save the structure
-    function saveStructure(items) {
+    function saveStructure(data) {
         const $btn = $('#saveStructure').prop('disabled', true);
         const $icon = $btn.find('i').removeClass('fa-save').addClass('fa-spinner fa-spin');
         
         $.ajax({
             url: `${baseUrl}/admin/form-structure/${window.structureId}/save`,
             method: 'POST',
-            data: { items },
+            data: data,
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }

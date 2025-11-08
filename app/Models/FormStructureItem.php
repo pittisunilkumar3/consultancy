@@ -8,6 +8,7 @@ class FormStructureItem extends Model
 {
     protected $fillable = [
         'structure_id',
+        'section_id',
         'question_id',
         'parent_item_id',
         'parent_option_value',
@@ -20,6 +21,14 @@ class FormStructureItem extends Model
     public function structure()
     {
         return $this->belongsTo(FormStructure::class);
+    }
+
+    /**
+     * Get the section this item belongs to (if any)
+     */
+    public function section()
+    {
+        return $this->belongsTo(FormStructureSection::class);
     }
 
     /**

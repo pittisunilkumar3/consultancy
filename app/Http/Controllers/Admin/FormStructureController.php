@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\FormStructure;
 use App\Models\FormStructureItem;
+use App\Models\FormStructureSection;
 use App\Models\Question;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -54,12 +55,18 @@ class FormStructureController extends Controller
         try {
             DB::beginTransaction();
             
-            // Remove all existing items (we'll replace with new structure)
+            // Remove all existing items and sections (we'll replace with new structure)
             $structure->items()->delete();
+            $structure->sections()->delete();
             
-            // Process the items recursively
+            // Process sections first
+            if ($request->has('sections')) {
+                $this->processSections($request->sections, $structure->id);
+            }
+            
+            // Process standalone items (not in sections)
             if ($request->has('items')) {
-                $this->processItems($request->items, $structure->id);
+                $this->processItems($request->items, $structure->id, null, null, null);
             }
             
             DB::commit();
@@ -82,14 +89,37 @@ class FormStructureController extends Controller
     }
 
     /**
+     * Process and save sections
+     */
+    private function processSections($sections, $structureId)
+    {
+        foreach ($sections as $index => $sectionData) {
+            $section = FormStructureSection::create([
+                'structure_id' => $structureId,
+                'name' => $sectionData['name'],
+                'description' => $sectionData['description'] ?? null,
+                'order' => $index,
+                'is_collapsible' => $sectionData['is_collapsible'] ?? true,
+                'is_expanded_by_default' => $sectionData['is_expanded_by_default'] ?? true,
+            ]);
+
+            // Process items in this section
+            if (isset($sectionData['items']) && is_array($sectionData['items'])) {
+                $this->processItems($sectionData['items'], $structureId, null, null, $section->id);
+            }
+        }
+    }
+
+    /**
      * Recursively process and save structure items
      */
-    private function processItems($items, $structureId, $parentId = null, $parentOptionValue = null)
+    private function processItems($items, $structureId, $parentId = null, $parentOptionValue = null, $sectionId = null)
     {
         foreach ($items as $index => $item) {
             // Create the item
             $structureItem = FormStructureItem::create([
                 'structure_id' => $structureId,
+                'section_id' => $sectionId,
                 'question_id' => $item['question_id'],
                 'parent_item_id' => $parentId,
                 'parent_option_value' => $parentOptionValue,
@@ -97,6 +127,7 @@ class FormStructureController extends Controller
             ]);
 
             // Process children if any (for radio questions)
+            // Children inherit the section_id from parent
             if (isset($item['children'])) {
                 foreach ($item['children'] as $optionValue => $child) {
                     if (isset($child['items'])) {
@@ -104,7 +135,8 @@ class FormStructureController extends Controller
                             $child['items'],
                             $structureId,
                             $structureItem->id,
-                            $optionValue
+                            $optionValue,
+                            $sectionId // Children inherit section from parent
                         );
                     }
                 }

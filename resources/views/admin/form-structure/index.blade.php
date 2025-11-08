@@ -78,6 +78,19 @@
             width: 100%;
         }
         
+        /* Sections in canvas */
+        #formCanvas > .form-section {
+            width: 100%;
+            margin-bottom: 1rem;
+            box-sizing: border-box;
+        }
+        
+        /* Section content should allow questions to be dropped and expand */
+        .section-content {
+            min-height: 100px;
+            min-width: 100%;
+        }
+        
         /* Legacy support for question-list class */
         .question-list {
             min-height: 400px;
@@ -149,6 +162,163 @@
         #formCanvas::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+        
+        /* Section styles */
+        .form-section {
+            margin-bottom: 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background: #ffffff;
+            overflow: visible;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .section-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+        }
+        
+        .section-header:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+        }
+        
+        .section-title input {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+            flex: 1;
+            max-width: 400px;
+        }
+        
+        .section-title input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .section-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .section-content {
+            padding: 1rem;
+            min-height: 100px;
+            overflow-x: auto;
+            overflow-y: visible;
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+        }
+        
+        .section-content.collapsed {
+            display: none;
+        }
+        
+        /* Top-level questions in section - allow full width */
+        .section-content > .question-item {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* Critical: Allow nested content to expand beyond section width */
+        .section-content .question-item .flex-grow-1 {
+            overflow: visible;
+        }
+        
+        .section-content .option-containers {
+            overflow: visible;
+            display: block;
+        }
+        
+        .section-content .option-container {
+            box-sizing: border-box;
+            white-space: normal;
+        }
+        
+        /* Nested items inside option containers can expand horizontally */
+        .section-content .option-container .question-item {
+            width: auto;
+            min-width: 250px;
+            box-sizing: border-box;
+        }
+        
+        /* Allow deeply nested content to expand */
+        .section-content .question-item {
+            white-space: normal;
+        }
+        
+        .section-content .option-container .option-list {
+            overflow: visible;
+        }
+        
+        /* Ensure nested structures don't get constrained - allow natural expansion */
+        .section-content .option-containers {
+            width: auto;
+            min-width: 0;
+            display: block;
+        }
+        
+        .section-content .option-container {
+            width: auto;
+            min-width: 0;
+        }
+        
+        .section-content .option-list {
+            width: auto;
+            min-width: 0;
+        }
+        
+        /* Critical: Allow nested question items to expand and push section content width */
+        .section-content .option-container .question-item,
+        .section-content .option-container .option-containers .option-container .question-item {
+            width: auto;
+            min-width: 250px;
+        }
+        
+        /* Custom scrollbar for section content */
+        .section-content::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .section-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .section-content::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        .section-content::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        .section-handle {
+            cursor: grab;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .section-handle:active {
+            cursor: grabbing;
+        }
     </style>
 @endpush
 @section('content')
@@ -167,9 +337,14 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title">{{ $pageTitle ?? __('Career Corner Form Structure') }}</h3>
-                    <button type="button" class="btn btn-primary" id="saveStructure">
-                        <i class="fa-solid fa-save me-1"></i>{{ __('Save Structure') }}
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary" id="createSection">
+                            <i class="fa-solid fa-folder-plus me-1"></i>{{ __('Create Section') }}
+                        </button>
+                        <button type="button" class="btn btn-primary" id="saveStructure">
+                            <i class="fa-solid fa-save me-1"></i>{{ __('Save Structure') }}
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card-body">
@@ -229,6 +404,32 @@
             </div>
             <div class="option-list">
                 <!-- Nested items dropped here -->
+            </div>
+        </div>
+    </template>
+
+    <!-- Template for section -->
+    <template id="sectionTemplate">
+        <div class="form-section" data-section-id="">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="section-handle me-2">
+                        <i class="fa-solid fa-grip-lines"></i>
+                    </span>
+                    <i class="fa-solid fa-folder"></i>
+                    <input type="text" class="section-name-input" placeholder="Section Name (e.g., Educational Details)" value="">
+                </div>
+                <div class="section-actions">
+                    <button type="button" class="btn btn-sm btn-light section-toggle" title="Collapse/Expand">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-light section-remove" title="Remove Section">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="section-content">
+                <!-- Questions will be dropped here -->
             </div>
         </div>
     </template>
