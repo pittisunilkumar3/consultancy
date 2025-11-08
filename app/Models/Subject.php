@@ -25,4 +25,24 @@ class Subject extends Model
         'amount',
         'status',
     ];
+
+    public function country()
+    {
+        return $this->belongsTo(Country::class, 'country_id');
+    }
+
+    public function university()
+    {
+        return $this->belongsTo(University::class, 'university_id');
+    }
+
+    public function studyLevel()
+    {
+        return $this->belongsTo(StudyLevel::class, 'study_level_id');
+    }
+
+    public function subjectCategory()
+    {
+        return $this->belongsTo(SubjectCategory::class, 'subject_category_id');
+    }
 }

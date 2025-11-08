@@ -24,16 +24,6 @@
                                 <li class="nav-item">
                                     <a class="nav-link fs-16 fw-400 lh-28 text-para-text p-0 {{ @$activeAboutUsMenu }}" href="{{ route('about-us.details') }}">{{__('About Us')}}</a>
                                 </li>
-                                <li class="nav-item dropdown">
-                                    <a class="{{@$activeStudyAbroadMenu}} nav-link fs-16 fw-400 lh-28 text-para-text p-0 dropdown-toggle menu-dropdown-toggle"
-                                       href="#" role="button" data-bs-toggle="dropdown"
-                                       aria-expanded="false">{{__('Study Abroad')}}</a>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item {{@$activeUniversityMenu}}" href="{{ route('universities.list') }}">{{__('Universities')}}</a></li>
-                                        <li><a class="dropdown-item {{@$activeSubjectMenu}}" href="{{ route('subject.list') }}">{{__('Subjects')}}</a></li>
-                                        <li><a class="dropdown-item {{@$activeScholarshipMenu}}" href="{{ route('scholarship.list') }}">{{__('Scholarship')}}</a></li>
-                                    </ul>
-                                </li>
                                 @php
                                     $coursePrograms = courseProgram();
                                 @endphp

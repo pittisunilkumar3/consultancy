@@ -25,4 +25,24 @@ class Scholarship extends Model
         'available_award_number',
         'offers_received_from_date'
     ];
+
+    public function country()
+    {
+        return $this->belongsTo(Country::class, 'country_id');
+    }
+
+    public function university()
+    {
+        return $this->belongsTo(University::class, 'university_id');
+    }
+
+    public function studyLevel()
+    {
+        return $this->belongsTo(StudyLevel::class, 'study_level_id');
+    }
+
+    public function subject()
+    {
+        return $this->belongsTo(Subject::class, 'subject_id');
+    }
 }
