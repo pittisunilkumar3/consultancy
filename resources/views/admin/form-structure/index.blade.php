@@ -175,7 +175,7 @@
         }
         
         .section-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
             color: white;
             padding: 1rem 1.25rem;
             display: flex;
@@ -185,7 +185,8 @@
         }
         
         .section-header:hover {
-            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+            background: linear-gradient(135deg,rgb(34, 154, 140) 0%, #087a70 100%);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         
         .section-title {
