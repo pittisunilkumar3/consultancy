@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\Cms\BlogCategoriesController;
 use App\Http\Controllers\Admin\Cms\BlogController;
 use App\Http\Controllers\Admin\Cms\BlogTagController;
 use App\Http\Controllers\Admin\Cms\CmsController;
+use App\Http\Controllers\Admin\FormStructureController;
 use App\Http\Controllers\Admin\Cms\CountryController;
 use App\Http\Controllers\Admin\Cms\FaqController;
 use App\Http\Controllers\Admin\Cms\ScholarshipController;
@@ -406,6 +407,11 @@ Route::group(['prefix' => 'questions', 'as' => 'questions.', 'middleware' => 'ca
     Route::post('update/{id}', [QuestionController::class, 'update'])->name('update');
     Route::delete('delete/{id}', [QuestionController::class, 'delete'])->name('delete');
     // further CRUD routes will be added later
+});
+Route::group(['prefix' => 'form-structure', 'as' => 'form-structure.', 'middleware' => 'can:Manage Questions'], function () {
+    Route::get('/', [FormStructureController::class, 'index'])->name('index');
+    Route::get('/{id}', [FormStructureController::class, 'getStructure'])->name('get');
+    Route::post('/{id}/save', [FormStructureController::class, 'saveStructure'])->name('save');
 });
 
 Route::get('service-orders', [ServiceOrderController::class, 'index'])->name('service_orders')->middleware('can:Manage Service');

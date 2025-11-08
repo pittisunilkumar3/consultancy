@@ -1,0 +1,150 @@
+@extends('layouts.app')
+
+@push('title')
+    {{ $pageTitle ?? __('Questions Structure') }}
+@endpush
+
+@push('style')
+    <style>
+        .question-list {
+            min-height: 400px;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            padding: 1rem;
+        }
+        .question-item {
+            cursor: move;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+        }
+        .question-item:hover {
+            border-color: #93c5fd;
+        }
+        .option-container {
+            margin-left: 2rem;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 0.375rem;
+        }
+        .option-container .title {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        .option-list {
+            min-height: 2rem;
+        }
+        .sortable-ghost {
+            opacity: 0.5;
+            background: #e2e8f0;
+        }
+        .handle {
+            cursor: grab;
+            color: #94a3b8;
+            padding: 0 0.5rem;
+        }
+        .handle:active {
+            cursor: grabbing;
+        }
+    </style>
+@endpush
+@section('content')
+    <div class="px-sm-30 p-15 bd-b-one bd-c-stroke-2 d-flex justify-content-between align-items-center">
+        <h4 class="fs-18 fw-700 lh-24 text-title-text">{{ $pageTitle ?? __('Questions Structure') }}</h4>
+    </div>
+    
+    <script>
+        // Make structure ID available to JavaScript
+        window.structureId = {{ $structure->id ?? 'null' }};
+        window.questions = {!! json_encode($questions ?? []) !!};
+    </script>
+
+    <div class="p-sm-30 p-15">
+        <div class="p-sm-25 p-15 bd-one bd-c-stroke bd-ra-10 bg-white">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">{{ $pageTitle ?? __('Career Corner Form Structure') }}</h3>
+                    <button type="button" class="btn btn-primary" id="saveStructure">
+                        <i class="fa-solid fa-save me-1"></i>{{ __('Save Structure') }}
+                    </button>
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Left side: Form structure canvas -->
+                        <div class="col-md-8">
+                            <h5 class="mb-3">{{ __('Form Structure') }}</h5>
+                            <div id="formCanvas" class="question-list">
+                                <!-- Items will be added here by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Right side: Available questions -->
+                        <div class="col-md-4">
+                            <h5 class="mb-3">{{ __('Available Questions') }}</h5>
+                            <div id="availableQuestions" class="question-list">
+                                @foreach($questions as $question)
+                                    <div class="question-item" data-id="{{ $question->id }}">
+                                        <span class="handle">⋮</span>
+                                        {{ $question->question }}
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template for question item -->
+    <template id="questionItemTemplate">
+        <div class="question-item d-flex align-items-start" data-id="">
+            <span class="handle me-2">
+                <i class="fa-solid fa-grip-lines"></i>
+            </span>
+            <div class="flex-grow-1">
+                <div class="question-text"></div>
+                <div class="text-muted small question-type"></div>
+                <div class="option-containers">
+                    <!-- Option containers added here for radio questions -->
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger remove-item ms-2">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+    </template>
+
+    <!-- Template for option container -->
+    <template id="optionContainerTemplate">
+        <div class="option-container" data-option="">
+            <div class="title">
+                <i class="fa-solid fa-level-down-alt me-1"></i>
+                <span>If answer is: </span>
+                <strong class="option-value"></strong>
+            </div>
+            <div class="option-list">
+                <!-- Nested items dropped here -->
+            </div>
+        </div>
+    </template>
+@endsection
+
+@push('script')
+    <!-- SortableJS for drag-and-drop -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    
+    <!-- Form structure builder -->
+    <script src="{{ asset('admin/custom/js/form-structure.js') }}"></script>
+    
+    <script>
+        // Initialize with structure ID from Career Corner
+        window.structureId = {{ $structure->id ?? 'null' }};
+    </script>
+@endpush
