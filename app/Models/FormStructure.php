@@ -34,12 +34,33 @@ class FormStructure extends Model
      */
     public function loadNestedStructure()
     {
-        return $this->topLevelItems()
-            ->with(['question', 'childItems.question'])
-            ->get()
-            ->map(function ($item) {
-                return $item->toNestedArray();
-            });
+        // Load top level items with their questions
+        $items = $this->topLevelItems()
+            ->with(['question'])
+            ->get();
+        
+        // Recursively load all nested children
+        $items->each(function ($item) {
+            $this->loadItemChildren($item);
+        });
+        
+        return $items->map(function ($item) {
+            return $item->toNestedArray();
+        });
+    }
+
+    /**
+     * Recursively load all nested children for an item
+     */
+    private function loadItemChildren($item)
+    {
+        // Load children with their questions
+        $item->load(['childItems.question']);
+        
+        // Recursively load children of children
+        $item->childItems->each(function ($child) {
+            $this->loadItemChildren($child);
+        });
     }
 
     /**

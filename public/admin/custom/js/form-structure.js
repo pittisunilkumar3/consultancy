@@ -25,6 +25,24 @@
             sort: false,
             handle: '.handle',
             animation: 150,
+            // Auto-scroll options
+            scroll: true,
+            scrollSensitivity: 100,
+            scrollSpeed: 10,
+            // Specify scrollable container
+            scrollFn: function(offsetX, offsetY, originalEvent, touchEvt, hoverTarget) {
+                // Scroll the available questions container
+                const container = document.getElementById('availableQuestions');
+                const rect = container.getBoundingClientRect();
+                const scrollTop = container.scrollTop;
+                
+                // Scroll up or down based on position
+                if (offsetY < rect.top + 50) {
+                    container.scrollTop = scrollTop - 10;
+                } else if (offsetY > rect.bottom - 50) {
+                    container.scrollTop = scrollTop + 10;
+                }
+            },
             onClone: function(evt) {
                 $(evt.clone).attr('data-source', 'available');
             }
@@ -39,6 +57,24 @@
             },
             animation: 150,
             handle: '.handle',
+            // Auto-scroll options
+            scroll: true,
+            scrollSensitivity: 100,
+            scrollSpeed: 10,
+            // Specify scrollable container
+            scrollFn: function(offsetX, offsetY, originalEvent, touchEvt, hoverTarget) {
+                // Scroll the form canvas
+                const canvas = document.getElementById('formCanvas');
+                const rect = canvas.getBoundingClientRect();
+                const scrollTop = canvas.scrollTop;
+                
+                // Scroll up or down based on position
+                if (offsetY < rect.top + 50) {
+                    canvas.scrollTop = scrollTop - 10;
+                } else if (offsetY > rect.bottom - 50) {
+                    canvas.scrollTop = scrollTop + 10;
+                }
+            },
             onAdd: function(evt) {
                 const item = evt.item;
                 if ($(item).data('source') === 'available') {
@@ -87,6 +123,11 @@
         const el = typeof element === 'string' ? document.querySelector(element) : element;
         if (!el) return null;
         
+        // Get container info for logging
+        const $container = $(el).closest('.option-container');
+        const optionValue = $container.length ? $container.data('option') : 'root';
+        const parentQuestionId = $container.closest('.question-item').data('id') || 'unknown';
+        
         return new Sortable(el, {
             group: {
                 name: 'shared',
@@ -96,13 +137,41 @@
             animation: 150,
             handle: '.handle',
             ghostClass: 'sortable-ghost',
+            // Auto-scroll options
+            scroll: true,
+            scrollSensitivity: 100,
+            scrollSpeed: 10,
+            // Specify scrollable container
+            scrollFn: function(offsetX, offsetY, originalEvent, touchEvt, hoverTarget) {
+                // Scroll the parent container
+                const rect = el.getBoundingClientRect();
+                const scrollTop = el.scrollTop;
+                
+                // Scroll up or down based on position
+                if (offsetY < rect.top + 50) {
+                    el.scrollTop = scrollTop - 10;
+                } else if (offsetY > rect.bottom - 50) {
+                    el.scrollTop = scrollTop + 10;
+                }
+            },
             onAdd: function(evt) {
                 const item = evt.item;
                 if ($(item).hasClass('question-item') && $(item).find('.option-containers').length) {
                     // Re-initialize sortables for any option containers in the moved item
                     $(item).find('.option-list').each(function() {
-                        initSortable(this);
+                        initSortable(this, {
+                            group: {
+                                name: 'shared',
+                                pull: true,
+                                put: true
+                            },
+                            animation: 150,
+                            handle: '.handle',
+                            ghostClass: 'sortable-ghost'
+                        });
                     });
+                    // Initialize nested sortable functionality
+                    initializeNestedSortable($(item));
                 }
                 if ($(item).data('source') === 'available') {
                     initializeNewItem(item);
@@ -118,7 +187,7 @@
         const question = window.questions.find(q => q.id === questionId) || 
                         availableQuestions.find(q => q.id === questionId);
         if (!question) {
-            console.error('Question not found:', questionId);
+            console.error('❌ Question not found:', questionId);
             $(item).remove();
             return;
         }
@@ -132,7 +201,7 @@
             const $containers = renderOptionContainers(question.options);
             $newItem.find('.option-containers').empty().append($containers);
 
-            // Init sortable for each option container
+            // Initialize sortable for each option container
             $newItem.find('.option-list').each(function() {
                 initSortable(this, {
                     group: {
@@ -142,7 +211,39 @@
                     },
                     animation: 150,
                     handle: '.handle',
-                    ghostClass: 'sortable-ghost'
+                    ghostClass: 'sortable-ghost',
+                    // Auto-scroll options
+                    scroll: true,
+                    scrollSensitivity: 100,
+                    scrollSpeed: 10
+                });
+            });
+        }
+    }
+
+    // Recursively initialize sortable functionality for nested items
+    function initializeNestedSortable($item) {
+        // If it's a radio question, initialize option containers
+        const questionId = $item.data('id');
+        const question = window.questions.find(q => q.id === questionId) || 
+                        availableQuestions.find(q => q.id === questionId);
+        
+        if (question && question.type === 'radio' && question.options) {
+            // Init sortable for each option container
+            $item.find('.option-list').each(function() {
+                initSortable(this, {
+                    group: {
+                        name: 'shared',
+                        pull: true,
+                        put: true
+                    },
+                    animation: 150,
+                    handle: '.handle',
+                    ghostClass: 'sortable-ghost',
+                    // Auto-scroll options
+                    scroll: true,
+                    scrollSensitivity: 100,
+                    scrollSpeed: 10
                 });
             });
         }
@@ -191,84 +292,143 @@
             $container.attr('data-option', value);
             $container.find('.option-value').text(label);
             
-            // Initialize sortable on the option-list immediately
-            const $optionList = $container.find('.option-list');
-            initSortable($optionList[0], {
-                group: 'shared',
-                animation: 150
-            });
-            
             return $container;
         });
+        
+        // Return all containers as a single jQuery object
+        return $($.map(containers, function(container) {
+            return container.get();
+        }));
     }
 
     // Render the current structure
     function renderStructure(items) {
         const $canvas = $('#formCanvas').empty();
         
-        items.forEach(item => {
+        items.forEach((item) => {
             const $item = $(renderQuestionItem(item.question));
-            
-            // If radio type with children, render option containers and their items
-            if (item.question.type === 'radio' && item.question.options) {
-                const $containers = renderOptionContainers(item.question.options);
-                $item.find('.option-containers').empty().append($containers);
-
-                // If there are children, add them to their respective option containers
-                if (item.children) {
-                    Object.entries(item.children).forEach(([optionValue, child]) => {
-                        const $container = $item.find(`[data-option="${optionValue}"] .option-list`);
-                        if ($container.length && child.items) {
-                            child.items.forEach(childItem => {
-                                const $childItem = $(renderQuestionItem(childItem.question));
-                                $container.append($childItem);
-                                
-                                // If child is also a radio question, initialize its options
-                                if (childItem.question.type === 'radio' && childItem.question.options) {
-                                    const $childContainers = renderOptionContainers(childItem.question.options);
-                                    $childItem.find('.option-containers').empty().append($childContainers);
-                                }
-                            });
-                        }
-                    });
-                }
-            }
-            
+            renderNestedItems($item, item, 0);
             $canvas.append($item);
         });
     }
 
-    // Serialize the current structure for saving
-    function serializeStructure() {
-        const items = [];
-        
-        $('#formCanvas > .question-item').each(function(index) {
-            const item = {
-                question_id: $(this).data('id'),
-                order: index
-            };
+    // Recursively render nested items for radio questions
+    function renderNestedItems($item, item, depth = 0) {
+        // If radio type with children, render option containers and their items
+        if (item.question && item.question.type === 'radio' && item.question.options) {
+            const $containers = renderOptionContainers(item.question.options);
+            $item.find('.option-containers').empty().append($containers);
 
-            // If radio type, serialize option containers
-            const $containers = $(this).find('.option-container');
-            if ($containers.length) {
-                item.children = {};
-                $containers.each(function() {
+            // Initialize sortable for each option container
+            $item.find('.option-list').each(function() {
+                initSortable(this, {
+                    group: {
+                        name: 'shared',
+                        pull: true,
+                        put: true
+                    },
+                    animation: 150,
+                    handle: '.handle',
+                    ghostClass: 'sortable-ghost',
+                    // Auto-scroll options
+                    scroll: true,
+                    scrollSensitivity: 100,
+                    scrollSpeed: 10
+                });
+            });
+
+            // If there are children, add them to their respective option containers
+            if (item.children) {
+                // Get all available option containers with their values
+                const availableOptions = {};
+                $item.find('.option-container').each(function() {
                     const optionValue = $(this).data('option');
+                    availableOptions[optionValue] = $(this).find('.option-list');
+                });
+                
+                Object.entries(item.children).forEach(([optionValue, child]) => {
+                    // Try exact match first
+                    let $container = availableOptions[optionValue];
+                    
+                    // If not found, try case-insensitive match
+                    if (!$container || $container.length === 0) {
+                        const matchingKey = Object.keys(availableOptions).find(key => 
+                            key.toLowerCase() === optionValue.toLowerCase()
+                        );
+                        if (matchingKey) {
+                            $container = availableOptions[matchingKey];
+                        }
+                    }
+                    
+                    if ($container && $container.length > 0 && child.items && child.items.length > 0) {
+                        child.items.forEach((childItem) => {
+                            const $childItem = $(renderQuestionItem(childItem.question));
+                            $container.append($childItem);
+                            
+                            // Recursively render nested items for this child
+                            renderNestedItems($childItem, childItem, depth + 1);
+                        });
+                    }
+                });
+            }
+        }
+    }
+
+    // Recursively serialize a question item and its nested children
+    function serializeItem($item, order, depth = 0) {
+        const questionId = $item.data('id');
+        
+        const item = {
+            question_id: questionId,
+            order: order
+        };
+
+        // Check if this is a radio question with option containers
+        // IMPORTANT: Only look for option containers that are DIRECT children of THIS item's structure
+        // Use .children() chain to avoid finding nested option containers from child items
+        const $flexGrow = $item.children('.flex-grow-1');
+        if ($flexGrow.length) {
+            const $optionContainers = $flexGrow.children('.option-containers').children('.option-container');
+            
+            if ($optionContainers.length) {
+                item.children = {};
+                
+                $optionContainers.each(function() {
+                    const $container = $(this);
+                    const optionValue = $container.data('option');
                     const childItems = [];
                     
-                    $(this).find('.option-list > .question-item').each(function(childIndex) {
-                        childItems.push({
-                            question_id: $(this).data('id'),
-                            order: childIndex
+                    // Get direct children of .option-list (only immediate .question-item children)
+                    const $optionList = $container.children('.option-list');
+                    if ($optionList.length) {
+                        const $directChildren = $optionList.children('.question-item');
+                        
+                        $directChildren.each(function(childIndex) {
+                            // Recursively serialize this child item
+                            // This will handle nested option containers within the child
+                            const childItem = serializeItem($(this), childIndex, depth + 1);
+                            childItems.push(childItem);
                         });
-                    });
+                    }
                     
                     if (childItems.length) {
                         item.children[optionValue] = { items: childItems };
                     }
                 });
             }
+        }
 
+        return item;
+    }
+
+    // Serialize the current structure for saving
+    function serializeStructure() {
+        const items = [];
+        
+        const $topLevelItems = $('#formCanvas > .question-item');
+        
+        $topLevelItems.each(function(index) {
+            const item = serializeItem($(this), index, 0);
             items.push(item);
         });
 
@@ -294,10 +454,12 @@
                 // Refresh the structure from server
                 renderStructure(response.data.items);
             } else {
+                console.error('Error saving structure:', response.message);
                 toastr.error(response.message || 'Error saving structure');
             }
         })
-        .fail(function() {
+        .fail(function(xhr, status, error) {
+            console.error('Error saving structure:', status, error);
             toastr.error('Error saving structure');
         })
         .always(function() {

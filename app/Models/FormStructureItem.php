@@ -59,24 +59,18 @@ class FormStructureItem extends Model
             'question' => $this->question,
         ];
 
-        // Add children for radio questions
-        if ($this->childItems->isNotEmpty()) {
-            $data['children'] = $this->childItems
-                ->groupBy('parent_option_value')
-                ->map(function ($items, $optionValue) {
-                    return [
-                        'items' => $items->map->toNestedArray()
-                    ];
-                })
-                ->all();
-        }
-
-        return $data;
-
         // Only include children if this item has a radio type question
         if ($this->question && $this->question->type === 'radio') {
+            // Get all direct children (only items where parent_item_id = this item's id)
+            $directChildren = $this->childItems;
+            
             // Group children by their parent_option_value
-            $children = $this->childItems->groupBy('parent_option_value')
+            // Filter out null values to avoid grouping issues
+            $children = $directChildren
+                ->filter(function ($item) {
+                    return $item->parent_option_value !== null;
+                })
+                ->groupBy('parent_option_value')
                 ->map(function ($items) {
                     return [
                         'items' => $items->map(function ($item) {
