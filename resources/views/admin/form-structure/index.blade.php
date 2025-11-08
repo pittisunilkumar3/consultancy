@@ -6,12 +6,86 @@
 
 @push('style')
     <style>
+        /* Right side - Available questions with vertical scroll */
+        #availableQuestions {
+            min-height: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            padding: 1rem;
+        }
+        
+        /* Left side - Form canvas with horizontal scroll (primary) and optional vertical scroll */
+        #formCanvas {
+            min-height: 400px;
+            max-height: 600px;
+            overflow-x: auto;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            position: relative;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* Top-level items in canvas - stack vertically */
+        #formCanvas > .question-item {
+            display: block;
+            width: 100%;
+            margin-bottom: 0.5rem;
+            box-sizing: border-box;
+        }
+        
+        /* Allow nested items to expand horizontally when needed */
+        .question-item {
+            box-sizing: border-box;
+            white-space: normal;
+        }
+        
+        /* Ensure option containers can expand with nested content horizontally */
+        .option-container {
+            box-sizing: border-box;
+            white-space: normal;
+        }
+        
+        /* Allow nested content to expand horizontally beyond container width */
+        .question-item .flex-grow-1 {
+            overflow: visible;
+        }
+        
+        /* Ensure nested content can expand horizontally beyond container */
+        .option-containers {
+            display: block;
+            overflow: visible;
+        }
+        
+        /* Prevent wrapping that would hide horizontal expansion */
+        .option-list {
+            overflow: visible;
+        }
+        
+        /* Ensure deeply nested items can expand naturally and push container width */
+        .option-container .question-item {
+            width: auto;
+            min-width: 250px;
+        }
+        
+        /* Top-level items should respect container width */
+        #formCanvas > .question-item {
+            width: 100%;
+        }
+        
+        /* Legacy support for question-list class */
         .question-list {
             min-height: 400px;
             border: 1px solid #e5e7eb;
             border-radius: 0.375rem;
             padding: 1rem;
         }
+        
         .question-item {
             cursor: move;
             padding: 0.75rem;
@@ -50,6 +124,30 @@
         }
         .handle:active {
             cursor: grabbing;
+        }
+        
+        /* Custom scrollbar styling for better UX */
+        #availableQuestions::-webkit-scrollbar,
+        #formCanvas::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        #availableQuestions::-webkit-scrollbar-track,
+        #formCanvas::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        #availableQuestions::-webkit-scrollbar-thumb,
+        #formCanvas::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        #availableQuestions::-webkit-scrollbar-thumb:hover,
+        #formCanvas::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
     </style>
 @endpush
