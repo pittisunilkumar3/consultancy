@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\Cms\BlogCategoriesController;
 use App\Http\Controllers\Admin\Cms\BlogController;
 use App\Http\Controllers\Admin\Cms\BlogTagController;
 use App\Http\Controllers\Admin\Cms\CmsController;
+use App\Http\Controllers\Admin\FormStructureController;
 use App\Http\Controllers\Admin\Cms\CountryController;
 use App\Http\Controllers\Admin\Cms\FaqController;
 use App\Http\Controllers\Admin\Cms\ScholarshipController;
@@ -36,6 +37,7 @@ use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\OnboardingFormSettingController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\ServiceOrderController;
 use App\Http\Controllers\Admin\ServiceOrderInvoiceController;
 use App\Http\Controllers\Admin\ServiceOrderTaskBoardController;
@@ -395,6 +397,21 @@ Route::group(['prefix' => 'service', 'as' => 'services.'], function () {
     Route::get('edit/{id}', [ServiceController::class, 'edit'])->name('edit')->middleware('can:Manage Service');
     Route::get('details/{id}', [ServiceController::class, 'details'])->name('details')->middleware('can:Manage Service');
     Route::post('delete/{id}', [ServiceController::class, 'delete'])->name('delete')->middleware('can:Manage Service');
+});
+
+// Questions (admin)
+Route::group(['prefix' => 'questions', 'as' => 'questions.', 'middleware' => 'can:Manage Questions'], function () {
+    Route::get('', [QuestionController::class, 'index'])->name('index');
+    Route::post('store', [QuestionController::class, 'store'])->name('store');
+    Route::get('show/{id}', [QuestionController::class, 'show'])->name('show');
+    Route::post('update/{id}', [QuestionController::class, 'update'])->name('update');
+    Route::delete('delete/{id}', [QuestionController::class, 'delete'])->name('delete');
+    // further CRUD routes will be added later
+});
+Route::group(['prefix' => 'form-structure', 'as' => 'form-structure.', 'middleware' => 'can:Manage Questions'], function () {
+    Route::get('/', [FormStructureController::class, 'index'])->name('index');
+    Route::get('/{id}', [FormStructureController::class, 'getStructure'])->name('get');
+    Route::post('/{id}/save', [FormStructureController::class, 'saveStructure'])->name('save');
 });
 
 Route::get('service-orders', [ServiceOrderController::class, 'index'])->name('service_orders')->middleware('can:Manage Service');

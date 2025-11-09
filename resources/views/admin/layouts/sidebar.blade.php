@@ -178,6 +178,32 @@
                     <li class="sidebar-divider"></li>
                 @endcanany
 
+                @can('Manage Questions')
+                    <li>
+                        <a href="#"
+                           class="d-flex align-items-center cg-10 {{isset($showQuestions) ? 'collapsed active' : ''}}"
+                           data-bs-toggle="collapse" data-bs-target="#collapseQuestions"
+                           aria-expanded="{{isset($showQuestions) ? 'true' : 'false'}}"
+                           aria-controls="collapseQuestions">
+                            <div class="d-flex">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M10 1.66663C13.6819 1.66663 15 3.0743 15 6.66663C15 9.66663 10 10.8333 10 13.3333" stroke="white" stroke-width="1.25" stroke-linecap="round"/>
+                                    <path d="M10 17.5H10.0083" stroke="white" stroke-width="1.25" stroke-linecap="round"/>
+                                    <path d="M6.66667 6.66663C6.66667 4.33329 8.33333 3.33331 10 3.33331C11.6667 3.33331 13.3333 4.33329 13.3333 6.66663C13.3333 8.99996 10 9.99996 10 12.5" stroke="white" stroke-width="1.25" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <span class="">{{__('Questions')}}</span>
+                        </a>
+                        <div class="collapse {{@$showQuestions}}" id="collapseQuestions" data-bs-parent="#sidebarMenu">
+                            <ul class="zSidebar-submenu">
+                                <li><a class="{{ @$activeQuestion }}" href="{{route('admin.questions.index')}}">{{__('Questions')}}</a></li>
+                                <li><a class="{{ @$activeQuestionStructure }}" href="{{route('admin.form-structure.index')}}">{{__('Questions Structure')}}</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                @endcan
+
                 @can('Manage Events')
                     <li>
                         <a href="#"
