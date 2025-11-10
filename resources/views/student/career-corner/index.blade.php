@@ -243,6 +243,29 @@
         .career-form-submit-btn:active {
             transform: translateY(0);
         }
+        
+        .career-form-input:readonly,
+        .career-form-textarea:readonly,
+        .career-form-select:disabled,
+        .career-form-input:disabled {
+            background-color: #f3f4f6;
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        
+        .career-form-radio-option input[type="radio"]:disabled + label,
+        .career-form-checkbox-option input[type="checkbox"]:disabled + label {
+            color: #6b7280;
+            cursor: not-allowed;
+        }
+        
+        .career-form-file-display {
+            padding: 0.875rem 1rem;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            color: #6b7280;
+        }
     </style>
 @endpush
 
@@ -252,6 +275,13 @@
     </div>
     <div class="p-sm-30 p-15">
         @if(isset($formStructure) && $formStructure && isset($formData) && !empty($formData))
+            @if(isset($submission) && $submission)
+                <div class="alert alert-success mb-4">
+                    <i class="fa-solid fa-check-circle me-2"></i>
+                    <strong>{{ __('Form Submitted') }}</strong> - {{ __('Submitted on') }}: {{ $submission->created_at->format('F d, Y h:i A') }}
+                </div>
+            @endif
+            
             <form id="careerCornerForm" method="POST">
                 @csrf
                 
@@ -268,22 +298,24 @@
                             
                             @if(isset($element['items']) && !empty($element['items']))
                                 @foreach($element['items'] as $item)
-                                    @include('student.career-corner.partials.question', ['item' => $item, 'questions' => $questions ?? [], 'depth' => 0])
+                                    @include('student.career-corner.partials.question', ['item' => $item, 'questions' => $questions ?? [], 'depth' => 0, 'submittedData' => $submittedData ?? null])
                                 @endforeach
                             @endif
                         </div>
                     @elseif($element['type'] === 'item' && isset($element['item']))
                         <div class="career-form-section">
-                            @include('student.career-corner.partials.question', ['item' => $element['item'], 'questions' => $questions ?? [], 'depth' => 0])
+                            @include('student.career-corner.partials.question', ['item' => $element['item'], 'questions' => $questions ?? [], 'depth' => 0, 'submittedData' => $submittedData ?? null])
                         </div>
                     @endif
                 @endforeach
                 
-                <div class="text-center mt-4">
-                    <button type="submit" class="career-form-submit-btn">
-                        <i class="fa-solid fa-paper-plane me-2"></i>{{ __('Submit Form') }}
-                    </button>
-                </div>
+                @if(!isset($submission) || !$submission)
+                    <div class="text-center mt-4">
+                        <button type="submit" class="career-form-submit-btn">
+                            <i class="fa-solid fa-paper-plane me-2"></i>{{ __('Submit Form') }}
+                        </button>
+                    </div>
+                @endif
             </form>
         @else
             <div class="career-form-empty-state">
@@ -299,6 +331,44 @@
 @push('script')
     <script>
         $(document).ready(function() {
+            // If form is readonly (submitted), don't initialize interactive features
+            const isReadonly = {{ isset($submission) && $submission ? 'true' : 'false' }};
+            
+            if (isReadonly) {
+                // Form is readonly, just show all nested questions that should be visible
+                // They are already shown by the server-side logic
+                return;
+            }
+            
+            // Function to update required attributes based on visibility
+            function updateRequiredAttributes() {
+                // Remove required from all hidden nested questions
+                $('.career-form-nested-questions:not(.show)').find('input[required], select[required], textarea[required]').each(function() {
+                    $(this).removeAttr('required');
+                });
+                
+                // Add required back to visible nested questions that should be required
+                $('.career-form-nested-questions.show').find('input, select, textarea').each(function() {
+                    const $field = $(this);
+                    // Check if the original question was required by checking data attribute or parent
+                    const $question = $field.closest('.career-form-question');
+                    const questionId = $question.data('question-id');
+                    if (questionId) {
+                        // Check if this field should be required based on the question's required status
+                        // We'll check the data-required attribute or check the original question
+                        const originalRequired = $field.data('original-required');
+                        if (originalRequired === true || originalRequired === 'true') {
+                            $field.attr('required', 'required');
+                        }
+                    }
+                });
+            }
+            
+            // Store original required status on page load
+            $('.career-form-nested-questions input[required], .career-form-nested-questions select[required], .career-form-nested-questions textarea[required]').each(function() {
+                $(this).data('original-required', true);
+            });
+            
             // Handle radio button changes to show/hide nested questions
             $(document).on('change', 'input[type="radio"][data-question-id]', function() {
                 const $radio = $(this);
@@ -312,6 +382,9 @@
                 // Hide all nested questions for this parent question
                 const $allNested = $(`.career-form-nested-questions[data-parent-question="${questionId}"]`);
                 $allNested.removeClass('show').css('display', 'none');
+                
+                // Remove required from hidden nested questions
+                $allNested.find('input[required], select[required], textarea[required]').removeAttr('required');
                 
                 // Show nested questions for selected option (case-insensitive match)
                 const $nestedContainer = $allNested.filter(function() {
@@ -327,6 +400,14 @@
                 
                 if ($nestedContainer.length > 0) {
                     $nestedContainer.css('display', 'block').addClass('show');
+                    
+                    // Restore required attributes for visible nested questions
+                    $nestedContainer.find('input, select, textarea').each(function() {
+                        const $field = $(this);
+                        if ($field.data('original-required') === true || $field.data('original-required') === 'true') {
+                            $field.attr('required', 'required');
+                        }
+                    });
                 }
             });
             
@@ -335,6 +416,9 @@
             
             // Handle form submission
             $('#careerCornerForm').on('submit', function(e) {
+                // Remove required from all hidden nested questions before validation
+                $('.career-form-nested-questions:not(.show)').find('input[required], select[required], textarea[required]').removeAttr('required');
+                
                 e.preventDefault();
                 
                 // Validate form
@@ -348,16 +432,57 @@
                 const originalHtml = $btn.html();
                 $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>{{ __('Submitting...') }}');
                 
-                // TODO: Implement form submission to save student responses
-                // For now, just show success message
-                setTimeout(function() {
-                    if (typeof toastr !== 'undefined') {
-                        toastr.success('{{ __('Form submitted successfully!') }}');
-                    } else {
-                        alert('{{ __('Form submitted successfully!') }}');
+                // Collect all form data
+                const formData = new FormData(this);
+                
+                // Submit via AJAX
+                $.ajax({
+                    url: '{{ route("student.career-corner.submit") }}',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').val() || '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.status) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success(response.message || '{{ __('Form submitted successfully!') }}');
+                            } else {
+                                alert(response.message || '{{ __('Form submitted successfully!') }}');
+                            }
+                            // Reload page to show submitted form in readonly mode
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 1500);
+                        } else {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(response.message || '{{ __('Error submitting form') }}');
+                            } else {
+                                alert(response.message || '{{ __('Error submitting form') }}');
+                            }
+                        }
+                        $btn.prop('disabled', false).html(originalHtml);
+                    },
+                    error: function(xhr) {
+                        let errorMessage = '{{ __('Error submitting form. Please try again.') }}';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        } else if (xhr.status === 422) {
+                            errorMessage = '{{ __('Validation error. Please check your inputs.') }}';
+                        } else if (xhr.status === 401) {
+                            errorMessage = '{{ __('Please login to submit the form') }}';
+                        }
+                        
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(errorMessage);
+                        } else {
+                            alert(errorMessage);
+                        }
+                        $btn.prop('disabled', false).html(originalHtml);
                     }
-                    $btn.prop('disabled', false).html(originalHtml);
-                }, 1000);
+                });
             });
         });
     </script>
