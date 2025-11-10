@@ -74,7 +74,7 @@
         @endif
         
     @elseif($question->type === 'select' && !empty($question->options))
-        <select class="career-form-select" name="{{ $questionId }}" {{ $isReadonly ? 'disabled' : '' }} {{ (!$isReadonly && $question->required) ? 'required' : '' }}>
+        <select class="career-form-select" name="{{ $questionId }}" {{ $isReadonly ? 'disabled style="cursor: not-allowed !important;"' : '' }} {{ (!$isReadonly && $question->required) ? 'required' : '' }}>
             <option value="">{{ __('-- Select an option --') }}</option>
             @foreach($question->options as $option)
                 @php
@@ -90,7 +90,7 @@
         <textarea class="career-form-textarea" 
                   name="{{ $questionId }}" 
                   rows="4" 
-                  {{ $isReadonly ? 'readonly' : '' }}
+                  {{ $isReadonly ? 'readonly style="cursor: not-allowed !important;"' : '' }}
                   {{ (!$isReadonly && $question->required) ? 'required' : '' }} 
                   placeholder="{{ __('Enter your answer') }}">{{ $isReadonly ? e($fieldValue) : '' }}</textarea>
         
@@ -99,7 +99,7 @@
                class="career-form-input" 
                name="{{ $questionId }}" 
                value="{{ $isReadonly ? e($fieldValue) : '' }}"
-               {{ $isReadonly ? 'readonly' : '' }}
+               {{ $isReadonly ? 'readonly style="cursor: not-allowed !important;"' : '' }}
                {{ (!$isReadonly && $question->required) ? 'required' : '' }} 
                placeholder="{{ __('Enter a number') }}">
         
@@ -143,7 +143,7 @@
                class="career-form-input" 
                name="{{ $questionId }}" 
                value="{{ $isReadonly ? e($fieldValue) : '' }}"
-               {{ $isReadonly ? 'readonly' : '' }}
+               {{ $isReadonly ? 'readonly style="cursor: not-allowed !important;"' : '' }}
                {{ (!$isReadonly && $question->required) ? 'required' : '' }} 
                placeholder="{{ __('Enter your answer') }}">
     @endif

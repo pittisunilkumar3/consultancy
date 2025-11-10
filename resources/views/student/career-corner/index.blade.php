@@ -74,12 +74,18 @@
             transition: all 0.2s ease;
         }
         
-        .career-form-input:focus,
-        .career-form-textarea:focus,
-        .career-form-select:focus {
+        .career-form-input:focus:not(:readonly):not(:disabled),
+        .career-form-textarea:focus:not(:readonly):not(:disabled),
+        .career-form-select:focus:not(:disabled) {
             outline: none;
             border-color: #14b8a6;
             box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+        }
+        
+        .career-form-input:hover:not(:readonly):not(:disabled),
+        .career-form-textarea:hover:not(:readonly):not(:disabled),
+        .career-form-select:hover:not(:disabled) {
+            border-color: #d1d5db;
         }
         
         .career-form-textarea {
@@ -116,7 +122,7 @@
             transition: all 0.2s ease;
         }
         
-        .career-form-radio-option:hover {
+        .career-form-radio-option:hover:not(:has(input[type="radio"]:disabled)) {
             border-color: #14b8a6;
             background-color: #f0fdfa;
         }
@@ -153,7 +159,7 @@
             transition: all 0.2s ease;
         }
         
-        .career-form-checkbox-option:hover {
+        .career-form-checkbox-option:hover:not(:has(input[type="checkbox"]:disabled)) {
             border-color: #14b8a6;
             background-color: #f0fdfa;
         }
@@ -247,16 +253,106 @@
         .career-form-input:readonly,
         .career-form-textarea:readonly,
         .career-form-select:disabled,
-        .career-form-input:disabled {
+        .career-form-input:disabled,
+        input[type="text"]:readonly,
+        input[type="number"]:readonly,
+        input[type="email"]:readonly,
+        input[type="tel"]:readonly,
+        input[type="date"]:readonly,
+        input[type="file"]:disabled,
+        textarea:readonly,
+        select:disabled,
+        input.career-form-input[readonly],
+        textarea.career-form-textarea[readonly],
+        select.career-form-select[disabled] {
             background-color: #f3f4f6;
-            cursor: not-allowed;
+            cursor: not-allowed !important;
             opacity: 0.8;
+            transition: none;
+        }
+        
+        /* Force cursor not-allowed for all text, textarea, and select fields when readonly/disabled */
+        .career-form-question input[readonly],
+        .career-form-question textarea[readonly],
+        .career-form-question select[disabled],
+        .career-form-question input:readonly,
+        .career-form-question textarea:readonly,
+        .career-form-question select:disabled {
+            cursor: not-allowed !important;
+        }
+        
+        .career-form-input:readonly:hover,
+        .career-form-textarea:readonly:hover,
+        .career-form-select:disabled:hover,
+        .career-form-input:disabled:hover {
+            background-color: #f3f4f6;
+            border-color: #e5e7eb;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .career-form-input:readonly:focus,
+        .career-form-textarea:readonly:focus,
+        .career-form-select:disabled:focus,
+        .career-form-input:readonly:active,
+        .career-form-textarea:readonly:active,
+        .career-form-select:disabled:active {
+            outline: none;
+            border-color: #e5e7eb;
+            box-shadow: none;
+            background-color: #f3f4f6;
         }
         
         .career-form-radio-option input[type="radio"]:disabled + label,
-        .career-form-checkbox-option input[type="checkbox"]:disabled + label {
+        .career-form-checkbox-option input[type="checkbox"]:disabled + label,
+        input[type="radio"]:disabled + label,
+        input[type="checkbox"]:disabled + label {
             color: #6b7280;
-            cursor: not-allowed;
+            cursor: not-allowed !important;
+        }
+        
+        .career-form-radio-option:has(input[type="radio"]:disabled),
+        .career-form-checkbox-option:has(input[type="checkbox"]:disabled),
+        .career-form-radio-group:has(input[type="radio"]:disabled),
+        .career-form-checkbox-group:has(input[type="checkbox"]:disabled) {
+            cursor: not-allowed !important;
+            transition: none;
+        }
+        
+        input[type="radio"]:disabled,
+        input[type="checkbox"]:disabled {
+            cursor: not-allowed !important;
+        }
+        
+        /* All labels for disabled/readonly fields */
+        label:has(+ input:readonly),
+        label:has(+ input:disabled),
+        label:has(+ textarea:readonly),
+        label:has(+ select:disabled),
+        .career-form-question:has(input:readonly) label,
+        .career-form-question:has(input:disabled) label,
+        .career-form-question:has(textarea:readonly) label,
+        .career-form-question:has(select:disabled) label {
+            cursor: not-allowed !important;
+        }
+        
+        /* Parent containers for all disabled/readonly fields */
+        .career-form-question:has(input:readonly),
+        .career-form-question:has(input:disabled),
+        .career-form-question:has(textarea:readonly),
+        .career-form-question:has(select:disabled) {
+            cursor: not-allowed !important;
+        }
+        
+        .career-form-radio-option:has(input[type="radio"]:disabled):hover,
+        .career-form-checkbox-option:has(input[type="checkbox"]:disabled):hover,
+        .career-form-radio-option:has(input[type="radio"]:disabled):active,
+        .career-form-checkbox-option:has(input[type="checkbox"]:disabled):active {
+            background: #ffffff;
+            border-color: #e5e7eb;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed !important;
         }
         
         .career-form-file-display {
@@ -265,6 +361,7 @@
             border: 1px solid #e5e7eb;
             border-radius: 0.5rem;
             color: #6b7280;
+            cursor: not-allowed !important;
         }
     </style>
 @endpush
