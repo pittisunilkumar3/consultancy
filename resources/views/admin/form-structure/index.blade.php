@@ -6,6 +6,35 @@
 
 @push('style')
     <style>
+        /* Canvas with grid background - more visible */
+        #formCanvas {
+            background-image: 
+                linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+            background-size: 25px 25px;
+            background-position: 0 0, 0 0;
+            background-color: #fafafa;
+        }
+        
+        /* Empty canvas state */
+        #formCanvas:empty::before {
+            content: 'Drag questions here to build your form structure';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #94a3b8;
+            font-size: 1rem;
+            font-weight: 500;
+            pointer-events: none;
+            text-align: center;
+            white-space: nowrap;
+        }
+        
+        #formCanvas:not(:empty)::before {
+            display: none;
+        }
+        
         /* Right side - Available questions with vertical scroll */
         #availableQuestions {
             min-height: 400px;
@@ -15,6 +44,12 @@
             border: 1px solid #e5e7eb;
             border-radius: 0.375rem;
             padding: 1rem;
+            background: #fafafa;
+            transition: border-color 0.3s ease;
+        }
+        
+        #availableQuestions:hover {
+            border-color: #cbd5e1;
         }
         
         /* Left side - Form canvas with horizontal scroll (primary) and optional vertical scroll */
@@ -23,12 +58,24 @@
             max-height: 600px;
             overflow-x: auto;
             overflow-y: auto;
-            border: 1px solid #e5e7eb;
+            border: 2px dashed #cbd5e1;
             border-radius: 0.375rem;
             padding: 1rem;
             position: relative;
             width: 100%;
             box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+        }
+        
+        #formCanvas:not(:empty) {
+            border-style: solid;
+            border-width: 1px;
+            background-color: #ffffff;
+        }
+        
+        #formCanvas:focus-within {
+            border-color: #14b8a6;
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
         }
         
         /* Top-level items in canvas - stack vertically */
@@ -106,37 +153,129 @@
             background: white;
             border: 1px solid #e5e7eb;
             border-radius: 0.375rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            position: relative;
+            animation: fadeInSlide 0.4s ease-out;
         }
+        
+        @keyframes fadeInSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
         .question-item:hover {
-            border-color: #93c5fd;
+            border-color: #14b8a6;
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .question-item:active {
+            transform: scale(0.98);
         }
         .option-container {
             margin-left: 2rem;
             margin-top: 0.5rem;
-            padding: 0.5rem;
+            padding: 0.75rem;
             background: #f8fafc;
             border: 1px dashed #cbd5e1;
             border-radius: 0.375rem;
+            transition: all 0.3s ease;
+            position: relative;
         }
+        
+        /* Visual depth indicator for nested levels - default removed, use data-level */
+        .option-container::before {
+            content: '';
+            position: absolute;
+            left: -2rem;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(to bottom, #14b8a6, #0d9488);
+            border-radius: 2px;
+            opacity: 0.8;
+        }
+        
+        .option-container:hover {
+            background: #f1f5f9;
+            border-color: #14b8a6;
+            border-style: solid;
+            box-shadow: 0 2px 8px rgba(20, 184, 166, 0.1);
+        }
+        
         .option-container .title {
             color: #64748b;
             font-size: 0.875rem;
             margin-bottom: 0.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .option-container .title i {
+            color: #14b8a6;
         }
         .option-list {
             min-height: 2rem;
         }
         .sortable-ghost {
-            opacity: 0.5;
+            opacity: 0.4;
             background: #e2e8f0;
+            border: 2px dashed #14b8a6;
+            transform: rotate(2deg);
+        }
+        
+        /* Drop zone highlight */
+        .sortable-drag-over {
+            background: rgba(20, 184, 166, 0.1) !important;
+            border: 2px dashed #14b8a6 !important;
+            border-radius: 0.5rem;
+        }
+        
+        /* Drop indicator line */
+        .sortable-drag-over::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #14b8a6;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.5;
+            }
+            50% {
+                opacity: 1;
+            }
         }
         .handle {
             cursor: grab;
             color: #94a3b8;
             padding: 0 0.5rem;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
         }
+        
+        .handle:hover {
+            color: #14b8a6;
+            transform: scale(1.2);
+        }
+        
         .handle:active {
             cursor: grabbing;
+            transform: scale(1.1);
         }
         
         /* Custom scrollbar styling for better UX */
@@ -182,11 +321,67 @@
             justify-content: space-between;
             align-items: center;
             cursor: move;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .section-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .section-header:hover::before {
+            left: 100%;
         }
         
         .section-header:hover {
-            background: linear-gradient(135deg,rgb(34, 154, 140) 0%, #087a70 100%);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, rgb(34, 154, 140) 0%, #087a70 100%);
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        /* Section animation on create */
+        .form-section {
+            animation: sectionFadeIn 0.5s ease-out;
+        }
+        
+        @keyframes sectionFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        /* Section shake animation for errors */
+        .form-section.shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        /* Section bounce on save */
+        .form-section.saved {
+            animation: bounce 0.6s ease;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
         
         .section-title {
@@ -228,7 +423,26 @@
         }
         
         .section-content.collapsed {
-            display: none;
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+        }
+        
+        .section-content:not(.collapsed) {
+            animation: slideDown 0.4s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                max-height: 0;
+                opacity: 0;
+            }
+            to {
+                max-height: 2000px;
+                opacity: 1;
+            }
         }
         
         /* Top-level questions in section - allow full width */
@@ -315,10 +529,259 @@
         .section-handle {
             cursor: grab;
             color: rgba(255, 255, 255, 0.9);
+            transition: all 0.2s ease;
+        }
+        
+        .section-handle:hover {
+            color: white;
+            transform: scale(1.2);
         }
         
         .section-handle:active {
             cursor: grabbing;
+            transform: scale(1.1);
+        }
+        
+        /* Section action buttons */
+        .section-actions .btn {
+            transition: all 0.2s ease;
+        }
+        
+        .section-actions .btn:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.3) !important;
+        }
+        
+        .section-actions .btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Question count badge in section */
+        .section-question-count {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            padding: 0.25rem 0.625rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+        
+        /* Remove item button */
+        .remove-item {
+            transition: all 0.2s ease;
+        }
+        
+        .remove-item:hover {
+            transform: scale(1.1);
+            background: #ef4444 !important;
+            border-color: #ef4444 !important;
+            color: white !important;
+        }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #94a3b8;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        /* Loading overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            border-radius: 0.375rem;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #14b8a6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Success flash animation */
+        .success-flash {
+            animation: successFlash 0.6s ease-out;
+        }
+        
+        @keyframes successFlash {
+            0% { background-color: transparent; }
+            50% { background-color: rgba(20, 184, 166, 0.2); }
+            100% { background-color: transparent; }
+        }
+        
+        /* Ripple effect */
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ripple::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .ripple:active::after {
+            width: 300px;
+            height: 300px;
+        }
+        
+        /* Typography improvements */
+        .question-text {
+            font-weight: 500;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+        
+        .question-type {
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Icon animations */
+        .section-toggle i {
+            transition: transform 0.3s ease;
+        }
+        
+        .section-content.collapsed ~ .section-header .section-toggle i {
+            transform: rotate(-90deg);
+        }
+        
+        /* Tooltip styles */
+        [title] {
+            position: relative;
+        }
+        
+        /* Improved spacing */
+        .option-container {
+            margin-left: 2.5rem;
+        }
+        
+        .option-container .option-container {
+            margin-left: 2rem;
+        }
+        
+        /* Depth level colors for nested items - must override default */
+        .option-container[data-level="0"]::before,
+        .option-container:not([data-level])::before {
+            background: linear-gradient(to bottom, #14b8a6, #0d9488) !important;
+        }
+        
+        .option-container[data-level="1"]::before {
+            background: linear-gradient(to bottom, #06b6d4, #0891b2) !important;
+        }
+        
+        .option-container[data-level="2"]::before {
+            background: linear-gradient(to bottom, #8b5cf6, #7c3aed) !important;
+        }
+        
+        .option-container[data-level="3"]::before {
+            background: linear-gradient(to bottom, #f59e0b, #d97706) !important;
+        }
+        
+        .option-container[data-level="4"]::before {
+            background: linear-gradient(to bottom, #ef4444, #dc2626) !important;
+        }
+        
+        .option-container[data-level="5"]::before {
+            background: linear-gradient(to bottom, #ec4899, #db2777) !important;
+        }
+        
+        /* Button improvements */
+        #createSection, #saveStructure {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #createSection:hover, #saveStructure:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        #createSection:active, #saveStructure:active {
+            transform: translateY(0);
+        }
+        
+        /* Progress bar for save */
+        .save-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: #14b8a6;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 0 0 0.375rem 0.375rem;
+        }
+        
+        /* Dragging state */
+        .dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+        
+        .drag-active {
+            border-color: #14b8a6;
+        }
+        
+        /* Ripple effect for buttons */
+        #createSection, #saveStructure, .section-actions .btn, .remove-item {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #createSection::after, #saveStructure::after, .section-actions .btn::after, .remove-item::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        #createSection:active::after, #saveStructure:active::after, .section-actions .btn:active::after, .remove-item:active::after {
+            width: 300px;
+            height: 300px;
         }
     </style>
 @endpush

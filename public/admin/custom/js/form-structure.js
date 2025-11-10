@@ -125,7 +125,11 @@
 
         // Remove item handler
         $(document).on('click', '.remove-item', function() {
-            $(this).closest('.question-item').remove();
+            $(this).closest('.question-item').fadeOut(300, function() {
+                $(this).remove();
+                updateSectionQuestionCounts();
+                updateDepthLevels();
+            });
         });
 
         // Section handlers
@@ -140,7 +144,11 @@
 
         $(document).on('click', '.section-remove', function() {
             if (confirm('Are you sure you want to remove this section? All questions in this section will also be removed.')) {
-                $(this).closest('.form-section').remove();
+                const $section = $(this).closest('.form-section');
+                $section.fadeOut(300, function() {
+                    $(this).remove();
+                    updateSectionQuestionCounts();
+                });
             }
         });
 
@@ -161,6 +169,11 @@
                     
                     // Render current structure
                     renderStructure(response.data.items);
+                    // Ensure counts and levels are updated after render
+                    setTimeout(() => {
+                        updateSectionQuestionCounts();
+                        updateDepthLevels();
+                    }, 200);
                 }
             })
             .fail(function() {
@@ -204,6 +217,23 @@
                     el.scrollTop = scrollTop + 10;
                 }
             },
+            onStart: function(evt) {
+                $(evt.item).addClass('dragging');
+                if (options.onStart) options.onStart(evt);
+            },
+            onEnd: function(evt) {
+                $(evt.item).removeClass('dragging');
+                $('.sortable-drag-over').removeClass('sortable-drag-over');
+                if (options.onEnd) options.onEnd(evt);
+            },
+            onMove: function(evt) {
+                $('.sortable-drag-over').removeClass('sortable-drag-over');
+                if (evt.related && evt.related !== evt.dragged) {
+                    $(evt.related).addClass('sortable-drag-over');
+                }
+                if (options.onMove) return options.onMove(evt);
+                return true;
+            },
             onAdd: function(evt) {
                 const item = evt.item;
                 if ($(item).hasClass('question-item') && $(item).find('.option-containers').length) {
@@ -217,7 +247,29 @@
                             },
                             animation: 150,
                             handle: '.handle',
-                            ghostClass: 'sortable-ghost'
+                            ghostClass: 'sortable-ghost',
+                            onStart: function(evt) {
+                                $(evt.item).addClass('dragging');
+                            },
+                            onEnd: function(evt) {
+                                $(evt.item).removeClass('dragging');
+                                $('.sortable-drag-over').removeClass('sortable-drag-over');
+                                updateDepthLevels();
+                            },
+                            onMove: function(evt) {
+                                $('.sortable-drag-over').removeClass('sortable-drag-over');
+                                if (evt.related && evt.related !== evt.dragged) {
+                                    $(evt.related).closest('.option-container').addClass('sortable-drag-over');
+                                }
+                                return true;
+                            },
+                            onAdd: function(evt) {
+                                const item = evt.item;
+                                if ($(item).data('source') === 'available') {
+                                    initializeNewItem(item);
+                                }
+                                updateDepthLevels();
+                            }
                         });
                     });
                     // Initialize nested sortable functionality
@@ -226,6 +278,7 @@
                 if ($(item).data('source') === 'available') {
                     initializeNewItem(item);
                 }
+                if (options.onAdd) options.onAdd(evt);
             },
             ...options
         });
@@ -245,6 +298,9 @@
         // Replace clone with proper template
         const $newItem = $(renderQuestionItem(question));
         $(item).replaceWith($newItem);
+        
+        // Add fade-in animation
+        $newItem.css('opacity', '0').animate({ opacity: 1 }, 300);
 
         // If it's a radio question, initialize option containers
         if (question.type === 'radio' && question.options) {
@@ -265,10 +321,34 @@
                     // Auto-scroll options
                     scroll: true,
                     scrollSensitivity: 100,
-                    scrollSpeed: 10
+                    scrollSpeed: 10,
+                    onStart: function(evt) {
+                        $(evt.item).addClass('dragging');
+                    },
+                    onEnd: function(evt) {
+                        $(evt.item).removeClass('dragging');
+                        $('.sortable-drag-over').removeClass('sortable-drag-over');
+                        updateDepthLevels();
+                    },
+                    onMove: function(evt) {
+                        $('.sortable-drag-over').removeClass('sortable-drag-over');
+                        if (evt.related && evt.related !== evt.dragged) {
+                            $(evt.related).closest('.option-container').addClass('sortable-drag-over');
+                        }
+                        return true;
+                    },
+                    onAdd: function(evt) {
+                        const item = evt.item;
+                        if ($(item).data('source') === 'available') {
+                            initializeNewItem(item);
+                        }
+                        updateDepthLevels();
+                    }
                 });
             });
         }
+        
+        updateDepthLevels();
     }
 
     // Recursively initialize sortable functionality for nested items
@@ -293,10 +373,71 @@
                     // Auto-scroll options
                     scroll: true,
                     scrollSensitivity: 100,
-                    scrollSpeed: 10
+                    scrollSpeed: 10,
+                    onStart: function(evt) {
+                        $(evt.item).addClass('dragging');
+                    },
+                    onEnd: function(evt) {
+                        $(evt.item).removeClass('dragging');
+                        $('.sortable-drag-over').removeClass('sortable-drag-over');
+                        updateDepthLevels();
+                    },
+                    onMove: function(evt) {
+                        $('.sortable-drag-over').removeClass('sortable-drag-over');
+                        if (evt.related && evt.related !== evt.dragged) {
+                            $(evt.related).closest('.option-container').addClass('sortable-drag-over');
+                        }
+                        return true;
+                    },
+                    onAdd: function(evt) {
+                        const item = evt.item;
+                        if ($(item).data('source') === 'available') {
+                            initializeNewItem(item);
+                        }
+                        updateDepthLevels();
+                    }
                 });
             });
         }
+    }
+    
+    // Update depth level indicators for nested option containers
+    function updateDepthLevels() {
+        $('.option-container').each(function() {
+            let level = 0;
+            let $current = $(this);
+            // Count how many parent option-containers exist
+            while ($current.length) {
+                $current = $current.parent().closest('.option-container');
+                if ($current.length) {
+                    level++;
+                } else {
+                    break;
+                }
+            }
+            $(this).attr('data-level', level);
+        });
+    }
+    
+    // Update question count badges in sections
+    function updateSectionQuestionCounts() {
+        $('.form-section').each(function() {
+            const $section = $(this);
+            const $content = $section.find('.section-content');
+            // Count only top-level question items directly in section content
+            const count = $content.children('.question-item').length;
+            let $badge = $section.find('.section-question-count');
+            
+            if (count > 0) {
+                if ($badge.length === 0) {
+                    $badge = $('<span class="section-question-count"></span>');
+                    $section.find('.section-title').append($badge);
+                }
+                $badge.text(count + ' question' + (count !== 1 ? 's' : ''));
+            } else {
+                $badge.remove();
+            }
+        });
     }
 
     // Render the list of available questions
@@ -371,16 +512,35 @@
             scroll: true,
             scrollSensitivity: 100,
             scrollSpeed: 10,
+            onStart: function(evt) {
+                $(evt.item).addClass('dragging');
+            },
+            onEnd: function(evt) {
+                $(evt.item).removeClass('dragging');
+                $('.sortable-drag-over').removeClass('sortable-drag-over');
+                updateSectionQuestionCounts();
+                updateDepthLevels();
+            },
+            onMove: function(evt) {
+                $('.sortable-drag-over').removeClass('sortable-drag-over');
+                if (evt.related && evt.related !== evt.dragged) {
+                    $(evt.related).addClass('sortable-drag-over');
+                }
+                return true;
+            },
             onAdd: function(evt) {
                 const item = evt.item;
                 if ($(item).data('source') === 'available') {
                     initializeNewItem(item);
                 }
+                updateSectionQuestionCounts();
+                updateDepthLevels();
             }
         });
         
         // Focus on the section name input
         $template.find('.section-name-input').focus();
+        updateSectionQuestionCounts();
     }
 
     // Initialize sortables for all section content areas
@@ -404,6 +564,8 @@
                         if ($(item).data('source') === 'available') {
                             initializeNewItem(item);
                         }
+                        updateSectionQuestionCounts();
+                        updateDepthLevels();
                     }
                 });
                 $(this).data('sortable-initialized', true);
@@ -441,11 +603,29 @@
             scroll: true,
             scrollSensitivity: 100,
             scrollSpeed: 10,
+            onStart: function(evt) {
+                $(evt.item).addClass('dragging');
+            },
+            onEnd: function(evt) {
+                $(evt.item).removeClass('dragging');
+                $('.sortable-drag-over').removeClass('sortable-drag-over');
+                updateSectionQuestionCounts();
+                updateDepthLevels();
+            },
+            onMove: function(evt) {
+                $('.sortable-drag-over').removeClass('sortable-drag-over');
+                if (evt.related && evt.related !== evt.dragged) {
+                    $(evt.related).addClass('sortable-drag-over');
+                }
+                return true;
+            },
             onAdd: function(evt) {
                 const item = evt.item;
                 if ($(item).data('source') === 'available') {
                     initializeNewItem(item);
                 }
+                updateSectionQuestionCounts();
+                updateDepthLevels();
             }
         });
         
@@ -454,6 +634,11 @@
             $sectionContent.addClass('collapsed');
             $template.find('.section-toggle i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
         }
+        
+        // Update question count for this section
+        setTimeout(() => {
+            updateSectionQuestionCounts();
+        }, 100);
         
         return $template;
     }
@@ -490,6 +675,10 @@
         
         // Initialize section sortables
         initSectionSortables();
+        
+        // Update depth levels and question counts
+        updateDepthLevels();
+        updateSectionQuestionCounts();
     }
 
     // Recursively render nested items for radio questions
@@ -552,6 +741,9 @@
                 });
             }
         }
+        
+        // Update depth levels after rendering nested items
+        updateDepthLevels();
     }
 
     // Recursively serialize a question item and its nested children
@@ -651,6 +843,11 @@
     function saveStructure(data) {
         const $btn = $('#saveStructure').prop('disabled', true);
         const $icon = $btn.find('i').removeClass('fa-save').addClass('fa-spinner fa-spin');
+        const $canvas = $('#formCanvas');
+        
+        // Add loading overlay
+        const $overlay = $('<div class="loading-overlay"><div class="spinner"></div></div>');
+        $canvas.css('position', 'relative').append($overlay);
         
         $.ajax({
             url: `${baseUrl}/admin/form-structure/${window.structureId}/save`,
@@ -662,21 +859,51 @@
         })
         .done(function(response) {
             if (response.status) {
+                // Success animation
+                $('.form-section').addClass('saved');
+                setTimeout(() => {
+                    $('.form-section').removeClass('saved');
+                }, 600);
+                
+                // Flash success
+                $canvas.addClass('success-flash');
+                setTimeout(() => {
+                    $canvas.removeClass('success-flash');
+                }, 600);
+                
                 toastr.success('Form structure saved successfully');
+                
                 // Refresh the structure from server
                 renderStructure(response.data.items);
+                
+                // Update counts and depth levels
+                updateSectionQuestionCounts();
+                updateDepthLevels();
             } else {
                 console.error('Error saving structure:', response.message);
                 toastr.error(response.message || 'Error saving structure');
+                
+                // Shake animation on error
+                $('.form-section').addClass('shake');
+                setTimeout(() => {
+                    $('.form-section').removeClass('shake');
+                }, 500);
             }
         })
         .fail(function(xhr, status, error) {
             console.error('Error saving structure:', status, error);
             toastr.error('Error saving structure');
+            
+            // Shake animation on error
+            $('.form-section').addClass('shake');
+            setTimeout(() => {
+                $('.form-section').removeClass('shake');
+            }, 500);
         })
         .always(function() {
             $btn.prop('disabled', false);
             $icon.removeClass('fa-spinner fa-spin').addClass('fa-save');
+            $overlay.remove();
         });
     }
 
