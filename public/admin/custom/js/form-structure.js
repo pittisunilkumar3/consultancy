@@ -1,3 +1,270 @@
+// ============================================
+// PREVIEW FUNCTION - DEFINED OUTSIDE CLOSURE
+// ============================================
+// Define showPreview OUTSIDE the closure so it's immediately available
+window.showPreview = function() {
+    // Wait for jQuery to be available
+    if (typeof jQuery === 'undefined') {
+        setTimeout(function() {
+            window.showPreview();
+        }, 100);
+        return;
+    }
+    
+    const $ = jQuery;
+    
+    // Check if required functions are available, if not wait
+    if (typeof window.serializeStructure !== 'function') {
+        setTimeout(function() {
+            window.showPreview();
+        }, 100);
+        return;
+    }
+    
+    // Get current structure from canvas
+    let structureData;
+    try {
+        structureData = window.serializeStructure();
+    } catch (e) {
+        console.error('Error serializing structure:', e);
+        structureData = { sections: [], items: [] };
+    }
+    
+    // Show modal
+    const $modal = $('#previewModal');
+    const $container = $('#previewFormContainer');
+    
+    // Check if modal exists
+    if ($modal.length === 0) {
+        if (typeof toastr !== 'undefined') {
+            toastr.error('Preview modal not found. Please refresh the page.');
+        } else {
+            alert('Preview modal not found. Please refresh the page.');
+        }
+        return;
+    }
+    
+    // Clear and show loading
+    $container.html(`
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-muted">Loading preview...</p>
+        </div>
+    `);
+    
+    // Remove any existing backdrops first to prevent stacking
+    $('.modal-backdrop').remove();
+    $('body').removeClass('modal-open').css('padding-right', '');
+    
+    // Try Bootstrap 5 Modal API first, fallback to jQuery
+    try {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            // Get or create modal instance
+            let modalInstance = bootstrap.Modal.getInstance($modal[0]);
+            if (!modalInstance) {
+                modalInstance = new bootstrap.Modal($modal[0], {
+                    backdrop: true,
+                    keyboard: true,
+                    focus: true
+                });
+            }
+            modalInstance.show();
+            
+            // Apply blur effect after modal is shown
+            setTimeout(function() {
+                applyModalBlur();
+            }, 100);
+        } else if (typeof $.fn.modal !== 'undefined') {
+            $modal.modal('show');
+            
+            // Apply blur effect after modal is shown
+            $modal.on('shown.bs.modal', function() {
+                applyModalBlur();
+            });
+        } else {
+            // Manual fallback
+            $modal.css('display', 'block').addClass('show');
+            $('body').addClass('modal-open').css('padding-right', '0px');
+            if ($('.modal-backdrop').length === 0) {
+                $('body').append('<div class="modal-backdrop fade show"></div>');
+            }
+            applyModalBlur();
+        }
+    } catch (e) {
+        console.error('Error showing modal:', e);
+        // Fallback: just show it with display
+        $modal.css('display', 'block').addClass('show');
+        $('body').addClass('modal-open');
+        if ($('.modal-backdrop').length === 0) {
+            $('body').append('<div class="modal-backdrop fade show"></div>');
+        }
+        applyModalBlur();
+    }
+    
+    // Function to apply blur effects to entire page (defined globally)
+    window.applyModalBlur = function() {
+        const $ = jQuery;
+        
+        // FIRST: Explicitly remove blur from modal BEFORE applying blur to other elements
+        $('#previewModal, #previewModal *').css({
+            'filter': 'none',
+            '-webkit-filter': 'none',
+            'backdrop-filter': 'none',
+            '-webkit-backdrop-filter': 'none'
+        });
+        
+        // Ensure backdrop has blur (but backdrop itself is not blurred)
+        $('.modal-backdrop').css({
+            'backdrop-filter': 'blur(10px)',
+            '-webkit-backdrop-filter': 'blur(10px)',
+            'background-color': 'rgba(0, 0, 0, 0.6)',
+            'filter': 'none',
+            '-webkit-filter': 'none'
+        });
+        
+        // DON'T blur wrappers - blur only specific children to avoid affecting modal
+        // Blur sidebar specifically (including zSidebar)
+        $('.zSidebar, .zMain-wrap > .sidebar, .zMain-wrap > aside, .sidebar, aside').not('#previewModal').not('#previewModal *').css({
+            'filter': 'blur(5px)',
+            'pointer-events': 'none',
+            'transition': 'filter 0.4s ease'
+        });
+        
+        // Blur navigation/header inside zMainContent but NOT the modal
+        $('.zMainContent > nav, .zMainContent > .navbar, .zMainContent > header').not('#previewModal').css({
+            'filter': 'blur(5px)',
+            'pointer-events': 'none',
+            'transition': 'filter 0.4s ease'
+        });
+        
+        // Blur content sections inside zMainContent but NOT the modal
+        // Find all direct children of zMainContent except modal
+        $('.zMainContent').children().not('#previewModal').not('.modal').not('.modal-backdrop').each(function() {
+            if ($(this).attr('id') !== 'previewModal' && !$(this).hasClass('modal')) {
+                $(this).css({
+                    'filter': 'blur(5px)',
+                    'pointer-events': 'none',
+                    'transition': 'filter 0.4s ease'
+                });
+            }
+        });
+        
+        // Also blur any nested content divs but exclude modal
+        $('.zMainContent div, .zMainContent section').not('#previewModal').not('#previewModal *').not('.modal').not('.modal *').each(function() {
+            // Skip if this element or any parent is the modal
+            if (!$(this).closest('#previewModal').length && !$(this).is('#previewModal')) {
+                $(this).css({
+                    'filter': 'blur(5px)',
+                    'pointer-events': 'none',
+                    'transition': 'filter 0.4s ease'
+                });
+            }
+        });
+        
+        // CRITICAL: Explicitly ensure modal is NOT blurred - use inline styles with !important
+        function removeModalBlur() {
+            // Use attr to set inline style with !important (jQuery can't do !important directly)
+            $('#previewModal').each(function() {
+                this.style.setProperty('filter', 'none', 'important');
+                this.style.setProperty('-webkit-filter', 'none', 'important');
+                this.style.setProperty('backdrop-filter', 'none', 'important');
+                this.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
+            });
+            
+            // Apply to all children
+            $('#previewModal *').each(function() {
+                this.style.setProperty('filter', 'none', 'important');
+                this.style.setProperty('-webkit-filter', 'none', 'important');
+                this.style.setProperty('backdrop-filter', 'none', 'important');
+                this.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
+            });
+            
+            // Also ensure modal dialog and content are not blurred
+            $('.modal-dialog, .modal-content, .modal-header, .modal-body, .modal-footer').each(function() {
+                this.style.setProperty('filter', 'none', 'important');
+                this.style.setProperty('-webkit-filter', 'none', 'important');
+                this.style.setProperty('backdrop-filter', 'none', 'important');
+                this.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
+            });
+        }
+        
+        // Apply immediately
+        removeModalBlur();
+        
+        // Apply again after short delay
+        setTimeout(removeModalBlur, 10);
+        
+        // Apply again after longer delay to ensure it sticks
+        setTimeout(removeModalBlur, 100);
+        setTimeout(removeModalBlur, 300);
+    };
+    
+    // Function to remove blur effects from entire page (defined globally)
+    window.removeModalBlur = function() {
+        const $ = jQuery;
+        
+        // Remove blur from sidebar (including zSidebar)
+        $('.zSidebar, .zMain-wrap > .sidebar, .zMain-wrap > aside, .sidebar, aside').css({
+            'filter': '',
+            'pointer-events': '',
+            'transition': ''
+        });
+        
+        // Remove blur from navigation/header
+        $('.zMainContent > nav, .zMainContent > .navbar, .zMainContent > header').css({
+            'filter': '',
+            'pointer-events': '',
+            'transition': ''
+        });
+        
+        // Remove blur from all direct children of zMainContent
+        $('.zMainContent').children().css({
+            'filter': '',
+            'pointer-events': '',
+            'transition': ''
+        });
+        
+        // Remove blur from all nested divs and sections
+        $('.zMainContent div, .zMainContent section').css({
+            'filter': '',
+            'pointer-events': '',
+            'transition': ''
+        });
+        
+        // Remove blur from any other elements that might have been blurred
+        $('body > *:not(.modal):not(.modal-backdrop)').css({
+            'filter': '',
+            'pointer-events': '',
+            'transition': ''
+        });
+        
+        // Also remove inline styles that were set with setProperty
+        $('.zSidebar, .zMain-wrap, .sidebar, aside, .zMainContent, nav, .navbar, header').each(function() {
+            this.style.removeProperty('filter');
+            this.style.removeProperty('-webkit-filter');
+            this.style.removeProperty('backdrop-filter');
+            this.style.removeProperty('-webkit-backdrop-filter');
+        });
+    };
+    
+    // Render preview - wait for renderPreview to be available
+    const renderPreviewWithRetry = function(attempts) {
+        attempts = attempts || 0;
+        if (typeof window.renderPreview === 'function') {
+            window.renderPreview(structureData, $container);
+        } else if (attempts < 50) {
+            setTimeout(function() {
+                renderPreviewWithRetry(attempts + 1);
+            }, 100);
+        } else {
+            console.error('renderPreview function not available after waiting');
+        }
+    };
+    renderPreviewWithRetry();
+};
+
 (function ($) {
     "use strict";
 
@@ -118,6 +385,14 @@
             saveStructure(data);
         });
 
+        // Preview button handler - use delegated event for reliability
+        $(document).on('click', '#previewForm', function(e) {
+            e.preventDefault();
+            if (typeof window.showPreview === 'function') {
+                window.showPreview();
+            }
+        });
+        
         // Create section button handler
         $('#createSection').on('click', function() {
             createNewSection();
@@ -652,11 +927,23 @@
             data = [];
         }
         
+        // Sort by order if available to ensure correct order
+        data.sort((a, b) => {
+            const orderA = a.order !== undefined ? a.order : (a.type === 'section' ? 0 : 999);
+            const orderB = b.order !== undefined ? b.order : (b.type === 'section' ? 0 : 999);
+            return orderA - orderB;
+        });
+        
         data.forEach((element) => {
             if (element.type === 'section') {
                 // Render section
                 const $section = renderSection(element);
                 $canvas.append($section);
+            } else if (element.type === 'item' && element.item) {
+                // Render standalone item (new format)
+                const $item = $(renderQuestionItem(element.item.question));
+                renderNestedItems($item, element.item, 0);
+                $canvas.append($item);
             } else if (element.type === 'items' || element.items) {
                 // Render standalone items (legacy format or items without section)
                 const items = element.items || [];
@@ -795,10 +1082,9 @@
 
     // Serialize the current structure for saving
     function serializeStructure() {
-        const sections = [];
-        const standaloneItems = [];
+        const orderedElements = [];
         
-        // Process all elements in canvas (sections and standalone items)
+        // Process all elements in canvas (sections and standalone items) - preserve order
         $('#formCanvas > *').each(function(index) {
             const $element = $(this);
             
@@ -811,6 +1097,8 @@
                 }
                 
                 const sectionData = {
+                    type: 'section',
+                    order: index,
                     name: sectionName,
                     description: null,
                     is_collapsible: true,
@@ -825,19 +1113,25 @@
                     sectionData.items.push(item);
                 });
                 
-                sections.push(sectionData);
+                orderedElements.push(sectionData);
             } else if ($element.hasClass('question-item')) {
                 // This is a standalone item (not in a section)
-                const item = serializeItem($element, standaloneItems.length, 0);
-                standaloneItems.push(item);
+                const item = serializeItem($element, 0, 0);
+                orderedElements.push({
+                    type: 'item',
+                    order: index,
+                    item: item
+                });
             }
         });
 
         return {
-            sections: sections,
-            items: standaloneItems
+            elements: orderedElements
         };
     }
+    
+    // Expose serializeStructure globally AFTER it's defined
+    window.serializeStructure = serializeStructure;
 
     // Save the structure
     function saveStructure(data) {
@@ -906,5 +1200,214 @@
             $overlay.remove();
         });
     }
+    
+    // showPreview is now defined at the top of the file and exposed to window
+    // This function definition is kept for backward compatibility but the global one is used
+    
+    // Render the preview form
+    function renderPreview(structureData, $container) {
+        // Check if new format (elements array) or old format (sections/items)
+        const hasElements = structureData.elements && Array.isArray(structureData.elements) && structureData.elements.length > 0;
+        const hasOldFormat = (structureData.sections && structureData.sections.length > 0) || 
+                            (structureData.items && structureData.items.length > 0);
+        
+        if (!hasElements && !hasOldFormat) {
+            $container.html(`
+                <div class="preview-empty-state">
+                    <i class="fa-solid fa-inbox"></i>
+                    <h5>No form structure found</h5>
+                    <p>Please add questions to the form structure to see the preview.</p>
+                </div>
+            `);
+            return;
+        }
+        
+        let html = '<form id="previewFormContent" class="preview-form">';
+        
+        if (hasElements) {
+            // New format: elements array with mixed order
+            structureData.elements.forEach((element) => {
+                if (element.type === 'section') {
+                    html += renderPreviewSection(element);
+                } else if (element.type === 'item' && element.item) {
+                    html += '<div class="preview-section">';
+                    html += renderPreviewQuestion(element.item, 0);
+                    html += '</div>';
+                }
+            });
+        } else {
+            // Old format: sections and items separately
+            if (structureData.sections && structureData.sections.length > 0) {
+                structureData.sections.forEach((section) => {
+                    html += renderPreviewSection(section);
+                });
+            }
+            
+            if (structureData.items && structureData.items.length > 0) {
+                html += '<div class="preview-section">';
+                structureData.items.forEach((item) => {
+                    html += renderPreviewQuestion(item, 0);
+                });
+                html += '</div>';
+            }
+        }
+        
+        html += '</form>';
+        
+        $container.html(html);
+        
+        // Initialize dynamic behavior for radio questions
+        initializePreviewInteractivity();
+    }
+    
+    // Render a preview section
+    function renderPreviewSection(section) {
+        let html = `<div class="preview-section">`;
+        
+        if (section.name) {
+            html += `<h3 class="preview-section-title">${escapeHtml(section.name)}</h3>`;
+        }
+        
+        if (section.description) {
+            html += `<p class="preview-section-description">${escapeHtml(section.description)}</p>`;
+        }
+        
+        if (section.items && section.items.length > 0) {
+            section.items.forEach((item) => {
+                html += renderPreviewQuestion(item, 0);
+            });
+        }
+        
+        html += `</div>`;
+        return html;
+    }
+    
+    // Render a preview question recursively
+    function renderPreviewQuestion(item, depth = 0) {
+        if (!item || !item.question_id) {
+            return '';
+        }
+        
+        const question = window.questions.find(q => q.id === item.question_id);
+        if (!question) {
+            return '';
+        }
+        
+        // Use a stable ID for radio groups (same question = same ID)
+        const questionId = `preview_q_${question.id}`;
+        const required = question.required ? '<span class="required">*</span>' : '';
+        const helpText = question.help_text ? `<div class="preview-question-help">${escapeHtml(question.help_text)}</div>` : '';
+        
+        let html = `<div class="preview-question" data-question-id="${question.id}" data-depth="${depth}">`;
+        html += `<label class="preview-question-label">${escapeHtml(question.question)}${required}</label>`;
+        html += helpText;
+        
+        // Render input based on type
+        if (question.type === 'radio' && question.options && question.options.length > 0) {
+            html += `<div class="preview-radio-group" data-question-id="${question.id}">`;
+            question.options.forEach((option, index) => {
+                const optionId = `${questionId}_opt_${index}`;
+                const escapedOption = escapeHtml(option);
+                html += `
+                    <div class="preview-radio-option">
+                        <input type="radio" 
+                               id="${optionId}" 
+                               name="${questionId}" 
+                               value="${escapedOption}"
+                               data-question-id="${question.id}"
+                               data-option-value="${escapedOption}">
+                        <label for="${optionId}">${escapedOption}</label>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            
+            // Render nested questions for each option (hidden by default)
+            if (item.children && typeof item.children === 'object') {
+                Object.entries(item.children).forEach(([optionValue, childData]) => {
+                    if (childData && childData.items && childData.items.length > 0) {
+                        const nestedContainerId = `nested_${question.id}_${String(optionValue).replace(/[^a-zA-Z0-9]/g, '_')}`;
+                        const escapedOptionValue = escapeHtml(String(optionValue));
+                        html += `<div class="preview-nested-questions" id="${nestedContainerId}" data-parent-question="${question.id}" data-option-value="${escapedOptionValue}" style="display: none;">`;
+                        childData.items.forEach((childItem) => {
+                            html += renderPreviewQuestion(childItem, depth + 1);
+                        });
+                        html += `</div>`;
+                    }
+                });
+            }
+        } else if (question.type === 'text') {
+            html += `<input type="text" class="preview-text-input" name="${questionId}" ${question.required ? 'required' : ''} placeholder="Enter your answer">`;
+        } else if (question.type === 'textarea') {
+            html += `<textarea class="preview-textarea" name="${questionId}" rows="4" ${question.required ? 'required' : ''} placeholder="Enter your answer"></textarea>`;
+        } else if (question.type === 'select' && question.options && question.options.length > 0) {
+            html += `<select class="preview-select-input" name="${questionId}" ${question.required ? 'required' : ''}>`;
+            html += `<option value="">-- Select an option --</option>`;
+            question.options.forEach((option) => {
+                // Handle both object format {value, label} and string format
+                let optionValue, optionLabel;
+                if (typeof option === 'object' && option !== null) {
+                    optionValue = option.value !== undefined ? option.value : option.label;
+                    optionLabel = option.label !== undefined ? option.label : option.value;
+                } else {
+                    optionValue = option;
+                    optionLabel = option;
+                }
+                html += `<option value="${escapeHtml(String(optionValue))}">${escapeHtml(String(optionLabel))}</option>`;
+            });
+            html += `</select>`;
+        }
+        
+        html += `</div>`;
+        return html;
+    }
+    
+    // Initialize interactivity for preview (show/hide nested questions)
+    function initializePreviewInteractivity() {
+        // Remove any existing handlers to prevent duplicates
+        $('#previewFormContainer').off('change', 'input[type="radio"]');
+        
+        // Handle radio button changes - standard behavior (no deselection)
+        $('#previewFormContainer').on('change', 'input[type="radio"]', function(e) {
+            e.stopPropagation();
+            const $radio = $(this);
+            const questionId = $radio.data('question-id');
+            const optionValue = $radio.data('option-value');
+            
+            if (!questionId || !optionValue) {
+                return;
+            }
+            
+            // Hide all nested questions for this parent question
+            const $allNested = $(`.preview-nested-questions[data-parent-question="${questionId}"]`);
+            $allNested.removeClass('show').hide();
+            
+            // Show nested questions for selected option (case-insensitive match)
+            const $nestedContainer = $allNested.filter(function() {
+                const containerOptionValue = $(this).data('option-value');
+                return containerOptionValue && containerOptionValue.toLowerCase() === optionValue.toLowerCase();
+            });
+            
+            if ($nestedContainer.length > 0) {
+                $nestedContainer.addClass('show').show();
+            }
+        });
+    }
+    
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return String(text).replace(/[&<>"']/g, m => map[m]);
+    }
+    
+    // Expose renderPreview globally AFTER it's defined
+    window.renderPreview = renderPreview;
 
 })(jQuery);

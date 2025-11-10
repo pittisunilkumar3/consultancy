@@ -783,6 +783,381 @@
             width: 300px;
             height: 300px;
         }
+        
+        /* Preview Modal Styles */
+        #previewFormContainer {
+            min-height: 400px;
+        }
+        
+        .preview-section {
+            margin-bottom: 2.5rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 0.75rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        
+        .preview-section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.75rem;
+            padding-bottom: 1rem;
+            border-bottom: 3px solid #14b8a6;
+            background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .preview-section-description {
+            color: #6b7280;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+            line-height: 1.6;
+            padding: 0.75rem;
+            background: #ffffff;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .preview-question {
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+        
+        .preview-question:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-color: #d1d5db;
+        }
+        
+        .preview-question[data-depth="1"],
+        .preview-question[data-depth="2"],
+        .preview-question[data-depth="3"] {
+            margin-left: 0;
+        }
+        
+        .preview-question-label {
+            display: block;
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: #1f2937;
+            margin-bottom: 0.875rem;
+            line-height: 1.5;
+        }
+        
+        .preview-question-label .required {
+            color: #ef4444;
+            margin-left: 0.25rem;
+        }
+        
+        .preview-question-help {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-style: italic;
+            padding: 0.5rem;
+            background: #f9fafb;
+            border-radius: 0.375rem;
+        }
+        
+        .preview-nested-questions {
+            margin-top: 1.5rem;
+            margin-left: 0;
+            padding: 0;
+            display: none !important;
+        }
+        
+        .preview-nested-questions.show {
+            display: block !important;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .preview-radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        
+        .preview-radio-option {
+            display: flex;
+            align-items: center;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #ffffff;
+        }
+        
+        .preview-radio-option:hover {
+            background: #f8fafc;
+            border-color: #14b8a6;
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(20, 184, 166, 0.1);
+        }
+        
+        .preview-radio-option input[type="radio"] {
+            margin-right: 0.875rem;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: #14b8a6;
+        }
+        
+        .preview-radio-option input[type="radio"]:checked + label {
+            color: #14b8a6;
+            font-weight: 600;
+        }
+        
+        .preview-radio-option:has(input[type="radio"]:checked) {
+            background: #f0fdfa;
+            border-color: #14b8a6;
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+        }
+        
+        .preview-text-input,
+        .preview-textarea {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        
+        .preview-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .preview-text-input:focus,
+        .preview-textarea:focus {
+            outline: none;
+            border-color: #14b8a6;
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+        }
+        
+        /* Enhanced Select Dropdown Styling */
+        .preview-select-input {
+            width: 100%;
+            padding: 0.875rem 2.5rem 0.875rem 1rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #1f2937;
+            background-color: #ffffff;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%23374151' d='M7 10L2 5h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.875rem center;
+            background-size: 1.125rem;
+            border: 2px solid #d1d5db;
+            border-radius: 0.625rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+            font-weight: 500;
+        }
+        
+        .preview-select-input:hover {
+            border-color: #14b8a6;
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.15);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%2314b8a6' d='M7 10L2 5h10z'/%3E%3C/svg%3E");
+            transform: translateY(-1px);
+        }
+        
+        .preview-select-input:focus {
+            outline: none;
+            border-color: #14b8a6;
+            box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.2), 0 4px 16px rgba(0, 0, 0, 0.12);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%2314b8a6' d='M7 10L2 5h10z'/%3E%3C/svg%3E");
+        }
+        
+        .preview-select-input:active {
+            transform: translateY(0);
+        }
+        
+        /* Style the dropdown options */
+        .preview-select-input option {
+            padding: 0.875rem 1rem;
+            color: #1f2937;
+            background-color: #ffffff;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.6;
+            border: none;
+            margin: 0.25rem 0;
+        }
+        
+        .preview-select-input option:first-child {
+            color: #9ca3af;
+            font-style: italic;
+            font-weight: 400;
+        }
+        
+        .preview-select-input option:checked,
+        .preview-select-input option[selected] {
+            background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%);
+            color: #0d9488;
+            font-weight: 600;
+        }
+        
+        /* For Firefox */
+        @-moz-document url-prefix() {
+            .preview-select-input option {
+                padding: 0.75rem 1rem;
+            }
+        }
+        
+        /* For Webkit browsers (Chrome, Safari, Edge) */
+        @supports (-webkit-appearance: none) {
+            .preview-select-input {
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%23374151' d='M7 10L2 5h10z'/%3E%3C/svg%3E");
+            }
+        }
+        
+        /* Disabled state */
+        .preview-select-input:disabled {
+            background-color: #f3f4f6;
+            color: #9ca3af;
+            cursor: not-allowed;
+            border-color: #e5e7eb;
+            opacity: 0.6;
+            box-shadow: none;
+        }
+        
+        .preview-select-input:disabled:hover {
+            transform: none;
+            border-color: #e5e7eb;
+            box-shadow: none;
+        }
+        
+        /* Custom scrollbar for select dropdown (Webkit browsers) */
+        .preview-select-input::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .preview-select-input::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        
+        .preview-select-input::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        .preview-select-input::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Modal Backdrop Blur Effect - More Specific Selectors */
+        #previewModal + .modal-backdrop,
+        .modal-backdrop.show,
+        .modal-backdrop.fade.show {
+            background-color: rgba(0, 0, 0, 0.6) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            opacity: 1 !important;
+        }
+        
+        /* Blur the entire page when modal is open */
+        body.modal-open {
+            overflow: hidden;
+        }
+        
+        /* Blur sidebar specifically - exclude modal (including zSidebar) */
+        body.modal-open .zSidebar,
+        body.modal-open .zMain-wrap .sidebar,
+        body.modal-open .zMain-wrap aside,
+        body.modal-open .sidebar:not(#previewModal):not(#previewModal *),
+        body.modal-open aside:not(#previewModal):not(#previewModal *) {
+            filter: blur(5px) !important;
+            transition: filter 0.4s ease !important;
+            pointer-events: none !important;
+        }
+        
+        /* Blur main content area - but exclude modal */
+        body.modal-open .zMainContent > *:not(#previewModal):not(.modal) {
+            filter: blur(5px) !important;
+            transition: filter 0.4s ease !important;
+            pointer-events: none !important;
+        }
+        
+        /* Blur header/navigation */
+        body.modal-open .zMainContent > nav,
+        body.modal-open .zMainContent > .navbar,
+        body.modal-open .zMainContent > header {
+            filter: blur(5px) !important;
+            transition: filter 0.4s ease !important;
+            pointer-events: none !important;
+        }
+        
+        /* DON'T blur the entire wrapper - it will blur the modal inside */
+        /* Instead, blur only specific children */
+        
+        /* CRITICAL: Ensure modal and ALL its children are NOT blurred - highest specificity */
+        body.modal-open #previewModal,
+        body.modal-open #previewModal *,
+        body.modal-open #previewModal .modal-dialog,
+        body.modal-open #previewModal .modal-content,
+        body.modal-open #previewModal .modal-header,
+        body.modal-open #previewModal .modal-body,
+        body.modal-open #previewModal .modal-footer,
+        body.modal-open .modal:not(.modal-backdrop),
+        body.modal-open .modal:not(.modal-backdrop) *,
+        body.modal-open .modal-dialog,
+        body.modal-open .modal-content,
+        body.modal-open .modal-header,
+        body.modal-open .modal-body,
+        body.modal-open .modal-footer {
+            filter: none !important;
+            -webkit-filter: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            pointer-events: auto !important;
+        }
+        
+        /* Ensure modal backdrop is clickable and not blurred */
+        body.modal-open .modal-backdrop,
+        body.modal-open .modal-backdrop.show {
+            filter: none !important;
+            -webkit-filter: none !important;
+            pointer-events: auto !important;
+        }
+        
+        .preview-empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #94a3b8;
+        }
+        
+        .preview-empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
     </style>
 @endpush
 @section('content')
@@ -802,6 +1177,9 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title">{{ $pageTitle ?? __('Career Corner Form Structure') }}</h3>
                     <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-info" id="previewForm">
+                            <i class="fa-solid fa-eye me-1"></i>{{ __('Preview Form') }}
+                        </button>
                         <button type="button" class="btn btn-outline-primary" id="createSection">
                             <i class="fa-solid fa-folder-plus me-1"></i>{{ __('Create Section') }}
                         </button>
@@ -897,6 +1275,31 @@
             </div>
         </div>
     </template>
+
+    <!-- Preview Modal -->
+    <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="previewModalLabel">
+                        <i class="fa-solid fa-eye me-2"></i>{{ __('Form Preview') }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" data-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="previewFormContainer">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3 text-muted">{{ __('Loading preview...') }}</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-dismiss="modal">{{ __('Close') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('script')
@@ -904,10 +1307,94 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     
     <!-- Form structure builder -->
-    <script src="{{ asset('admin/custom/js/form-structure.js') }}"></script>
+    <script src="{{ asset('admin/custom/js/form-structure.js') }}?v={{ time() }}"></script>
     
     <script>
         // Initialize with structure ID from Career Corner
         window.structureId = {{ $structure->id ?? 'null' }};
+        
+        // Attach preview button handler when document is ready
+        $(document).ready(function() {
+            // Use delegated event handler for reliability
+            $(document).on('click', '#previewForm', function(e) {
+                e.preventDefault();
+                if (typeof window.showPreview === 'function') {
+                    window.showPreview();
+                }
+            });
+            
+            // Remove blur effects when modal is closed
+            $('#previewModal').on('hidden.bs.modal', function() {
+                if (typeof window.removeModalBlur === 'function') {
+                    window.removeModalBlur();
+                } else if (typeof removeModalBlur === 'function') {
+                    removeModalBlur();
+                }
+            });
+            
+            // Also handle Bootstrap 5 events
+            $('#previewModal').on('hide.bs.modal', function() {
+                if (typeof window.removeModalBlur === 'function') {
+                    window.removeModalBlur();
+                } else if (typeof removeModalBlur === 'function') {
+                    removeModalBlur();
+                }
+            });
+            
+            // Handle when modal backdrop is clicked
+            $(document).on('click', '.modal-backdrop', function() {
+                setTimeout(function() {
+                    if (typeof window.removeModalBlur === 'function') {
+                        window.removeModalBlur();
+                    }
+                }, 300);
+            });
+        });
+        
+        // Use global function if available, otherwise define locally
+        if (typeof window.removeModalBlur !== 'function') {
+            window.removeModalBlur = function() {
+                // Remove blur from sidebar (including zSidebar)
+                $('.zSidebar, .zMain-wrap > .sidebar, .zMain-wrap > aside, .sidebar, aside').css({
+                    'filter': '',
+                    'pointer-events': '',
+                    'transition': ''
+                });
+                
+                // Remove blur from navigation/header
+                $('.zMainContent > nav, .zMainContent > .navbar, .zMainContent > header').css({
+                    'filter': '',
+                    'pointer-events': '',
+                    'transition': ''
+                });
+                
+                // Remove blur from all direct children of zMainContent
+                $('.zMainContent').children().css({
+                    'filter': '',
+                    'pointer-events': '',
+                    'transition': ''
+                });
+                
+                // Remove blur from all nested divs and sections
+                $('.zMainContent div, .zMainContent section').css({
+                    'filter': '',
+                    'pointer-events': '',
+                    'transition': ''
+                });
+                
+                // Remove blur from any other elements
+                $('body > *:not(.modal):not(.modal-backdrop)').css({
+                    'filter': '',
+                    'pointer-events': '',
+                    'transition': ''
+                });
+                
+                // Remove inline styles
+                $('.zSidebar, .zMain-wrap, .sidebar, aside, .zMainContent, nav, .navbar, header').each(function() {
+                    this.style.removeProperty('filter');
+                    this.style.removeProperty('-webkit-filter');
+                });
+            };
+        }
     </script>
 @endpush
