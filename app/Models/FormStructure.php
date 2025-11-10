@@ -6,9 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class FormStructure extends Model
 {
-    protected $fillable = ['name', 'slug', 'meta'];
+    protected $fillable = ['name', 'slug', 'meta', 'is_published'];
     protected $casts = [
         'meta' => 'array',
+        'is_published' => 'boolean',
     ];
 
     /**

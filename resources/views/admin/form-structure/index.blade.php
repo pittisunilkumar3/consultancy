@@ -933,6 +933,50 @@
             box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
         }
         
+        .preview-checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        
+        .preview-checkbox-option {
+            display: flex;
+            align-items: center;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #ffffff;
+        }
+        
+        .preview-checkbox-option:hover {
+            background: #f8fafc;
+            border-color: #14b8a6;
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(20, 184, 166, 0.1);
+        }
+        
+        .preview-checkbox-option input[type="checkbox"] {
+            margin-right: 0.875rem;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: #14b8a6;
+        }
+        
+        .preview-checkbox-option input[type="checkbox"]:checked + label {
+            color: #14b8a6;
+            font-weight: 600;
+        }
+        
+        .preview-checkbox-option:has(input[type="checkbox"]:checked) {
+            background: #f0fdfa;
+            border-color: #14b8a6;
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+        }
+        
         .preview-text-input,
         .preview-textarea {
             width: 100%;
@@ -1186,6 +1230,10 @@
                         <button type="button" class="btn btn-primary" id="saveStructure">
                             <i class="fa-solid fa-save me-1"></i>{{ __('Save Structure') }}
                         </button>
+                        <button type="button" class="btn {{ $structure->is_published ? 'btn-success' : 'btn-outline-success' }}" id="togglePublish">
+                            <i class="fa-solid {{ $structure->is_published ? 'fa-toggle-on' : 'fa-toggle-off' }} me-1"></i>
+                            <span id="publishButtonText">{{ $structure->is_published ? __('Unpublish Form') : __('Publish Form') }}</span>
+                        </button>
                     </div>
                 </div>
 
@@ -1321,6 +1369,58 @@
                 if (typeof window.showPreview === 'function') {
                     window.showPreview();
                 }
+            });
+            
+            // Handle publish/unpublish button
+            $(document).on('click', '#togglePublish', function(e) {
+                e.preventDefault();
+                const $btn = $(this);
+                const $icon = $btn.find('i');
+                const $text = $btn.find('#publishButtonText');
+                const structureId = {{ $structure->id ?? 'null' }};
+                
+                if (!structureId) {
+                    toastr.error('Structure ID not found');
+                    return;
+                }
+                
+                // Disable button during request
+                $btn.prop('disabled', true);
+                const originalIcon = $icon.attr('class');
+                $icon.removeClass().addClass('fa-solid fa-spinner fa-spin me-1');
+                
+                $.ajax({
+                    url: `{{ route('admin.form-structure.toggle-publish', ['id' => $structure->id ?? 0]) }}`,
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                })
+                .done(function(response) {
+                    if (response.status) {
+                        // Update button appearance
+                        if (response.data.is_published) {
+                            $btn.removeClass('btn-outline-success').addClass('btn-success');
+                            $icon.removeClass().addClass('fa-solid fa-toggle-on me-1');
+                            $text.text('{{ __('Unpublish Form') }}');
+                        } else {
+                            $btn.removeClass('btn-success').addClass('btn-outline-success');
+                            $icon.removeClass().addClass('fa-solid fa-toggle-off me-1');
+                            $text.text('{{ __('Publish Form') }}');
+                        }
+                        
+                        toastr.success(response.message);
+                    } else {
+                        toastr.error(response.message || 'Error updating publish status');
+                    }
+                })
+                .fail(function(xhr) {
+                    const message = xhr.responseJSON?.message || 'Error updating publish status';
+                    toastr.error(message);
+                })
+                .always(function() {
+                    $btn.prop('disabled', false);
+                });
             });
             
             // Remove blur effects when modal is closed

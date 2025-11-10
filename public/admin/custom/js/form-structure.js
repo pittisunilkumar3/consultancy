@@ -1340,6 +1340,10 @@ window.showPreview = function() {
             html += `<input type="text" class="preview-text-input" name="${questionId}" ${question.required ? 'required' : ''} placeholder="Enter your answer">`;
         } else if (question.type === 'textarea') {
             html += `<textarea class="preview-textarea" name="${questionId}" rows="4" ${question.required ? 'required' : ''} placeholder="Enter your answer"></textarea>`;
+        } else if (question.type === 'number') {
+            html += `<input type="number" class="preview-text-input" name="${questionId}" ${question.required ? 'required' : ''} placeholder="Enter a number">`;
+        } else if (question.type === 'file') {
+            html += `<input type="file" class="preview-text-input" name="${questionId}" ${question.required ? 'required' : ''} accept="*/*">`;
         } else if (question.type === 'select' && question.options && question.options.length > 0) {
             html += `<select class="preview-select-input" name="${questionId}" ${question.required ? 'required' : ''}>`;
             html += `<option value="">-- Select an option --</option>`;
@@ -1356,6 +1360,32 @@ window.showPreview = function() {
                 html += `<option value="${escapeHtml(String(optionValue))}">${escapeHtml(String(optionLabel))}</option>`;
             });
             html += `</select>`;
+        } else if (question.type === 'checkbox' && question.options && question.options.length > 0) {
+            html += `<div class="preview-checkbox-group">`;
+            question.options.forEach((option, index) => {
+                const optionId = `${questionId}_opt_${index}`;
+                let optionValue, optionLabel;
+                if (typeof option === 'object' && option !== null) {
+                    optionValue = option.value !== undefined ? option.value : option.label;
+                    optionLabel = option.label !== undefined ? option.label : option.value;
+                } else {
+                    optionValue = option;
+                    optionLabel = option;
+                }
+                const escapedOptionValue = escapeHtml(String(optionValue));
+                const escapedOptionLabel = escapeHtml(String(optionLabel));
+                html += `
+                    <div class="preview-checkbox-option">
+                        <input type="checkbox" 
+                               id="${optionId}" 
+                               name="${questionId}[]" 
+                               value="${escapedOptionValue}"
+                               ${question.required ? 'required' : ''}>
+                        <label for="${optionId}">${escapedOptionLabel}</label>
+                    </div>
+                `;
+            });
+            html += `</div>`;
         }
         
         html += `</div>`;

@@ -89,7 +89,8 @@ class FormStructureItem extends Model
                 });
             
             if ($children->isNotEmpty()) {
-                $data['children'] = $children;
+                // Convert collection to array to preserve keys (option values)
+                $data['children'] = $children->toArray();
             }
         }
 

@@ -119,6 +119,38 @@ class FormStructureController extends Controller
     }
 
     /**
+     * Toggle publish status of the form structure
+     */
+    public function togglePublish($id)
+    {
+        $structure = FormStructure::findOrFail($id);
+        
+        try {
+            $structure->is_published = !$structure->is_published;
+            $structure->save();
+            
+            $status = $structure->is_published ? 'published' : 'unpublished';
+            $message = $structure->is_published 
+                ? 'Form has been published and is now live on Career Corner page' 
+                : 'Form has been unpublished and is no longer visible to students';
+            
+            return response()->json([
+                'status' => true,
+                'message' => $message,
+                'data' => [
+                    'structure' => $structure,
+                    'is_published' => $structure->is_published
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error updating publish status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Process and save sections
      */
     private function processSections($sections, $structureId)
