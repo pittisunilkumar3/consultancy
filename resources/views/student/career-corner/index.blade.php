@@ -373,13 +373,18 @@
     <div class="p-sm-30 p-15">
         @if(isset($formStructure) && $formStructure && isset($formData) && !empty($formData))
             @if(isset($submission) && $submission)
-                <div class="alert alert-success mb-4">
-                    <i class="fa-solid fa-check-circle me-2"></i>
-                    <strong>{{ __('Form Submitted') }}</strong> - {{ __('Submitted on') }}: {{ $submission->created_at->format('F d, Y h:i A') }}
+                <div class="alert alert-success mb-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fa-solid fa-check-circle me-2"></i>
+                        <strong>{{ __('Form Submitted') }}</strong> - {{ __('Submitted on') }}: {{ $submission->created_at->setTimezone(getOption('app_timezone', 'UTC'))->format('F d, Y h:i A') }}
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="changePreferencesBtn">
+                        <i class="fa-solid fa-edit me-1"></i>{{ __('Change Preferences') }}
+                    </button>
                 </div>
             @endif
             
-            <form id="careerCornerForm" method="POST">
+            <form id="careerCornerForm" method="POST" action="{{ route('student.career-corner.submit') }}">
                 @csrf
                 
                 @foreach($formData as $element)
@@ -406,13 +411,11 @@
                     @endif
                 @endforeach
                 
-                @if(!isset($submission) || !$submission)
-                    <div class="text-center mt-4">
-                        <button type="submit" class="career-form-submit-btn">
-                            <i class="fa-solid fa-paper-plane me-2"></i>{{ __('Submit Form') }}
-                        </button>
-                    </div>
-                @endif
+                <div class="text-center mt-4" id="submitButtonContainer" style="{{ (isset($submission) && $submission) ? 'display: none;' : '' }}">
+                    <button type="submit" class="career-form-submit-btn">
+                        <i class="fa-solid fa-paper-plane me-2"></i>{{ __('Submit Form') }}
+                    </button>
+                </div>
             </form>
         @else
             <div class="career-form-empty-state">
@@ -428,13 +431,199 @@
 @push('script')
     <script>
         $(document).ready(function() {
-            // If form is readonly (submitted), don't initialize interactive features
-            const isReadonly = {{ isset($submission) && $submission ? 'true' : 'false' }};
+            // Track if form is in readonly mode
+            let isReadonly = {{ isset($submission) && $submission ? 'true' : 'false' }};
             
-            if (isReadonly) {
-                // Form is readonly, just show all nested questions that should be visible
-                // They are already shown by the server-side logic
-                return;
+            // Function to make form editable
+            function makeFormEditable() {
+                isReadonly = false;
+                
+                // Remove readonly/disabled attributes from all fields
+                $('#careerCornerForm input[readonly]').removeAttr('readonly').removeAttr('style');
+                $('#careerCornerForm textarea[readonly]').removeAttr('readonly').removeAttr('style');
+                $('#careerCornerForm select[disabled]').prop('disabled', false).removeAttr('style');
+                $('#careerCornerForm input[disabled]').prop('disabled', false);
+                
+                // Restore required attributes for visible nested questions
+                $('.career-form-nested-questions.show').find('input, select, textarea').each(function() {
+                    const $field = $(this);
+                    if ($field.data('original-required') === true || $field.data('original-required') === 'true') {
+                        $field.attr('required', 'required');
+                    }
+                });
+                
+                // Hide change preferences button and show submit button
+                $('#changePreferencesBtn').hide();
+                
+                // Remove inline style and force show - use multiple methods to ensure it works
+                const $submitContainer = $('#submitButtonContainer');
+                if ($submitContainer.length) {
+                    // Remove any inline styles that might hide it
+                    $submitContainer.removeAttr('style');
+                    // Force display with multiple methods
+                    $submitContainer.css('display', 'block');
+                    $submitContainer.show();
+                    $submitContainer.removeClass('d-none'); // Remove Bootstrap hide class if present
+                    
+                    // Double-check after a small delay
+                    setTimeout(function() {
+                        if ($submitContainer.is(':hidden') || $submitContainer.css('display') === 'none') {
+                            $submitContainer.css('display', 'block !important');
+                            $submitContainer[0].style.setProperty('display', 'block', 'important');
+                        }
+                    }, 50);
+                } else {
+                    console.error('Submit button container not found!');
+                }
+                
+                // Initialize interactive features
+                initializeFormInteractivity();
+                
+                // Ensure form submission handler is attached
+                attachFormSubmitHandler();
+                
+                // Trigger change on all checked radio buttons to show/hide nested questions correctly
+                $('input[type="radio"][data-question-id]:checked').trigger('change');
+            }
+            
+            // Function to attach form submission handler
+            function attachFormSubmitHandler() {
+                // Remove existing handler to prevent duplicates
+                $('#careerCornerForm').off('submit');
+                
+                // Handle form submission
+                $('#careerCornerForm').on('submit', function(e) {
+                    // Remove required from all hidden nested questions before validation
+                    $('.career-form-nested-questions:not(.show)').find('input[required], select[required], textarea[required]').removeAttr('required');
+                    
+                    e.preventDefault();
+                    
+                    // Validate form
+                    if (!this.checkValidity()) {
+                        this.reportValidity();
+                        return;
+                    }
+                    
+                    // Show loading state
+                    const $btn = $(this).find('button[type="submit"]');
+                    const originalHtml = $btn.html();
+                    $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>{{ __('Submitting...') }}');
+                    
+                    // Collect all form data
+                    const formData = new FormData(this);
+                    
+                    // Submit via AJAX
+                    $.ajax({
+                        url: '{{ route("student.career-corner.submit") }}',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').val() || '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            if (response.status) {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.success(response.message || '{{ __('Form submitted successfully!') }}');
+                                } else {
+                                    alert(response.message || '{{ __('Form submitted successfully!') }}');
+                                }
+                                // Reload page to show submitted form in readonly mode
+                                setTimeout(function() {
+                                    window.location.reload();
+                                }, 1500);
+                            } else {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.error(response.message || '{{ __('Error submitting form') }}');
+                                } else {
+                                    alert(response.message || '{{ __('Error submitting form') }}');
+                                }
+                            }
+                            $btn.prop('disabled', false).html(originalHtml);
+                        },
+                        error: function(xhr) {
+                            let errorMessage = '{{ __('Error submitting form. Please try again.') }}';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (xhr.status === 422) {
+                                errorMessage = '{{ __('Validation error. Please check your inputs.') }}';
+                            } else if (xhr.status === 401) {
+                                errorMessage = '{{ __('Please login to submit the form') }}';
+                            } else if (xhr.status === 405) {
+                                errorMessage = '{{ __('Method not allowed. Please refresh the page and try again.') }}';
+                            }
+                            
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(errorMessage);
+                            } else {
+                                alert(errorMessage);
+                            }
+                            $btn.prop('disabled', false).html(originalHtml);
+                        }
+                    });
+                });
+            }
+            
+            // Change Preferences button handler
+            $('#changePreferencesBtn').on('click', function() {
+                if (confirm('{{ __('Are you sure you want to edit your submitted form?') }}')) {
+                    makeFormEditable();
+                }
+            });
+            
+            // Function to initialize form interactivity
+            function initializeFormInteractivity() {
+                // Initialize radio button change handlers
+                initializeRadioHandlers();
+            }
+            
+            // Function to initialize radio button handlers
+            function initializeRadioHandlers() {
+                // Remove existing handlers to prevent duplicates
+                $(document).off('change', 'input[type="radio"][data-question-id]');
+                
+                // Handle radio button changes to show/hide nested questions
+                $(document).on('change', 'input[type="radio"][data-question-id]', function() {
+                    const $radio = $(this);
+                    const questionId = $radio.data('question-id');
+                    const optionValue = $radio.val();
+                    
+                    if (!questionId || !optionValue) {
+                        return;
+                    }
+                    
+                    // Hide all nested questions for this parent question
+                    const $allNested = $(`.career-form-nested-questions[data-parent-question="${questionId}"]`);
+                    $allNested.removeClass('show').css('display', 'none');
+                    
+                    // Remove required from hidden nested questions
+                    $allNested.find('input[required], select[required], textarea[required]').removeAttr('required');
+                    
+                    // Show nested questions for selected option (case-insensitive match)
+                    const $nestedContainer = $allNested.filter(function() {
+                        const containerOptionValue = $(this).data('option-value') || $(this).attr('data-option-value');
+                        if (!containerOptionValue) {
+                            return false;
+                        }
+                        // Trim and compare case-insensitively
+                        const selectedValue = String(optionValue).trim().toLowerCase();
+                        const containerValue = String(containerOptionValue).trim().toLowerCase();
+                        return containerValue === selectedValue;
+                    });
+                    
+                    if ($nestedContainer.length > 0) {
+                        $nestedContainer.css('display', 'block').addClass('show');
+                        
+                        // Restore required attributes for visible nested questions
+                        $nestedContainer.find('input, select, textarea').each(function() {
+                            const $field = $(this);
+                            if ($field.data('original-required') === true || $field.data('original-required') === 'true') {
+                                $field.attr('required', 'required');
+                            }
+                        });
+                    }
+                });
             }
             
             // Function to update required attributes based on visibility
@@ -466,121 +655,20 @@
                 $(this).data('original-required', true);
             });
             
-            // Handle radio button changes to show/hide nested questions
-            $(document).on('change', 'input[type="radio"][data-question-id]', function() {
-                const $radio = $(this);
-                const questionId = $radio.data('question-id');
-                const optionValue = $radio.val();
-                
-                if (!questionId || !optionValue) {
-                    return;
-                }
-                
-                // Hide all nested questions for this parent question
-                const $allNested = $(`.career-form-nested-questions[data-parent-question="${questionId}"]`);
-                $allNested.removeClass('show').css('display', 'none');
-                
-                // Remove required from hidden nested questions
-                $allNested.find('input[required], select[required], textarea[required]').removeAttr('required');
-                
-                // Show nested questions for selected option (case-insensitive match)
-                const $nestedContainer = $allNested.filter(function() {
-                    const containerOptionValue = $(this).data('option-value') || $(this).attr('data-option-value');
-                    if (!containerOptionValue) {
-                        return false;
-                    }
-                    // Trim and compare case-insensitively
-                    const selectedValue = String(optionValue).trim().toLowerCase();
-                    const containerValue = String(containerOptionValue).trim().toLowerCase();
-                    return containerValue === selectedValue;
-                });
-                
-                if ($nestedContainer.length > 0) {
-                    $nestedContainer.css('display', 'block').addClass('show');
-                    
-                    // Restore required attributes for visible nested questions
-                    $nestedContainer.find('input, select, textarea').each(function() {
-                        const $field = $(this);
-                        if ($field.data('original-required') === true || $field.data('original-required') === 'true') {
-                            $field.attr('required', 'required');
-                        }
-                    });
-                }
-            });
+            if (isReadonly) {
+                // Form is readonly, just show all nested questions that should be visible
+                // They are already shown by the server-side logic
+                return;
+            }
+            
+            // Initialize form interactivity for editable form
+            initializeFormInteractivity();
+            
+            // Attach form submission handler
+            attachFormSubmitHandler();
             
             // Also handle on page load - check if any radio is already selected
             $('input[type="radio"][data-question-id]:checked').trigger('change');
-            
-            // Handle form submission
-            $('#careerCornerForm').on('submit', function(e) {
-                // Remove required from all hidden nested questions before validation
-                $('.career-form-nested-questions:not(.show)').find('input[required], select[required], textarea[required]').removeAttr('required');
-                
-                e.preventDefault();
-                
-                // Validate form
-                if (!this.checkValidity()) {
-                    this.reportValidity();
-                    return;
-                }
-                
-                // Show loading state
-                const $btn = $(this).find('button[type="submit"]');
-                const originalHtml = $btn.html();
-                $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>{{ __('Submitting...') }}');
-                
-                // Collect all form data
-                const formData = new FormData(this);
-                
-                // Submit via AJAX
-                $.ajax({
-                    url: '{{ route("student.career-corner.submit") }}',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').val() || '{{ csrf_token() }}'
-                    },
-                    success: function(response) {
-                        if (response.status) {
-                            if (typeof toastr !== 'undefined') {
-                                toastr.success(response.message || '{{ __('Form submitted successfully!') }}');
-                            } else {
-                                alert(response.message || '{{ __('Form submitted successfully!') }}');
-                            }
-                            // Reload page to show submitted form in readonly mode
-                            setTimeout(function() {
-                                window.location.reload();
-                            }, 1500);
-                        } else {
-                            if (typeof toastr !== 'undefined') {
-                                toastr.error(response.message || '{{ __('Error submitting form') }}');
-                            } else {
-                                alert(response.message || '{{ __('Error submitting form') }}');
-                            }
-                        }
-                        $btn.prop('disabled', false).html(originalHtml);
-                    },
-                    error: function(xhr) {
-                        let errorMessage = '{{ __('Error submitting form. Please try again.') }}';
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            errorMessage = xhr.responseJSON.message;
-                        } else if (xhr.status === 422) {
-                            errorMessage = '{{ __('Validation error. Please check your inputs.') }}';
-                        } else if (xhr.status === 401) {
-                            errorMessage = '{{ __('Please login to submit the form') }}';
-                        }
-                        
-                        if (typeof toastr !== 'undefined') {
-                            toastr.error(errorMessage);
-                        } else {
-                            alert(errorMessage);
-                        }
-                        $btn.prop('disabled', false).html(originalHtml);
-                    }
-                });
-            });
         });
     </script>
 @endpush

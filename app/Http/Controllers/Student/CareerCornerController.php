@@ -85,17 +85,36 @@ class CareerCornerController extends Controller
                 ], 422);
             }
 
-            // Save the submission
-            $submission = CareerCornerSubmission::create([
-                'user_id' => $user->id,
-                'form_structure_id' => $structure->id,
-                'form_data' => $formData,
-                'status' => STATUS_ACTIVE,
-            ]);
+            // Check if user already has a submission for this form
+            $existingSubmission = CareerCornerSubmission::where('user_id', $user->id)
+                ->where('form_structure_id', $structure->id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($existingSubmission) {
+                // Update existing submission
+                $existingSubmission->update([
+                    'form_data' => $formData,
+                    'status' => STATUS_ACTIVE,
+                ]);
+                
+                $submission = $existingSubmission;
+                $message = __('Form updated successfully!');
+            } else {
+                // Create new submission
+                $submission = CareerCornerSubmission::create([
+                    'user_id' => $user->id,
+                    'form_structure_id' => $structure->id,
+                    'form_data' => $formData,
+                    'status' => STATUS_ACTIVE,
+                ]);
+                
+                $message = __('Form submitted successfully!');
+            }
 
             return response()->json([
                 'status' => true,
-                'message' => __('Form submitted successfully!'),
+                'message' => $message,
                 'data' => $submission
             ]);
 
