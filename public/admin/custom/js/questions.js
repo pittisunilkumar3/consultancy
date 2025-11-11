@@ -83,7 +83,7 @@
         }
 
         // Serialize options into hidden #options before submit
-        $('#add-modal form').on('submit', function() {
+        $('#add-modal form').on('submit', function(e) {
             var type = $('#type').val();
             if (['select', 'radio', 'checkbox'].includes(type)) {
                 var items = [];
@@ -108,6 +108,7 @@
             } else {
                 $('#options').val('');
             }
+
         });
 
         var table = null;
@@ -185,7 +186,10 @@
             var $form = $(this).find('form.ajax');
             var $title = $(this).find('h5').first();
             var $submitText = $form.find('button[type=submit] span').last();
-            if ($form.prop('action') === storeUrl || !$form.prop('action')) {
+            var currentAction = $form.prop('action');
+            var isCreateMode = !currentAction || currentAction === storeUrl || currentAction.endsWith('/questions/store');
+
+            if (isCreateMode) {
                 // Creating new question - ensure form is reset and options hidden
                 $form.trigger('reset');
                 $form.find('[name="type"]').val('text').trigger('change');
@@ -193,11 +197,15 @@
                 // clear dynamic option rows as well
                 $('#optionList').empty();
                 updateOptionInputsForType('text');
+                // Clear criteria field checkboxes ONLY in create mode
+                $form.find('.criteria-field-checkbox').prop('checked', false);
                 $title.text('Add New Question');
                 $submitText.text('Create');
                 // update niceSelect UI if available
                 try { $('.sf-select-without-search').niceSelect('update'); } catch (e) {}
             } else {
+                // Edit mode - don't clear anything, the edit handler will populate everything
+                // DO NOT clear checkboxes here - they will be set by the edit handler after modal is shown
                 $title.text('Edit Question');
                 $submitText.text('Update');
             }
@@ -209,16 +217,23 @@
             var id = $(this).data('id');
             if (!id) return;
             var showUrl = $('#questionsShowBase').val() + '/' + id;
+            var $form = $('#add-modal').find('form.ajax');
+
+            // Set update action FIRST so modal show event knows it's edit mode
+            $form.prop('action', $('#questionsUpdateBase').val() + '/' + id);
+            $form.data('method', 'POST');
+
             $.get(showUrl, function (res) {
                 if (res && res.status) {
                     var data = res.data;
-                    var $form = $('#add-modal').find('form.ajax');
+
+                    // Populate form fields
                     $form.find('[name="question"]').val(data.question);
                     $form.find('[name="type"]').val(data.type).trigger('change');
                     try { $form.find('.sf-select-without-search').niceSelect('update'); } catch(e) {}
                     $form.find('[name="order"]').val(data.order);
                     $form.find('[name="required"]').prop('checked', data.required ? true : false);
-                    
+
                     // Handle options for select/radio/checkbox - populate optionList UI
                     $('#optionList').empty();
                     if (data.options && ['select', 'radio', 'checkbox'].includes(data.type)) {
@@ -238,10 +253,48 @@
                         // ensure option inputs reflect type (show/hide value inputs)
                         updateOptionInputsForType(data.type);
                     }
-                    // set update action
-                    $form.prop('action', $('#questionsUpdateBase').val() + '/' + id);
-                    $form.data('method', 'POST');
+
+                    // Show modal FIRST, then set checkboxes after it's fully shown
                     $('#add-modal').modal('show');
+
+                    // Set criteria checkboxes AFTER modal is fully shown to avoid timing issues
+                    $('#add-modal').one('shown.bs.modal', function() {
+                        // Use a small delay to ensure DOM is fully ready
+                        setTimeout(function() {
+                            var $modalForm = $('#add-modal').find('form.ajax');
+
+                            // Clear all first
+                            $modalForm.find('.criteria-field-checkbox').prop('checked', false);
+
+                            // Then set the mapped ones
+                            if (data.mapped_criteria_fields && Array.isArray(data.mapped_criteria_fields) && data.mapped_criteria_fields.length > 0) {
+                                data.mapped_criteria_fields.forEach(function(criteriaFieldId) {
+                                    // Convert to string to ensure matching
+                                    var criteriaId = String(criteriaFieldId);
+                                    var checkboxId = 'criteria_field_' + criteriaId;
+
+                                    // Try multiple ways to find the checkbox
+                                    var $checkbox = $('#add-modal').find('#' + checkboxId);
+
+                                    if ($checkbox.length === 0) {
+                                        // Try finding by value attribute
+                                        $checkbox = $('#add-modal').find('.criteria-field-checkbox[value="' + criteriaId + '"]');
+                                    }
+
+                                    if ($checkbox.length === 0) {
+                                        // Try finding by value attribute with number
+                                        $checkbox = $('#add-modal').find('.criteria-field-checkbox[value="' + parseInt(criteriaId) + '"]');
+                                    }
+
+                                    if ($checkbox.length) {
+                                        $checkbox.prop('checked', true);
+                                        // Force trigger change event to ensure UI updates
+                                        $checkbox.trigger('change');
+                                    }
+                                });
+                            }
+                        }, 50);
+                    });
                 } else {
                     if (window.toastr) toastr.error('Could not load question');
                 }

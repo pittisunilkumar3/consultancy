@@ -7,6 +7,8 @@ use App\Http\Requests\Admin\UniversityRequest;
 use App\Models\Country;
 use App\Models\FileManager;
 use App\Models\University;
+use App\Models\UniversityCriteriaField;
+use App\Models\UniversityCriteriaValue;
 use Illuminate\Http\Request;
 use App\Traits\ResponseTrait;
 use Illuminate\Support\Facades\DB;
@@ -64,18 +66,28 @@ class UniversityController extends Controller
         $data['universityActive'] = 'active';
         $data['showCmsSettings'] = 'show';
         $data['countryData'] = Country::where('status',STATUS_ACTIVE)->get();
+        $data['criteriaFields'] = UniversityCriteriaField::where('status', STATUS_ACTIVE)->orderBy('order')->get();
 
         return view('admin.cms.universities.create', $data);
     }
 
     public function edit($id)
     {
-        $data['universityData'] = University::find($id);
+        $data['universityData'] = University::with('criteriaValues.criteriaField')->find($id);
         $data['pageTitleParent'] = __("Manage University");
         $data['pageTitle'] = __('Update');
         $data['universityActive'] = 'active';
         $data['showCmsSettings'] = 'show';
         $data['countryData'] = Country::where('status',STATUS_ACTIVE)->get();
+        $data['criteriaFields'] = UniversityCriteriaField::where('status', STATUS_ACTIVE)->orderBy('order')->get();
+        
+        // Get existing criteria values keyed by criteria_field_id
+        $data['existingCriteriaValues'] = [];
+        if ($data['universityData'] && $data['universityData']->criteriaValues) {
+            foreach ($data['universityData']->criteriaValues as $value) {
+                $data['existingCriteriaValues'][$value->criteria_field_id] = $value->value;
+            }
+        }
 
         return view('admin.cms.universities.edit', $data);
     }
@@ -138,6 +150,70 @@ class UniversityController extends Controller
             $university->gallery_image = array_values($universityGalleryImage);
 
             $university->save();
+
+            // Save criteria values
+            // Get all active criteria fields to handle unchecked checkboxes
+            $allCriteriaFields = UniversityCriteriaField::where('status', STATUS_ACTIVE)->get();
+            $submittedCriteriaValues = $request->criteria_values ?? [];
+            
+            foreach ($allCriteriaFields as $criteriaField) {
+                $criteriaFieldId = $criteriaField->id;
+                
+                // Check if this criteria field was submitted in the form
+                if (isset($submittedCriteriaValues[$criteriaFieldId])) {
+                    $value = $submittedCriteriaValues[$criteriaFieldId];
+                    
+                    // For boolean type, if checkbox is checked, value will be "1"
+                    if ($criteriaField->type === 'boolean') {
+                        // Boolean checkbox is checked (value = "1")
+                        UniversityCriteriaValue::updateOrCreate(
+                            [
+                                'university_id' => $university->id,
+                                'criteria_field_id' => $criteriaFieldId
+                            ],
+                            [
+                                'value' => '1'
+                            ]
+                        );
+                    } elseif ($value !== null && $value !== '') {
+                        // Non-boolean field with a value
+                        UniversityCriteriaValue::updateOrCreate(
+                            [
+                                'university_id' => $university->id,
+                                'criteria_field_id' => $criteriaFieldId
+                            ],
+                            [
+                                'value' => $value
+                            ]
+                        );
+                    } else {
+                        // Empty value for non-boolean - remove it
+                        UniversityCriteriaValue::where('university_id', $university->id)
+                            ->where('criteria_field_id', $criteriaFieldId)
+                            ->delete();
+                    }
+                } else {
+                    // Field not in request
+                    if ($criteriaField->type === 'boolean') {
+                        // Boolean checkbox is unchecked - set value to "0" (false)
+                        UniversityCriteriaValue::updateOrCreate(
+                            [
+                                'university_id' => $university->id,
+                                'criteria_field_id' => $criteriaFieldId
+                            ],
+                            [
+                                'value' => '0'
+                            ]
+                        );
+                    } else {
+                        // Non-boolean field not in request - remove it (field was cleared)
+                        UniversityCriteriaValue::where('university_id', $university->id)
+                            ->where('criteria_field_id', $criteriaFieldId)
+                            ->delete();
+                    }
+                }
+            }
+
             DB::commit();
 
             $message = $request->id ? __('Updated successfully.') : __('Created successfully.');

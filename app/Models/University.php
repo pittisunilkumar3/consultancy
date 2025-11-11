@@ -36,4 +36,25 @@ class University extends Model
     {
         return $this->belongsTo(Country::class, 'country_id');
     }
+
+    /**
+     * Get all criteria values for this university
+     */
+    public function criteriaValues()
+    {
+        return $this->hasMany(UniversityCriteriaValue::class, 'university_id');
+    }
+
+    /**
+     * Get criteria values keyed by criteria field slug
+     */
+    public function getCriteriaValuesBySlug()
+    {
+        return $this->criteriaValues()
+            ->with('criteriaField')
+            ->get()
+            ->keyBy(function ($value) {
+                return $value->criteriaField->slug;
+            });
+    }
 }

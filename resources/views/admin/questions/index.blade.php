@@ -97,6 +97,29 @@
                             <label for="required" class="form-check-label">{{ __('Required Field') }}</label>
                         </div>
                     </div>
+                    @if(isset($criteriaFields) && $criteriaFields->count() > 0)
+                    <div class="col-12">
+                        <label class="zForm-label">{{ __('Map to University Criteria') }} <small class="text-muted">({{ __('Optional') }})</small></label>
+                        <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                            @foreach($criteriaFields as $criteriaField)
+                            <div class="zForm-wrap-checkbox-2 mb-2">
+                                <input type="checkbox" 
+                                       name="criteria_fields[]" 
+                                       id="criteria_field_{{ $criteriaField->id }}" 
+                                       class="form-check-input criteria-field-checkbox" 
+                                       value="{{ $criteriaField->id }}">
+                                <label for="criteria_field_{{ $criteriaField->id }}" class="form-check-label">
+                                    {{ $criteriaField->name }}
+                                    @if($criteriaField->description)
+                                    <small class="text-muted d-block">{{ $criteriaField->description }}</small>
+                                    @endif
+                                </label>
+                            </div>
+                            @endforeach
+                        </div>
+                        <small class="form-text text-muted">{{ __('Select which university criteria this question maps to. This will be used for filtering universities based on student answers.') }}</small>
+                    </div>
+                    @endif
                 </div>
                 <button type="submit" class="mt-20 sf-btn-primary d-flex align-items-center">
                     <span class="spinner-border spinner-border-sm d-none me-2" role="status"></span>

@@ -199,8 +199,25 @@
                             <ul class="zSidebar-submenu">
                                 <li><a class="{{ @$activeQuestion }}" href="{{route('admin.questions.index')}}">{{__('Questions')}}</a></li>
                                 <li><a class="{{ @$activeQuestionStructure }}" href="{{route('admin.form-structure.index')}}">{{__('Questions Structure')}}</a></li>
+                                <li><a class="{{ @$activeCriteriaFields }}" href="{{route('admin.university-criteria-fields.index')}}">{{__('University Criteria Fields')}}</a></li>
                             </ul>
                         </div>
+                    </li>
+                @endcan
+
+                @can('Manage Career Corner Submissions')
+                    <li>
+                        <a href="{{route('admin.career-corner-submissions.index')}}"
+                           class="d-flex align-items-center cg-10 {{ @$activeCareerCornerSubmissions }}">
+                            <div class="d-flex">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M16.6667 2.5H3.33333C2.41286 2.5 1.66667 3.24619 1.66667 4.16667V15.8333C1.66667 16.7538 2.41286 17.5 3.33333 17.5H16.6667C17.5871 17.5 18.3333 16.7538 18.3333 15.8333V4.16667C18.3333 3.24619 17.5871 2.5 16.6667 2.5Z" stroke="white" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M13.3333 5.83337H6.66667M13.3333 10H6.66667M10 14.1667H6.66667" stroke="white" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <span class="">{{__('Career Corner Submissions')}}</span>
+                        </a>
                     </li>
                 @endcan
 

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Question;
+use App\Models\UniversityCriteriaField;
+use App\Models\QuestionCriteriaMapping;
 use Illuminate\Http\Request;
 
 class QuestionController extends Controller
@@ -32,11 +34,12 @@ class QuestionController extends Controller
 
         // set sidebar active variables and page title for normal view
         $questions = Question::orderBy('order')->get();
+        $criteriaFields = UniversityCriteriaField::where('status', STATUS_ACTIVE)->orderBy('order')->get();
         $showQuestions = 'show';
         $activeQuestion = 'active';
         $pageTitle = __('Questions');
 
-        return view('admin.questions.index', compact('questions', 'showQuestions', 'activeQuestion', 'pageTitle'));
+        return view('admin.questions.index', compact('questions', 'criteriaFields', 'showQuestions', 'activeQuestion', 'pageTitle'));
     }
 
     /**
@@ -78,6 +81,22 @@ class QuestionController extends Controller
             'options' => $options
         ]);
 
+        // Save criteria field mappings
+        // Note: With FormData, unchecked checkboxes won't be sent, so we check if the field exists
+        $criteriaFields = $request->input('criteria_fields', []);
+        if (!is_array($criteriaFields)) {
+            $criteriaFields = [];
+        }
+
+        foreach ($criteriaFields as $criteriaFieldId) {
+            if (!empty($criteriaFieldId)) {
+                QuestionCriteriaMapping::create([
+                    'question_id' => $question->id,
+                    'criteria_field_id' => $criteriaFieldId
+                ]);
+            }
+        }
+
         return response()->json([
             'status' => true,
             'message' => __('Question created successfully'),
@@ -90,10 +109,15 @@ class QuestionController extends Controller
      */
     public function show($id)
     {
-        $question = Question::findOrFail($id);
+        $question = Question::with('criteriaFields')->findOrFail($id);
+        $mappedCriteriaIds = $question->criteriaFields->pluck('id')->toArray();
+
+        $data = $question->toArray();
+        $data['mapped_criteria_fields'] = $mappedCriteriaIds;
+
         return response()->json([
             'status' => true,
-            'data' => $question
+            'data' => $data
         ]);
     }
 
@@ -136,6 +160,26 @@ class QuestionController extends Controller
             'required' => $request->required ? true : false,
             'options' => $options
         ]);
+
+        // Update criteria field mappings
+        // First, delete all existing mappings
+        QuestionCriteriaMapping::where('question_id', $question->id)->delete();
+
+        // Then, create new mappings
+        // Note: With FormData, unchecked checkboxes won't be sent, so we check if the field exists
+        $criteriaFields = $request->input('criteria_fields', []);
+        if (!is_array($criteriaFields)) {
+            $criteriaFields = [];
+        }
+
+        foreach ($criteriaFields as $criteriaFieldId) {
+            if (!empty($criteriaFieldId)) {
+                QuestionCriteriaMapping::create([
+                    'question_id' => $question->id,
+                    'criteria_field_id' => $criteriaFieldId
+                ]);
+            }
+        }
 
         return response()->json([
             'status' => true,

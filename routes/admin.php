@@ -38,6 +38,8 @@ use App\Http\Controllers\Admin\OnboardingFormSettingController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\QuestionController;
+use App\Http\Controllers\Admin\UniversityCriteriaFieldController;
+use App\Http\Controllers\Admin\CareerCornerSubmissionController;
 use App\Http\Controllers\Admin\ServiceOrderController;
 use App\Http\Controllers\Admin\ServiceOrderInvoiceController;
 use App\Http\Controllers\Admin\ServiceOrderTaskBoardController;
@@ -408,11 +410,26 @@ Route::group(['prefix' => 'questions', 'as' => 'questions.', 'middleware' => 'ca
     Route::delete('delete/{id}', [QuestionController::class, 'delete'])->name('delete');
     // further CRUD routes will be added later
 });
+
+// University Criteria Fields (admin)
+Route::group(['prefix' => 'university-criteria-fields', 'as' => 'university-criteria-fields.', 'middleware' => 'can:Manage Questions'], function () {
+    Route::get('', [UniversityCriteriaFieldController::class, 'index'])->name('index');
+    Route::post('store', [UniversityCriteriaFieldController::class, 'store'])->name('store');
+    Route::get('show/{id}', [UniversityCriteriaFieldController::class, 'show'])->name('show');
+    Route::post('update/{id}', [UniversityCriteriaFieldController::class, 'update'])->name('update');
+    Route::delete('delete/{id}', [UniversityCriteriaFieldController::class, 'delete'])->name('delete');
+});
 Route::group(['prefix' => 'form-structure', 'as' => 'form-structure.', 'middleware' => 'can:Manage Questions'], function () {
     Route::get('/', [FormStructureController::class, 'index'])->name('index');
     Route::get('/{id}', [FormStructureController::class, 'getStructure'])->name('get');
     Route::post('/{id}/save', [FormStructureController::class, 'saveStructure'])->name('save');
     Route::post('/{id}/toggle-publish', [FormStructureController::class, 'togglePublish'])->name('toggle-publish');
+});
+
+// Career Corner Submissions (admin)
+Route::group(['prefix' => 'career-corner-submissions', 'as' => 'career-corner-submissions.', 'middleware' => 'can:Manage Career Corner Submissions'], function () {
+    Route::get('/', [CareerCornerSubmissionController::class, 'index'])->name('index');
+    Route::get('/{id}', [CareerCornerSubmissionController::class, 'show'])->name('show');
 });
 
 Route::get('service-orders', [ServiceOrderController::class, 'index'])->name('service_orders')->middleware('can:Manage Service');
