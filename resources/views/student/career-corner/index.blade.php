@@ -489,13 +489,13 @@
 
                             @if(isset($element['items']) && !empty($element['items']))
                                 @foreach($element['items'] as $item)
-                                    @include('student.career-corner.partials.question', ['item' => $item, 'questions' => $questions ?? [], 'depth' => 0, 'submittedData' => $submittedData ?? null])
+                                    @include('student.career-corner.partials.question', ['item' => $item, 'questions' => $questions ?? [], 'depth' => 0, 'submittedData' => $submittedData ?? null, 'isReadonly' => isset($submission) && $submission ? true : false])
                                 @endforeach
                             @endif
                         </div>
                     @elseif($element['type'] === 'item' && isset($element['item']))
                         <div class="career-form-section">
-                            @include('student.career-corner.partials.question', ['item' => $element['item'], 'questions' => $questions ?? [], 'depth' => 0, 'submittedData' => $submittedData ?? null])
+                            @include('student.career-corner.partials.question', ['item' => $element['item'], 'questions' => $questions ?? [], 'depth' => 0, 'submittedData' => $submittedData ?? null, 'isReadonly' => isset($submission) && $submission ? true : false])
                         </div>
                     @endif
                 @endforeach
@@ -520,8 +520,194 @@
 @push('script')
     <script>
         $(document).ready(function() {
+            // Debug: Log submitted data from server
+            @if(isset($submittedData) && is_array($submittedData))
+            console.log('=== CAREER CORNER FORM DEBUG ===');
+            console.log('Submitted Data from Server:', @json($submittedData));
+            console.log('Submission exists:', {{ isset($submission) && $submission ? 'true' : 'false' }});
+            console.log('Is Readonly Mode:', {{ isset($submission) && $submission ? 'true' : 'false' }});
+
+            // Debug: Log form structure to see nested questions
+            @if(isset($formData) && is_array($formData))
+            console.log('\n=== FORM STRUCTURE DEBUG ===');
+            console.log('Form Data Structure:', @json($formData));
+
+            // Check for nested questions in structure
+            function findNestedQuestions(structure, path = '') {
+                const nested = [];
+                if (Array.isArray(structure)) {
+                    structure.forEach((element, index) => {
+                        if (element.type === 'section' && element.items) {
+                            element.items.forEach((item, itemIndex) => {
+                                const itemPath = `${path}[${index}].items[${itemIndex}]`;
+                                if (item.children) {
+                                    nested.push({
+                                        path: itemPath,
+                                        questionId: item.question_id,
+                                        children: Object.keys(item.children)
+                                    });
+                                    // Recursively check nested items
+                                    Object.values(item.children).forEach(childGroup => {
+                                        if (childGroup.items) {
+                                            childGroup.items.forEach(childItem => {
+                                                nested.push(...findNestedQuestions([childItem], `${itemPath}.children`));
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        } else if (element.type === 'item' && element.item) {
+                            const item = element.item;
+                            const itemPath = `${path}[${index}].item`;
+                            if (item.children) {
+                                nested.push({
+                                    path: itemPath,
+                                    questionId: item.question_id,
+                                    children: Object.keys(item.children)
+                                });
+                                // Recursively check nested items
+                                Object.values(item.children).forEach(childGroup => {
+                                    if (childGroup.items) {
+                                        childGroup.items.forEach(childItem => {
+                                            nested.push(...findNestedQuestions([childItem], `${itemPath}.children`));
+                                        });
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+                return nested;
+            }
+
+            const nestedInStructure = findNestedQuestions(@json($formData));
+            console.log('Nested questions found in structure:', nestedInStructure);
+
+            // Debug: Check which questions are available
+            @if(isset($questions))
+            const availableQuestions = @json(is_array($questions) ? array_keys($questions) : $questions->keys()->toArray());
+            console.log('Available question IDs in $questions array:', availableQuestions);
+
+            // Check if nested questions from structure are in available questions
+            nestedInStructure.forEach(nested => {
+                if (nested.children) {
+                    nested.children.forEach(optionValue => {
+                        // Find nested items under this option
+                        // This is a simplified check - we'd need to traverse the structure
+                    });
+                }
+            });
+            @endif
+            console.log('=== END FORM STRUCTURE DEBUG ===\n');
+            @endif
+            @endif
+
             // Track if form is in readonly mode
             let isReadonly = {{ isset($submission) && $submission ? 'true' : 'false' }};
+
+            // Debug: Log all questions and their values on the page (including nested)
+            console.log('\n=== QUESTIONS AND ANSWERS ON PAGE ===');
+            const questionsData = [];
+
+            // Function to check if question is nested and visible
+            function isQuestionVisible($question) {
+                const $nestedContainer = $question.closest('.career-form-nested-questions');
+                if ($nestedContainer.length === 0) {
+                    return true; // Not nested, so visible
+                }
+                return $nestedContainer.hasClass('show') || $nestedContainer.css('display') !== 'none';
+            }
+
+            $('.career-form-question').each(function() {
+                const $question = $(this);
+                const questionId = $question.data('question-id');
+                const questionKey = $question.data('question-key');
+                const fieldValue = $question.data('field-value');
+                const isReadonlyField = $question.data('is-readonly');
+                const debugInfo = $question.data('debug-info');
+
+                // Get the actual question text
+                const questionText = $question.find('.career-form-question-label').text().trim();
+
+                // Get the actual field value from the form
+                let actualFieldValue = null;
+                const $input = $question.find('input[type="text"], input[type="number"], input[type="email"], textarea');
+                const $select = $question.find('select');
+                const $radio = $question.find('input[type="radio"]:checked');
+                const $checkbox = $question.find('input[type="checkbox"]:checked');
+
+                if ($input.length) {
+                    actualFieldValue = $input.val();
+                } else if ($select.length) {
+                    actualFieldValue = $select.val();
+                } else if ($radio.length) {
+                    actualFieldValue = $radio.val();
+                } else if ($checkbox.length) {
+                    actualFieldValue = $checkbox.map(function() { return $(this).val(); }).get();
+                }
+
+                const isNested = $question.closest('.career-form-nested-questions').length > 0;
+                const isVisible = isQuestionVisible($question);
+                const parentQuestionId = $question.closest('.career-form-nested-questions').data('parent-question') || null;
+
+                const questionInfo = {
+                    questionId: questionId,
+                    questionKey: questionKey,
+                    questionText: questionText,
+                    fieldValueFromData: fieldValue,
+                    actualFieldValue: actualFieldValue,
+                    isReadonly: isReadonlyField,
+                    isNested: isNested,
+                    isVisible: isVisible,
+                    parentQuestionId: parentQuestionId,
+                    debugInfo: debugInfo
+                };
+
+                questionsData.push(questionInfo);
+
+                const nestedPrefix = isNested ? '[NESTED] ' : '';
+                console.log(`\n${nestedPrefix}Question ID: ${questionId} (Key: ${questionKey})`);
+                if (isNested) {
+                    console.log(`  Parent Question ID: ${parentQuestionId}`);
+                    console.log(`  Is Visible: ${isVisible}`);
+                }
+                console.log(`  Text: "${questionText}"`);
+                console.log(`  Value from data attribute:`, fieldValue);
+                console.log(`  Actual field value:`, actualFieldValue);
+                console.log(`  Is Readonly: ${isReadonlyField}`);
+                console.log(`  Debug Info:`, debugInfo);
+            });
+
+            // Debug: Check nested containers
+            console.log('\n=== NESTED CONTAINERS DEBUG ===');
+            $('.career-form-nested-questions').each(function() {
+                const $container = $(this);
+                const parentQuestionId = $container.data('parent-question');
+                const optionValue = $container.data('option-value');
+                const debugMatch = $container.data('debug-match');
+                const isVisible = $container.hasClass('show') || $container.css('display') !== 'none';
+                const questionCount = $container.find('.career-form-question').length;
+
+                console.log(`Nested Container:`);
+                console.log(`  Parent Question ID: ${parentQuestionId}`);
+                console.log(`  Option Value: "${optionValue}"`);
+                console.log(`  Is Visible: ${isVisible}`);
+                console.log(`  Questions inside: ${questionCount}`);
+                console.log(`  Debug Match Info:`, debugMatch);
+            });
+            console.log('=== END NESTED CONTAINERS DEBUG ===\n');
+
+            console.log('\n=== SUMMARY ===');
+            console.log(`Total questions found: ${questionsData.length}`);
+            console.log(`  - Nested questions: ${questionsData.filter(q => q.isNested).length}`);
+            console.log(`  - Visible nested questions: ${questionsData.filter(q => q.isNested && q.isVisible).length}`);
+            console.log(`  - Hidden nested questions: ${questionsData.filter(q => q.isNested && !q.isVisible).length}`);
+            console.log(`Total nested containers: ${$('.career-form-nested-questions').length}`);
+            console.log(`Visible nested containers: ${$('.career-form-nested-questions.show').length}`);
+            console.log(`Questions with values: ${questionsData.filter(q => q.actualFieldValue && q.actualFieldValue !== '').length}`);
+            console.log(`Questions with data values: ${questionsData.filter(q => q.fieldValueFromData !== null && q.fieldValueFromData !== '').length}`);
+            console.log(`Hidden nested questions with data:`, questionsData.filter(q => q.isNested && !q.isVisible && q.fieldValueFromData));
+            console.log('\n=== END DEBUG ===\n');
 
             // Function to make form editable
             function makeFormEditable() {
@@ -635,8 +821,94 @@
                     const originalHtml = $btn.html();
                     $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>{{ __('Submitting...') }}');
 
-                    // Collect all form data
-                    const formData = new FormData(this);
+                    // Collect form data, excluding hidden nested questions
+                    const formData = new FormData();
+                    const formDataObj = {};
+
+                    // Helper function to check if a field is in a visible nested container
+                    function isFieldVisible($field) {
+                        const $nestedContainer = $field.closest('.career-form-nested-questions');
+                        if ($nestedContainer.length === 0) {
+                            // Not in a nested container, so it's visible
+                            return true;
+                        }
+
+                        // Check if the nested container is visible
+                        if (!$nestedContainer.hasClass('show') && $nestedContainer.css('display') === 'none') {
+                            return false;
+                        }
+
+                        // Check if parent radio is selected
+                        const parentQuestionId = $nestedContainer.data('parent-question');
+                        const containerOptionValue = $nestedContainer.data('option-value');
+
+                        if (!parentQuestionId || !containerOptionValue) {
+                            return false;
+                        }
+
+                        // Find the checked radio for this parent question
+                        const $checkedRadio = $(`input[type="radio"][data-question-id="${parentQuestionId}"]:checked`);
+                        if ($checkedRadio.length === 0) {
+                            return false;
+                        }
+
+                        const selectedValue = String($checkedRadio.val()).trim().toLowerCase();
+                        const containerValue = String(containerOptionValue).trim().toLowerCase();
+
+                        return selectedValue === containerValue;
+                    }
+
+                    // Collect all form fields, excluding hidden nested questions
+                    $(this).find('input, select, textarea').each(function() {
+                        const $field = $(this);
+                        const name = $field.attr('name');
+
+                        if (!name || name === '_token') {
+                            return;
+                        }
+
+                        // Skip disabled/readonly fields that are not in readonly mode (they're hidden)
+                        if ($field.is(':disabled') && !isReadonly) {
+                            return;
+                        }
+
+                        // Skip fields in hidden nested containers
+                        if (!isFieldVisible($field)) {
+                            return;
+                        }
+
+                        // Collect the value
+                        if ($field.is(':checkbox')) {
+                            if ($field.is(':checked')) {
+                                if (!formDataObj[name]) {
+                                    formDataObj[name] = [];
+                                }
+                                formDataObj[name].push($field.val());
+                            }
+                        } else if ($field.is(':radio')) {
+                            if ($field.is(':checked')) {
+                                formDataObj[name] = $field.val();
+                            }
+                        } else {
+                            const value = $field.val();
+                            if (value !== null && value !== '') {
+                                formDataObj[name] = value;
+                            }
+                        }
+                    });
+
+                    // Convert object to FormData
+                    Object.keys(formDataObj).forEach(key => {
+                        const value = formDataObj[key];
+                        if (Array.isArray(value)) {
+                            value.forEach(v => formData.append(key + '[]', v));
+                        } else {
+                            formData.append(key, value);
+                        }
+                    });
+
+                    // Add CSRF token
+                    formData.append('_token', $('input[name="_token"]').val() || '{{ csrf_token() }}');
 
                     // Submit via AJAX
                     $.ajax({
@@ -754,6 +1026,24 @@
 
                     // Hide all nested questions for this parent question
                     const $allNested = $(`.career-form-nested-questions[data-parent-question="${questionId}"]`);
+
+                    // Clear values in nested questions that are being hidden
+                    $allNested.each(function() {
+                        const $nestedContainer = $(this);
+                        const containerOptionValue = $nestedContainer.data('option-value') || $nestedContainer.attr('data-option-value');
+                        const selectedValue = String(optionValue).trim().toLowerCase();
+                        const containerValue = String(containerOptionValue).trim().toLowerCase();
+
+                        // If this nested container doesn't match the selected option, clear its values
+                        if (containerValue !== selectedValue) {
+                            // Clear all input values in this nested container
+                            $nestedContainer.find('input[type="text"], input[type="number"], input[type="email"], textarea').val('');
+                            $nestedContainer.find('select').val('').prop('selectedIndex', 0);
+                            $nestedContainer.find('input[type="radio"]').prop('checked', false);
+                            $nestedContainer.find('input[type="checkbox"]').prop('checked', false);
+                        }
+                    });
+
                     $allNested.removeClass('show').css('display', 'none');
 
                     // Remove required from hidden nested questions
