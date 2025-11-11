@@ -1,32 +1,49 @@
 @php
-    $question = $questions[$item['question_id']] ?? null;
-    if (!$question) {
+    // Handle both snapshot questions (arrays) and current questions (objects)
+    $questionData = $questions[$item['question_id']] ?? null;
+    if (!$questionData) {
         return;
     }
 
-    $questionId = 'career_q_' . $question->id;
-    $required = $question->required ? '<span class="required">*</span>' : '';
-    $helpText = $question->help_text ? '<div class="career-form-question-help">' . e($question->help_text) . '</div>' : '';
+    // Normalize question data - handle both array (snapshot) and object (current) formats
+    if (is_array($questionData)) {
+        $questionId = 'career_q_' . $questionData['id'];
+        $questionText = $questionData['question'] ?? '';
+        $questionType = $questionData['type'] ?? 'text';
+        $questionOptions = $questionData['options'] ?? [];
+        $questionRequired = $questionData['required'] ?? false;
+        $questionHelpText = $questionData['help_text'] ?? null;
+    } else {
+        $questionId = 'career_q_' . $questionData->id;
+        $questionText = $questionData->question ?? '';
+        $questionType = $questionData->type ?? 'text';
+        $questionOptions = $questionData->options ?? [];
+        $questionRequired = $questionData->required ?? false;
+        $questionHelpText = $questionData->help_text ?? null;
+    }
+
+    $required = $questionRequired ? '<span class="required">*</span>' : '';
+    $helpText = $questionHelpText ? '<div class="career-form-question-help">' . e($questionHelpText) . '</div>' : '';
 
     // Check if form is readonly (submitted or explicitly set)
     $isReadonly = isset($isReadonly) ? $isReadonly : (isset($submittedData) && $submittedData !== null);
     $fieldValue = $isReadonly ? ($submittedData[$questionId] ?? null) : null;
 
     // For checkbox, get array of values
-    if ($isReadonly && $question->type === 'checkbox' && isset($submittedData[$questionId])) {
+    if ($isReadonly && $questionType === 'checkbox' && isset($submittedData[$questionId])) {
         $fieldValue = is_array($submittedData[$questionId]) ? $submittedData[$questionId] : [$submittedData[$questionId]];
     }
 @endphp
 
-<div class="career-form-question" data-question-id="{{ $question->id }}" data-depth="{{ $depth }}">
+<div class="career-form-question" data-question-id="{{ is_array($questionData) ? $questionData['id'] : $questionData->id }}" data-depth="{{ $depth }}">
     <label class="career-form-question-label">
-        {{ e($question->question) }}{!! $required !!}
+        {{ e($questionText) }}{!! $required !!}
     </label>
     {!! $helpText !!}
 
-    @if($question->type === 'radio' && !empty($question->options))
-        <div class="career-form-radio-group" data-question-id="{{ $question->id }}">
-            @foreach($question->options as $index => $option)
+    @if($questionType === 'radio' && !empty($questionOptions))
+        <div class="career-form-radio-group" data-question-id="{{ is_array($questionData) ? $questionData['id'] : $questionData->id }}">
+            @foreach($questionOptions as $index => $option)
                 @php
                     $optionValue = is_array($option) ? ($option['value'] ?? $option['label'] ?? '') : $option;
                     $optionLabel = is_array($option) ? ($option['label'] ?? $option['value'] ?? '') : $option;
@@ -37,11 +54,11 @@
                            id="{{ $optionId }}"
                            name="{{ $questionId }}"
                            value="{{ e($optionValue) }}"
-                           data-question-id="{{ $question->id }}"
+                           data-question-id="{{ is_array($questionData) ? $questionData['id'] : $questionData->id }}"
                            data-option-value="{{ e($optionValue) }}"
                            {{ ($isReadonly && $fieldValue == $optionValue) ? 'checked' : '' }}
                            {{ $isReadonly ? 'disabled' : '' }}
-                           {{ (!$isReadonly && $question->required) ? 'required' : '' }}>
+                           {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}>
                     <label for="{{ $optionId }}" style="cursor: {{ $isReadonly ? 'default' : 'pointer' }};">{{ e($optionLabel) }}</label>
                 </div>
             @endforeach
@@ -61,7 +78,7 @@
                         }
                     @endphp
                     <div class="career-form-nested-questions"
-                         data-parent-question="{{ $question->id }}"
+                         data-parent-question="{{ is_array($questionData) ? $questionData['id'] : $questionData->id }}"
                          data-option-value="{{ e($optionValueStr) }}"
                          style="display: {{ $shouldShow ? 'block' : 'none' }} !important;"
                          {{ $shouldShow ? 'class="show"' : '' }}>
@@ -73,10 +90,10 @@
             @endforeach
         @endif
 
-    @elseif($question->type === 'select' && !empty($question->options))
-        <select class="career-form-select" name="{{ $questionId }}" {{ $isReadonly ? 'disabled style="cursor: not-allowed !important;"' : '' }} {{ (!$isReadonly && $question->required) ? 'required' : '' }}>
+    @elseif($questionType === 'select' && !empty($questionOptions))
+        <select class="career-form-select" name="{{ $questionId }}" {{ $isReadonly ? 'disabled style="cursor: not-allowed !important;"' : '' }} {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}>
             <option value="">{{ __('-- Select an option --') }}</option>
-            @foreach($question->options as $option)
+            @foreach($questionOptions as $option)
                 @php
                     $optionValue = is_array($option) ? ($option['value'] ?? $option['label'] ?? '') : $option;
                     $optionLabel = is_array($option) ? ($option['label'] ?? $option['value'] ?? '') : $option;
@@ -86,24 +103,24 @@
             @endforeach
         </select>
 
-    @elseif($question->type === 'textarea')
+    @elseif($questionType === 'textarea')
         <textarea class="career-form-textarea"
                   name="{{ $questionId }}"
                   rows="4"
                   {{ $isReadonly ? 'readonly style="cursor: not-allowed !important;"' : '' }}
-                  {{ (!$isReadonly && $question->required) ? 'required' : '' }}
+                  {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}
                   placeholder="{{ __('Enter your answer') }}">{{ $isReadonly ? e($fieldValue) : '' }}</textarea>
 
-    @elseif($question->type === 'number')
+    @elseif($questionType === 'number')
         <input type="number"
                class="career-form-input"
                name="{{ $questionId }}"
                value="{{ $isReadonly ? e($fieldValue) : '' }}"
                {{ $isReadonly ? 'readonly style="cursor: not-allowed !important;"' : '' }}
-               {{ (!$isReadonly && $question->required) ? 'required' : '' }}
+               {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}
                placeholder="{{ __('Enter a number') }}">
 
-    @elseif($question->type === 'file')
+    @elseif($questionType === 'file')
         @if($isReadonly && $fieldValue)
             <div class="career-form-file-display">
                 <i class="fa-solid fa-file me-2"></i>{{ __('File uploaded: ') }}{{ basename($fieldValue) }}
@@ -112,13 +129,13 @@
             <input type="file"
                    class="career-form-input"
                    name="{{ $questionId }}"
-                   {{ (!$isReadonly && $question->required) ? 'required' : '' }}
+                   {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}
                    accept="*/*">
         @endif
 
-    @elseif($question->type === 'checkbox' && !empty($question->options))
+    @elseif($questionType === 'checkbox' && !empty($questionOptions))
         <div class="career-form-checkbox-group">
-            @foreach($question->options as $index => $option)
+            @foreach($questionOptions as $index => $option)
                 @php
                     $optionValue = is_array($option) ? ($option['value'] ?? $option['label'] ?? '') : $option;
                     $optionLabel = is_array($option) ? ($option['label'] ?? $option['value'] ?? '') : $option;
@@ -132,7 +149,7 @@
                            value="{{ e($optionValue) }}"
                            {{ $isChecked ? 'checked' : '' }}
                            {{ $isReadonly ? 'disabled' : '' }}
-                           {{ (!$isReadonly && $question->required) ? 'required' : '' }}>
+                           {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}>
                     <label for="{{ $optionId }}" style="cursor: {{ $isReadonly ? 'default' : 'pointer' }};">{{ e($optionLabel) }}</label>
                 </div>
             @endforeach
@@ -144,7 +161,7 @@
                name="{{ $questionId }}"
                value="{{ $isReadonly ? e($fieldValue) : '' }}"
                {{ $isReadonly ? 'readonly style="cursor: not-allowed !important;"' : '' }}
-               {{ (!$isReadonly && $question->required) ? 'required' : '' }}
+               {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}
                placeholder="{{ __('Enter your answer') }}">
     @endif
 </div>

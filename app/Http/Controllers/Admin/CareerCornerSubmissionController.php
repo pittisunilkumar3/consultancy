@@ -104,11 +104,23 @@ class CareerCornerSubmissionController extends Controller
             ->orderBy('id', 'desc')
             ->first();
 
-        // Load the form structure data
+        // Load the form structure data - use snapshot if available, otherwise current structure
         $formData = null;
         $questions = [];
+        $structureChanged = false;
 
-        if ($submission->formStructure) {
+        // Try to use snapshot first (preserves original form structure)
+        $snapshotData = $submission->getFormStructureData();
+        
+        if ($snapshotData && isset($snapshotData['structure']) && isset($snapshotData['questions'])) {
+            // Use snapshot data
+            $formData = $snapshotData['structure'];
+            $questions = collect($snapshotData['questions'])->keyBy('id');
+            
+            // Check if structure has changed
+            $structureChanged = $submission->hasStructureChanged();
+        } elseif ($submission->formStructure) {
+            // Fallback to current structure if no snapshot
             $formData = $submission->formStructure->loadNestedStructure();
             $questions = \App\Models\Question::orderBy('order')->get()->keyBy('id');
         }
@@ -121,6 +133,7 @@ class CareerCornerSubmissionController extends Controller
         $data['submittedData'] = $submission->form_data;
         $data['previousSubmission'] = $previousSubmission;
         $data['nextSubmission'] = $nextSubmission;
+        $data['structureChanged'] = $structureChanged;
 
         return view('admin.career-corner-submissions.show', $data);
     }

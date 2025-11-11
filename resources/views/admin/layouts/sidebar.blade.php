@@ -199,6 +199,7 @@
                             <ul class="zSidebar-submenu">
                                 <li><a class="{{ @$activeQuestion }}" href="{{route('admin.questions.index')}}">{{__('Questions')}}</a></li>
                                 <li><a class="{{ @$activeQuestionStructure }}" href="{{route('admin.form-structure.index')}}">{{__('Questions Structure')}}</a></li>
+                                <li><a class="{{ @$activeCriteriaFields }}" href="{{route('admin.university-criteria-fields.index')}}">{{__('University Criteria Fields')}}</a></li>
                             </ul>
                         </div>
                     </li>

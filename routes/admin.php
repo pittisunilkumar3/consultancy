@@ -38,6 +38,7 @@ use App\Http\Controllers\Admin\OnboardingFormSettingController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\QuestionController;
+use App\Http\Controllers\Admin\UniversityCriteriaFieldController;
 use App\Http\Controllers\Admin\CareerCornerSubmissionController;
 use App\Http\Controllers\Admin\ServiceOrderController;
 use App\Http\Controllers\Admin\ServiceOrderInvoiceController;
@@ -408,6 +409,15 @@ Route::group(['prefix' => 'questions', 'as' => 'questions.', 'middleware' => 'ca
     Route::post('update/{id}', [QuestionController::class, 'update'])->name('update');
     Route::delete('delete/{id}', [QuestionController::class, 'delete'])->name('delete');
     // further CRUD routes will be added later
+});
+
+// University Criteria Fields (admin)
+Route::group(['prefix' => 'university-criteria-fields', 'as' => 'university-criteria-fields.', 'middleware' => 'can:Manage Questions'], function () {
+    Route::get('', [UniversityCriteriaFieldController::class, 'index'])->name('index');
+    Route::post('store', [UniversityCriteriaFieldController::class, 'store'])->name('store');
+    Route::get('show/{id}', [UniversityCriteriaFieldController::class, 'show'])->name('show');
+    Route::post('update/{id}', [UniversityCriteriaFieldController::class, 'update'])->name('update');
+    Route::delete('delete/{id}', [UniversityCriteriaFieldController::class, 'delete'])->name('delete');
 });
 Route::group(['prefix' => 'form-structure', 'as' => 'form-structure.', 'middleware' => 'can:Manage Questions'], function () {
     Route::get('/', [FormStructureController::class, 'index'])->name('index');

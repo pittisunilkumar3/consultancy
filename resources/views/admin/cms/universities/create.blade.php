@@ -286,6 +286,50 @@
                                 </div>
                             </div>
                         </div>
+                        @if(isset($criteriaFields) && $criteriaFields->count() > 0)
+                        <div class="p-sm-25 p-15 bd-one bd-c-stroke mb-20 bd-ra-10 bg-white">
+                            <div class="bd-c-stroke-2 d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="fs-18 fw-700 lh-24">{{ __('Admission Criteria') }}</h4>
+                            </div>
+                            <div class="row rg-20">
+                                @foreach($criteriaFields as $criteriaField)
+                                <div class="col-md-6">
+                                    <label for="criteria_{{ $criteriaField->id }}" class="zForm-label-alt">
+                                        {{ $criteriaField->name }}
+                                        @if($criteriaField->description)
+                                        <small class="text-muted d-block">{{ $criteriaField->description }}</small>
+                                        @endif
+                                    </label>
+                                    @if($criteriaField->type === 'boolean')
+                                        <div class="zCheck form-switch">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="criteria_values[{{ $criteriaField->id }}]" 
+                                                   id="criteria_{{ $criteriaField->id }}" 
+                                                   value="1" 
+                                                   role="switch">
+                                            <label for="criteria_{{ $criteriaField->id }}" class="zForm-label-alt ms-2">
+                                                {{ $criteriaField->name }}
+                                            </label>
+                                        </div>
+                                    @elseif($criteriaField->type === 'number' || $criteriaField->type === 'decimal')
+                                        <input type="number" 
+                                               name="criteria_values[{{ $criteriaField->id }}]" 
+                                               id="criteria_{{ $criteriaField->id }}" 
+                                               class="form-control zForm-control-alt"
+                                               step="{{ $criteriaField->type === 'decimal' ? '0.01' : '1' }}"
+                                               placeholder="{{ __('Enter value') }}">
+                                    @else
+                                        <input type="text" 
+                                               name="criteria_values[{{ $criteriaField->id }}]" 
+                                               id="criteria_{{ $criteriaField->id }}" 
+                                               class="form-control zForm-control-alt"
+                                               placeholder="{{ __('Enter value') }}">
+                                    @endif
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
                         <div class="bd-c-stroke-2 justify-content-between align-items-center text-end pt-15">
                             <button type="submit" class="flipBtn sf-flipBtn-primary flex-shrink-0">{{__('Submit')}}</button>
                         </div>

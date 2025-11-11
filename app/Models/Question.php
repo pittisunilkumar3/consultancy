@@ -23,4 +23,20 @@ class Question extends Model
         'options' => 'array',
         'required' => 'boolean',
     ];
+
+    /**
+     * Get all criteria fields mapped to this question
+     */
+    public function criteriaFields()
+    {
+        return $this->belongsToMany(UniversityCriteriaField::class, 'question_criteria_mappings', 'question_id', 'criteria_field_id');
+    }
+
+    /**
+     * Get all criteria mappings for this question
+     */
+    public function criteriaMappings()
+    {
+        return $this->hasMany(QuestionCriteriaMapping::class, 'question_id');
+    }
 }

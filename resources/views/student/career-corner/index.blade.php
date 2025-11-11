@@ -382,6 +382,14 @@
     <div class="p-sm-30 p-15">
         @if(isset($formStructure) && $formStructure && isset($formData) && !empty($formData))
             @if(isset($submission) && $submission)
+                @if(isset($structureChanged) && $structureChanged)
+                    <div class="alert alert-warning mb-4">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                        <strong>{{ __('Form Structure Updated') }}</strong>
+                        <p class="mb-0 mt-2">{{ __('The form has been updated since you last submitted. Click "Change Preferences" to review and update your answers with the latest form structure.') }}</p>
+                    </div>
+                @endif
+
                 <div class="alert alert-success mb-4 d-flex justify-content-between align-items-center">
                     <div>
                         <i class="fa-solid fa-check-circle me-2"></i>
@@ -396,6 +404,73 @@
                         </button>
                     </div>
                 </div>
+
+                {{-- Matching Universities Section --}}
+                @if(isset($matchingUniversities) && $matchingUniversities->count() > 0)
+                <div class="career-form-section mb-4" id="matchingUniversitiesSection">
+                    <h3 class="career-form-section-title mb-3">
+                        <i class="fa-solid fa-graduation-cap me-2"></i>{{ __('Recommended Universities Based on Your Profile') }}
+                    </h3>
+                    <p class="career-form-section-description mb-4">
+                        {{ __('Based on your submitted information, here are universities that match your profile:') }}
+                    </p>
+                    <div class="row rg-15" id="matchingUniversitiesList">
+                        @foreach($matchingUniversities as $university)
+                            <div class="col-xl-3 col-md-4 col-sm-6">
+                                <div class="course-item-two">
+                                    <a href="{{ route('universities.details', $university->slug) }}" class="img" target="_blank">
+                                        <img src="{{getFileUrl($university->thumbnail_image)}}"
+                                             alt="{{$university->name}}" style="height: 180px; object-fit: cover; width: 100%;"/>
+                                    </a>
+                                    <div class="course-content">
+                                        <div class="text-content">
+                                            <a href="{{ route('universities.details', $university->slug) }}"
+                                               class="title" target="_blank">{{$university->name}}</a>
+                                            @if($university->country)
+                                                <p class="author">{{$university->country->name}}</p>
+                                            @endif
+                                        </div>
+                                        <ul class="list zList-pb-6">
+                                            @if($university->world_ranking)
+                                                <li class="item">
+                                                    <div class="icon d-flex">
+                                                        <img src="{{asset('assets/images/icon/world-ranking.svg')}}" alt=""/>
+                                                    </div>
+                                                    <p class="text">{{__('World Ranking')}}: {{$university->world_ranking}}</p>
+                                                </li>
+                                            @endif
+                                            @if($university->international_student)
+                                                <li class="item">
+                                                    <div class="icon d-flex">
+                                                        <img src="{{asset('assets/images/icon/international-students.svg')}}" alt=""/>
+                                                    </div>
+                                                    <p class="text">{{__('International Students')}}: {{$university->international_student}}</p>
+                                                </li>
+                                            @endif
+                                        </ul>
+                                        <a href="{{route('universities.details', $university->slug)}}"
+                                           class="link" target="_blank">{{__('View Details')}}<i class="fa-solid fa-arrow-right"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="text-center mt-4">
+                        <a href="{{ route('student.universities.index') }}" class="flipBtn sf-flipBtn-primary">
+                            <i class="fa-solid fa-search me-2"></i>{{ __('View All Universities') }}
+                        </a>
+                    </div>
+                </div>
+                @elseif(isset($matchingUniversities) && $matchingUniversities->count() === 0 && isset($submission))
+                <div class="alert alert-info mb-4" id="noMatchingUniversitiesAlert">
+                    <i class="fa-solid fa-info-circle me-2"></i>
+                    <strong>{{ __('No Matching Universities Found') }}</strong>
+                    <p class="mb-0 mt-2">{{ __('We couldn\'t find any universities matching your current profile. Please try updating your preferences or contact our support team for assistance.') }}</p>
+                    <a href="{{ route('student.universities.index') }}" class="btn btn-outline-primary btn-sm mt-3">
+                        <i class="fa-solid fa-search me-1"></i>{{ __('Browse All Universities') }}
+                    </a>
+                </div>
+                @endif
             @endif
 
             <form id="careerCornerForm" method="POST" action="{{ route('student.career-corner.submit') }}">
@@ -466,6 +541,10 @@
                     }
                 });
 
+                // Hide matching universities section when editing
+                $('#matchingUniversitiesSection').slideUp(300);
+                $('#noMatchingUniversitiesAlert').slideUp(300);
+
                 // Hide change preferences button and show cancel button
                 $('#changePreferencesBtn').hide();
                 $('#cancelEditBtn').show();
@@ -504,6 +583,10 @@
             // Function to revert form back to readonly mode
             function revertToReadonlyMode() {
                 isReadonly = true;
+
+                // Show matching universities section again when canceling edit
+                $('#matchingUniversitiesSection').slideDown(300);
+                $('#noMatchingUniversitiesAlert').slideDown(300);
 
                 // Store current form values before reverting
                 const formValues = {};
@@ -572,6 +655,10 @@
                                 } else {
                                     alert(response.message || '{{ __('Form submitted successfully!') }}');
                                 }
+
+                                // Refresh matching universities after submission
+                                refreshMatchingUniversities();
+
                                 // Reload page to show submitted form in readonly mode
                                 setTimeout(function() {
                                     window.location.reload();
@@ -741,6 +828,23 @@
 
             // Also handle on page load - check if any radio is already selected
             $('input[type="radio"][data-question-id]:checked').trigger('change');
+
+            // Function to refresh matching universities via AJAX (optional - page reloads anyway)
+            function refreshMatchingUniversities() {
+                // This function is called after form submission
+                // Since we reload the page, universities will be refreshed automatically
+                // But we can use this for future AJAX updates if needed
+                $.ajax({
+                    url: '{{ route("student.career-corner.matching-universities") }}',
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.status && response.data) {
+                            // Universities will be updated on page reload
+                            // This is just a placeholder for future AJAX updates
+                        }
+                    }
+                });
+            }
         });
     </script>
 @endpush

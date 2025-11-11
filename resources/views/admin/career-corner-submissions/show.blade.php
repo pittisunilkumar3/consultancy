@@ -157,6 +157,14 @@
     </div>
 
     <div class="p-sm-30 p-15">
+        @if(isset($structureChanged) && $structureChanged)
+            <div class="alert alert-warning mb-4">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                <strong>{{ __('Form Structure Changed') }}</strong>
+                <p class="mb-0 mt-2">{{ __('The form structure has been modified since this submission was made. The data displayed below reflects the form structure at the time of submission.') }}</p>
+            </div>
+        @endif
+
         @if(isset($submission) && $submission)
             <div class="submission-info">
                 <h5 class="mb-3">{{ __('Submission Information') }}</h5>
