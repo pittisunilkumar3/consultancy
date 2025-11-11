@@ -6,9 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class FormStructure extends Model
 {
-    protected $fillable = ['name', 'slug', 'meta'];
+    protected $fillable = ['name', 'slug', 'meta', 'is_published'];
     protected $casts = [
         'meta' => 'array',
+        'is_published' => 'boolean',
     ];
 
     /**
@@ -52,56 +53,81 @@ class FormStructure extends Model
 
     /**
      * Load the complete nested structure including questions and sections
+     * Returns elements in order (sections and standalone items mixed)
      */
     public function loadNestedStructure()
     {
         $result = [];
         
-        // Load sections with their items
-        $sections = $this->sections()->get();
+        // Load sections with their items, ordered by order field
+        $sections = $this->sections()->orderBy('order')->get();
         
-        foreach ($sections as $section) {
-            // Load top-level items in this section
-            $items = $this->topLevelItemsInSection($section->id)
-                ->with(['question'])
-                ->get();
-            
-            // Recursively load all nested children
-            $items->each(function ($item) {
-                $this->loadItemChildren($item);
-            });
-            
-            $result[] = [
-                'type' => 'section',
-                'id' => $section->id,
-                'name' => $section->name,
-                'description' => $section->description,
-                'order' => $section->order,
-                'is_collapsible' => $section->is_collapsible,
-                'is_expanded_by_default' => $section->is_expanded_by_default,
-                'items' => $items->map(function ($item) {
-                    return $item->toNestedArray();
-                })
-            ];
-        }
-        
-        // Load standalone items (not in any section)
+        // Load standalone items, ordered by order field
         $standaloneItems = $this->topLevelItems()
             ->with(['question'])
+            ->orderBy('order')
             ->get();
         
-        // Recursively load all nested children
+        // Recursively load all nested children for standalone items
         $standaloneItems->each(function ($item) {
             $this->loadItemChildren($item);
         });
         
-        if ($standaloneItems->isNotEmpty()) {
-            $result[] = [
-                'type' => 'items',
-                'items' => $standaloneItems->map(function ($item) {
-                    return $item->toNestedArray();
-                })
-            ];
+        // Create a map of sections by order
+        $sectionsByOrder = [];
+        foreach ($sections as $section) {
+            $sectionsByOrder[$section->order] = $section;
+        }
+        
+        // Create a map of standalone items by order
+        $itemsByOrder = [];
+        foreach ($standaloneItems as $item) {
+            $itemsByOrder[$item->order] = $item;
+        }
+        
+        // Get all order values and sort them
+        $allOrders = array_unique(array_merge(array_keys($sectionsByOrder), array_keys($itemsByOrder)));
+        sort($allOrders);
+        
+        // Build result in order
+        foreach ($allOrders as $order) {
+            // Check if there's a section at this order
+            if (isset($sectionsByOrder[$order])) {
+                $section = $sectionsByOrder[$order];
+                
+                // Load top-level items in this section
+                $items = $this->topLevelItemsInSection($section->id)
+                    ->with(['question'])
+                    ->get();
+                
+                // Recursively load all nested children
+                $items->each(function ($item) {
+                    $this->loadItemChildren($item);
+                });
+                
+                $result[] = [
+                    'type' => 'section',
+                    'id' => $section->id,
+                    'name' => $section->name,
+                    'description' => $section->description,
+                    'order' => $section->order,
+                    'is_collapsible' => $section->is_collapsible,
+                    'is_expanded_by_default' => $section->is_expanded_by_default,
+                    'items' => $items->map(function ($item) {
+                        return $item->toNestedArray();
+                    })
+                ];
+            }
+            
+            // Check if there's a standalone item at this order
+            if (isset($itemsByOrder[$order])) {
+                $item = $itemsByOrder[$order];
+                $result[] = [
+                    'type' => 'item',
+                    'order' => $item->order,
+                    'item' => $item->toNestedArray()
+                ];
+            }
         }
         
         return $result;
