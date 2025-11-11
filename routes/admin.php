@@ -38,6 +38,7 @@ use App\Http\Controllers\Admin\OnboardingFormSettingController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\QuestionController;
+use App\Http\Controllers\Admin\CareerCornerSubmissionController;
 use App\Http\Controllers\Admin\ServiceOrderController;
 use App\Http\Controllers\Admin\ServiceOrderInvoiceController;
 use App\Http\Controllers\Admin\ServiceOrderTaskBoardController;
@@ -413,6 +414,12 @@ Route::group(['prefix' => 'form-structure', 'as' => 'form-structure.', 'middlewa
     Route::get('/{id}', [FormStructureController::class, 'getStructure'])->name('get');
     Route::post('/{id}/save', [FormStructureController::class, 'saveStructure'])->name('save');
     Route::post('/{id}/toggle-publish', [FormStructureController::class, 'togglePublish'])->name('toggle-publish');
+});
+
+// Career Corner Submissions (admin)
+Route::group(['prefix' => 'career-corner-submissions', 'as' => 'career-corner-submissions.', 'middleware' => 'can:Manage Career Corner Submissions'], function () {
+    Route::get('/', [CareerCornerSubmissionController::class, 'index'])->name('index');
+    Route::get('/{id}', [CareerCornerSubmissionController::class, 'show'])->name('show');
 });
 
 Route::get('service-orders', [ServiceOrderController::class, 'index'])->name('service_orders')->middleware('can:Manage Service');

@@ -10,9 +10,9 @@ window.showPreview = function() {
         }, 100);
         return;
     }
-    
+
     const $ = jQuery;
-    
+
     // Check if required functions are available, if not wait
     if (typeof window.serializeStructure !== 'function') {
         setTimeout(function() {
@@ -20,7 +20,7 @@ window.showPreview = function() {
         }, 100);
         return;
     }
-    
+
     // Get current structure from canvas
     let structureData;
     try {
@@ -29,11 +29,11 @@ window.showPreview = function() {
         console.error('Error serializing structure:', e);
         structureData = { sections: [], items: [] };
     }
-    
+
     // Show modal
     const $modal = $('#previewModal');
     const $container = $('#previewFormContainer');
-    
+
     // Check if modal exists
     if ($modal.length === 0) {
         if (typeof toastr !== 'undefined') {
@@ -43,7 +43,7 @@ window.showPreview = function() {
         }
         return;
     }
-    
+
     // Clear and show loading
     $container.html(`
         <div class="text-center py-5">
@@ -53,11 +53,11 @@ window.showPreview = function() {
             <p class="mt-3 text-muted">Loading preview...</p>
         </div>
     `);
-    
+
     // Remove any existing backdrops first to prevent stacking
     $('.modal-backdrop').remove();
     $('body').removeClass('modal-open').css('padding-right', '');
-    
+
     // Try Bootstrap 5 Modal API first, fallback to jQuery
     try {
         if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
@@ -71,14 +71,14 @@ window.showPreview = function() {
                 });
             }
             modalInstance.show();
-            
+
             // Apply blur effect after modal is shown
             setTimeout(function() {
                 applyModalBlur();
             }, 100);
         } else if (typeof $.fn.modal !== 'undefined') {
             $modal.modal('show');
-            
+
             // Apply blur effect after modal is shown
             $modal.on('shown.bs.modal', function() {
                 applyModalBlur();
@@ -102,11 +102,11 @@ window.showPreview = function() {
         }
         applyModalBlur();
     }
-    
+
     // Function to apply blur effects to entire page (defined globally)
     window.applyModalBlur = function() {
         const $ = jQuery;
-        
+
         // FIRST: Explicitly remove blur from modal BEFORE applying blur to other elements
         $('#previewModal, #previewModal *').css({
             'filter': 'none',
@@ -114,7 +114,7 @@ window.showPreview = function() {
             'backdrop-filter': 'none',
             '-webkit-backdrop-filter': 'none'
         });
-        
+
         // Ensure backdrop has blur (but backdrop itself is not blurred)
         $('.modal-backdrop').css({
             'backdrop-filter': 'blur(10px)',
@@ -123,7 +123,7 @@ window.showPreview = function() {
             'filter': 'none',
             '-webkit-filter': 'none'
         });
-        
+
         // DON'T blur wrappers - blur only specific children to avoid affecting modal
         // Blur sidebar specifically (including zSidebar)
         $('.zSidebar, .zMain-wrap > .sidebar, .zMain-wrap > aside, .sidebar, aside').not('#previewModal').not('#previewModal *').css({
@@ -131,14 +131,14 @@ window.showPreview = function() {
             'pointer-events': 'none',
             'transition': 'filter 0.4s ease'
         });
-        
+
         // Blur navigation/header inside zMainContent but NOT the modal
         $('.zMainContent > nav, .zMainContent > .navbar, .zMainContent > header').not('#previewModal').css({
             'filter': 'blur(5px)',
             'pointer-events': 'none',
             'transition': 'filter 0.4s ease'
         });
-        
+
         // Blur content sections inside zMainContent but NOT the modal
         // Find all direct children of zMainContent except modal
         $('.zMainContent').children().not('#previewModal').not('.modal').not('.modal-backdrop').each(function() {
@@ -150,7 +150,7 @@ window.showPreview = function() {
                 });
             }
         });
-        
+
         // Also blur any nested content divs but exclude modal
         $('.zMainContent div, .zMainContent section').not('#previewModal').not('#previewModal *').not('.modal').not('.modal *').each(function() {
             // Skip if this element or any parent is the modal
@@ -162,7 +162,7 @@ window.showPreview = function() {
                 });
             }
         });
-        
+
         // CRITICAL: Explicitly ensure modal is NOT blurred - use inline styles with !important
         function removeModalBlur() {
             // Use attr to set inline style with !important (jQuery can't do !important directly)
@@ -172,7 +172,7 @@ window.showPreview = function() {
                 this.style.setProperty('backdrop-filter', 'none', 'important');
                 this.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
             });
-            
+
             // Apply to all children
             $('#previewModal *').each(function() {
                 this.style.setProperty('filter', 'none', 'important');
@@ -180,7 +180,7 @@ window.showPreview = function() {
                 this.style.setProperty('backdrop-filter', 'none', 'important');
                 this.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
             });
-            
+
             // Also ensure modal dialog and content are not blurred
             $('.modal-dialog, .modal-content, .modal-header, .modal-body, .modal-footer').each(function() {
                 this.style.setProperty('filter', 'none', 'important');
@@ -189,57 +189,57 @@ window.showPreview = function() {
                 this.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
             });
         }
-        
+
         // Apply immediately
         removeModalBlur();
-        
+
         // Apply again after short delay
         setTimeout(removeModalBlur, 10);
-        
+
         // Apply again after longer delay to ensure it sticks
         setTimeout(removeModalBlur, 100);
         setTimeout(removeModalBlur, 300);
     };
-    
+
     // Function to remove blur effects from entire page (defined globally)
     window.removeModalBlur = function() {
         const $ = jQuery;
-        
+
         // Remove blur from sidebar (including zSidebar)
         $('.zSidebar, .zMain-wrap > .sidebar, .zMain-wrap > aside, .sidebar, aside').css({
             'filter': '',
             'pointer-events': '',
             'transition': ''
         });
-        
+
         // Remove blur from navigation/header
         $('.zMainContent > nav, .zMainContent > .navbar, .zMainContent > header').css({
             'filter': '',
             'pointer-events': '',
             'transition': ''
         });
-        
+
         // Remove blur from all direct children of zMainContent
         $('.zMainContent').children().css({
             'filter': '',
             'pointer-events': '',
             'transition': ''
         });
-        
+
         // Remove blur from all nested divs and sections
         $('.zMainContent div, .zMainContent section').css({
             'filter': '',
             'pointer-events': '',
             'transition': ''
         });
-        
+
         // Remove blur from any other elements that might have been blurred
         $('body > *:not(.modal):not(.modal-backdrop)').css({
             'filter': '',
             'pointer-events': '',
             'transition': ''
         });
-        
+
         // Also remove inline styles that were set with setProperty
         $('.zSidebar, .zMain-wrap, .sidebar, aside, .zMainContent, nav, .navbar, header').each(function() {
             this.style.removeProperty('filter');
@@ -248,7 +248,7 @@ window.showPreview = function() {
             this.style.removeProperty('-webkit-backdrop-filter');
         });
     };
-    
+
     // Render preview - wait for renderPreview to be available
     const renderPreviewWithRetry = function(attempts) {
         attempts = attempts || 0;
@@ -271,7 +271,7 @@ window.showPreview = function() {
     // Global state
     let structure = null;
     let availableQuestions = [];
-    
+
     // Get base URL from meta tag
     const baseUrl = $('meta[name="base-url"]').attr('content') || '';
 
@@ -302,7 +302,7 @@ window.showPreview = function() {
                 const container = document.getElementById('availableQuestions');
                 const rect = container.getBoundingClientRect();
                 const scrollTop = container.scrollTop;
-                
+
                 // Scroll up or down based on position
                 if (offsetY < rect.top + 50) {
                     container.scrollTop = scrollTop - 10;
@@ -335,7 +335,7 @@ window.showPreview = function() {
                 const canvas = document.getElementById('formCanvas');
                 const rect = canvas.getBoundingClientRect();
                 const scrollTop = canvas.scrollTop;
-                
+
                 // Scroll up or down based on position
                 if (offsetY < rect.top + 50) {
                     canvas.scrollTop = scrollTop - 10;
@@ -361,9 +361,9 @@ window.showPreview = function() {
                             scroll: true,
                             scrollSensitivity: 100,
                             scrollSpeed: 10,
-                            onAdd: function(evt) {
-                                const item = evt.item;
-                                if ($(item).data('source') === 'available') {
+            onAdd: function(evt) {
+                const item = evt.item;
+                if ($(item).data('source') === 'available') {
                                     initializeNewItem(item);
                                 }
                             }
@@ -392,7 +392,7 @@ window.showPreview = function() {
                 window.showPreview();
             }
         });
-        
+
         // Create section button handler
         $('#createSection').on('click', function() {
             createNewSection();
@@ -412,7 +412,7 @@ window.showPreview = function() {
             const $section = $(this).closest('.form-section');
             const $content = $section.find('.section-content');
             const $icon = $(this).find('i');
-            
+
             $content.toggleClass('collapsed');
             $icon.toggleClass('fa-chevron-down fa-chevron-up');
         });
@@ -438,10 +438,10 @@ window.showPreview = function() {
                 if (response.status) {
                     structure = response.data.structure;
                     availableQuestions = response.data.available_questions;
-                    
+
                     // Render available questions
                     renderAvailableQuestions();
-                    
+
                     // Render current structure
                     renderStructure(response.data.items);
                     // Ensure counts and levels are updated after render
@@ -460,12 +460,12 @@ window.showPreview = function() {
     function initSortable(element, options = {}) {
         const el = typeof element === 'string' ? document.querySelector(element) : element;
         if (!el) return null;
-        
+
         // Get container info for logging
         const $container = $(el).closest('.option-container');
         const optionValue = $container.length ? $container.data('option') : 'root';
         const parentQuestionId = $container.closest('.question-item').data('id') || 'unknown';
-        
+
         return new Sortable(el, {
             group: {
                 name: 'shared',
@@ -484,7 +484,7 @@ window.showPreview = function() {
                 // Scroll the parent container
                 const rect = el.getBoundingClientRect();
                 const scrollTop = el.scrollTop;
-                
+
                 // Scroll up or down based on position
                 if (offsetY < rect.top + 50) {
                     el.scrollTop = scrollTop - 10;
@@ -562,7 +562,7 @@ window.showPreview = function() {
     // Initialize a newly added item
     function initializeNewItem(item) {
         const questionId = $(item).data('id');
-        const question = window.questions.find(q => q.id === questionId) || 
+        const question = window.questions.find(q => q.id === questionId) ||
                         availableQuestions.find(q => q.id === questionId);
         if (!question) {
             console.error('❌ Question not found:', questionId);
@@ -573,7 +573,7 @@ window.showPreview = function() {
         // Replace clone with proper template
         const $newItem = $(renderQuestionItem(question));
         $(item).replaceWith($newItem);
-        
+
         // Add fade-in animation
         $newItem.css('opacity', '0').animate({ opacity: 1 }, 300);
 
@@ -622,7 +622,7 @@ window.showPreview = function() {
                 });
             });
         }
-        
+
         updateDepthLevels();
     }
 
@@ -630,9 +630,9 @@ window.showPreview = function() {
     function initializeNestedSortable($item) {
         // If it's a radio question, initialize option containers
         const questionId = $item.data('id');
-        const question = window.questions.find(q => q.id === questionId) || 
+        const question = window.questions.find(q => q.id === questionId) ||
                         availableQuestions.find(q => q.id === questionId);
-        
+
         if (question && question.type === 'radio' && question.options) {
             // Init sortable for each option container
             $item.find('.option-list').each(function() {
@@ -675,7 +675,7 @@ window.showPreview = function() {
             });
         }
     }
-    
+
     // Update depth level indicators for nested option containers
     function updateDepthLevels() {
         $('.option-container').each(function() {
@@ -693,7 +693,7 @@ window.showPreview = function() {
             $(this).attr('data-level', level);
         });
     }
-    
+
     // Update question count badges in sections
     function updateSectionQuestionCounts() {
         $('.form-section').each(function() {
@@ -702,7 +702,7 @@ window.showPreview = function() {
             // Count only top-level question items directly in section content
             const count = $content.children('.question-item').length;
             let $badge = $section.find('.section-question-count');
-            
+
             if (count > 0) {
                 if ($badge.length === 0) {
                     $badge = $('<span class="section-question-count"></span>');
@@ -718,11 +718,11 @@ window.showPreview = function() {
     // Render the list of available questions
     function renderAvailableQuestions() {
         const $list = $('#availableQuestions').empty();
-        
+
         availableQuestions.forEach(question => {
             const $item = $(
-                `<div class="question-item d-flex align-items-start" 
-                      data-id="${question.id}" 
+                `<div class="question-item d-flex align-items-start"
+                      data-id="${question.id}"
                       data-source="available">
                     <span class="handle me-2">
                         <i class="fa-solid fa-grip-lines"></i>
@@ -749,18 +749,18 @@ window.showPreview = function() {
     // Render option containers for radio questions
     function renderOptionContainers(options) {
         if (!Array.isArray(options)) return $();
-        
+
         const containers = options.map(option => {
             const value = typeof option === 'object' ? option.value : option;
             const label = typeof option === 'object' ? option.label : option;
-            
+
             const $container = $($('#optionContainerTemplate').html());
             $container.attr('data-option', value);
             $container.find('.option-value').text(label);
-            
+
             return $container;
         });
-        
+
         // Return all containers as a single jQuery object
         return $($.map(containers, function(container) {
             return container.get();
@@ -772,7 +772,7 @@ window.showPreview = function() {
         const $template = $($('#sectionTemplate').html());
         const $canvas = $('#formCanvas');
         $canvas.append($template);
-        
+
         // Initialize sortable for the section content
         const $sectionContent = $template.find('.section-content');
         initSortable($sectionContent[0], {
@@ -812,7 +812,7 @@ window.showPreview = function() {
                 updateDepthLevels();
             }
         });
-        
+
         // Focus on the section name input
         $template.find('.section-name-input').focus();
         updateSectionQuestionCounts();
@@ -853,9 +853,9 @@ window.showPreview = function() {
         const $template = $($('#sectionTemplate').html());
         $template.attr('data-section-id', sectionData.id || '');
         $template.find('.section-name-input').val(sectionData.name || '');
-        
+
         const $sectionContent = $template.find('.section-content');
-        
+
         // Render items in this section
         if (sectionData.items && sectionData.items.length > 0) {
             sectionData.items.forEach((item) => {
@@ -864,7 +864,7 @@ window.showPreview = function() {
                 $sectionContent.append($item);
             });
         }
-        
+
         // Initialize sortable for section content
         initSortable($sectionContent[0], {
             group: {
@@ -903,37 +903,37 @@ window.showPreview = function() {
                 updateDepthLevels();
             }
         });
-        
+
         // Set collapsed state
         if (sectionData.is_expanded_by_default === false) {
             $sectionContent.addClass('collapsed');
             $template.find('.section-toggle i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
         }
-        
+
         // Update question count for this section
         setTimeout(() => {
             updateSectionQuestionCounts();
         }, 100);
-        
+
         return $template;
     }
 
     // Render the current structure
     function renderStructure(data) {
         const $canvas = $('#formCanvas').empty();
-        
+
         // Data can be array of sections/items or legacy format
         if (!Array.isArray(data)) {
             data = [];
         }
-        
+
         // Sort by order if available to ensure correct order
         data.sort((a, b) => {
             const orderA = a.order !== undefined ? a.order : (a.type === 'section' ? 0 : 999);
             const orderB = b.order !== undefined ? b.order : (b.type === 'section' ? 0 : 999);
             return orderA - orderB;
         });
-        
+
         data.forEach((element) => {
             if (element.type === 'section') {
                 // Render section
@@ -948,10 +948,10 @@ window.showPreview = function() {
                 // Render standalone items (legacy format or items without section)
                 const items = element.items || [];
                 items.forEach((item) => {
-                    const $item = $(renderQuestionItem(item.question));
+            const $item = $(renderQuestionItem(item.question));
                     renderNestedItems($item, item, 0);
-                    $canvas.append($item);
-                });
+            $canvas.append($item);
+        });
             } else if (element.question) {
                 // Legacy format - single item
                 const $item = $(renderQuestionItem(element.question));
@@ -959,10 +959,10 @@ window.showPreview = function() {
                 $canvas.append($item);
             }
         });
-        
+
         // Initialize section sortables
         initSectionSortables();
-        
+
         // Update depth levels and question counts
         updateDepthLevels();
         updateSectionQuestionCounts();
@@ -1001,26 +1001,26 @@ window.showPreview = function() {
                     const optionValue = $(this).data('option');
                     availableOptions[optionValue] = $(this).find('.option-list');
                 });
-                
+
                 Object.entries(item.children).forEach(([optionValue, child]) => {
                     // Try exact match first
                     let $container = availableOptions[optionValue];
-                    
+
                     // If not found, try case-insensitive match
                     if (!$container || $container.length === 0) {
-                        const matchingKey = Object.keys(availableOptions).find(key => 
+                        const matchingKey = Object.keys(availableOptions).find(key =>
                             key.toLowerCase() === optionValue.toLowerCase()
                         );
                         if (matchingKey) {
                             $container = availableOptions[matchingKey];
                         }
                     }
-                    
+
                     if ($container && $container.length > 0 && child.items && child.items.length > 0) {
                         child.items.forEach((childItem) => {
                             const $childItem = $(renderQuestionItem(childItem.question));
                             $container.append($childItem);
-                            
+
                             // Recursively render nested items for this child
                             renderNestedItems($childItem, childItem, depth + 1);
                         });
@@ -1028,7 +1028,7 @@ window.showPreview = function() {
                 });
             }
         }
-        
+
         // Update depth levels after rendering nested items
         updateDepthLevels();
     }
@@ -1036,8 +1036,8 @@ window.showPreview = function() {
     // Recursively serialize a question item and its nested children
     function serializeItem($item, order, depth = 0) {
         const questionId = $item.data('id');
-        
-        const item = {
+
+            const item = {
             question_id: questionId,
             order: order
         };
@@ -1048,20 +1048,20 @@ window.showPreview = function() {
         const $flexGrow = $item.children('.flex-grow-1');
         if ($flexGrow.length) {
             const $optionContainers = $flexGrow.children('.option-containers').children('.option-container');
-            
+
             if ($optionContainers.length) {
                 item.children = {};
-                
+
                 $optionContainers.each(function() {
                     const $container = $(this);
                     const optionValue = $container.data('option');
                     const childItems = [];
-                    
+
                     // Get direct children of .option-list (only immediate .question-item children)
                     const $optionList = $container.children('.option-list');
                     if ($optionList.length) {
                         const $directChildren = $optionList.children('.question-item');
-                        
+
                         $directChildren.each(function(childIndex) {
                             // Recursively serialize this child item
                             // This will handle nested option containers within the child
@@ -1069,7 +1069,7 @@ window.showPreview = function() {
                             childItems.push(childItem);
                         });
                     }
-                    
+
                     if (childItems.length) {
                         item.children[optionValue] = { items: childItems };
                     }
@@ -1083,11 +1083,11 @@ window.showPreview = function() {
     // Serialize the current structure for saving
     function serializeStructure() {
         const orderedElements = [];
-        
+
         // Process all elements in canvas (sections and standalone items) - preserve order
         $('#formCanvas > *').each(function(index) {
             const $element = $(this);
-            
+
             if ($element.hasClass('form-section')) {
                 // This is a section
                 const sectionName = $element.find('.section-name-input').val().trim();
@@ -1095,7 +1095,7 @@ window.showPreview = function() {
                     // Skip sections without names
                     return;
                 }
-                
+
                 const sectionData = {
                     type: 'section',
                     order: index,
@@ -1105,14 +1105,14 @@ window.showPreview = function() {
                     is_expanded_by_default: !$element.find('.section-content').hasClass('collapsed'),
                     items: []
                 };
-                
+
                 // Serialize items in this section
                 const $sectionContent = $element.find('.section-content');
                 $sectionContent.children('.question-item').each(function(itemIndex) {
                     const item = serializeItem($(this), itemIndex, 0);
                     sectionData.items.push(item);
                 });
-                
+
                 orderedElements.push(sectionData);
             } else if ($element.hasClass('question-item')) {
                 // This is a standalone item (not in a section)
@@ -1129,7 +1129,7 @@ window.showPreview = function() {
             elements: orderedElements
         };
     }
-    
+
     // Expose serializeStructure globally AFTER it's defined
     window.serializeStructure = serializeStructure;
 
@@ -1138,11 +1138,11 @@ window.showPreview = function() {
         const $btn = $('#saveStructure').prop('disabled', true);
         const $icon = $btn.find('i').removeClass('fa-save').addClass('fa-spinner fa-spin');
         const $canvas = $('#formCanvas');
-        
+
         // Add loading overlay
         const $overlay = $('<div class="loading-overlay"><div class="spinner"></div></div>');
         $canvas.css('position', 'relative').append($overlay);
-        
+
         $.ajax({
             url: `${baseUrl}/admin/form-structure/${window.structureId}/save`,
             method: 'POST',
@@ -1158,25 +1158,25 @@ window.showPreview = function() {
                 setTimeout(() => {
                     $('.form-section').removeClass('saved');
                 }, 600);
-                
+
                 // Flash success
                 $canvas.addClass('success-flash');
                 setTimeout(() => {
                     $canvas.removeClass('success-flash');
                 }, 600);
-                
+
                 toastr.success('Form structure saved successfully');
-                
+
                 // Refresh the structure from server
                 renderStructure(response.data.items);
-                
+
                 // Update counts and depth levels
                 updateSectionQuestionCounts();
                 updateDepthLevels();
             } else {
                 console.error('Error saving structure:', response.message);
                 toastr.error(response.message || 'Error saving structure');
-                
+
                 // Shake animation on error
                 $('.form-section').addClass('shake');
                 setTimeout(() => {
@@ -1187,7 +1187,7 @@ window.showPreview = function() {
         .fail(function(xhr, status, error) {
             console.error('Error saving structure:', status, error);
             toastr.error('Error saving structure');
-            
+
             // Shake animation on error
             $('.form-section').addClass('shake');
             setTimeout(() => {
@@ -1200,17 +1200,17 @@ window.showPreview = function() {
             $overlay.remove();
         });
     }
-    
+
     // showPreview is now defined at the top of the file and exposed to window
     // This function definition is kept for backward compatibility but the global one is used
-    
+
     // Render the preview form
     function renderPreview(structureData, $container) {
         // Check if new format (elements array) or old format (sections/items)
         const hasElements = structureData.elements && Array.isArray(structureData.elements) && structureData.elements.length > 0;
-        const hasOldFormat = (structureData.sections && structureData.sections.length > 0) || 
+        const hasOldFormat = (structureData.sections && structureData.sections.length > 0) ||
                             (structureData.items && structureData.items.length > 0);
-        
+
         if (!hasElements && !hasOldFormat) {
             $container.html(`
                 <div class="preview-empty-state">
@@ -1221,9 +1221,9 @@ window.showPreview = function() {
             `);
             return;
         }
-        
+
         let html = '<form id="previewFormContent" class="preview-form">';
-        
+
         if (hasElements) {
             // New format: elements array with mixed order
             structureData.elements.forEach((element) => {
@@ -1242,7 +1242,7 @@ window.showPreview = function() {
                     html += renderPreviewSection(section);
                 });
             }
-            
+
             if (structureData.items && structureData.items.length > 0) {
                 html += '<div class="preview-section">';
                 structureData.items.forEach((item) => {
@@ -1251,57 +1251,57 @@ window.showPreview = function() {
                 html += '</div>';
             }
         }
-        
+
         html += '</form>';
-        
+
         $container.html(html);
-        
+
         // Initialize dynamic behavior for radio questions
         initializePreviewInteractivity();
     }
-    
+
     // Render a preview section
     function renderPreviewSection(section) {
         let html = `<div class="preview-section">`;
-        
+
         if (section.name) {
             html += `<h3 class="preview-section-title">${escapeHtml(section.name)}</h3>`;
         }
-        
+
         if (section.description) {
             html += `<p class="preview-section-description">${escapeHtml(section.description)}</p>`;
         }
-        
+
         if (section.items && section.items.length > 0) {
             section.items.forEach((item) => {
                 html += renderPreviewQuestion(item, 0);
             });
         }
-        
+
         html += `</div>`;
         return html;
     }
-    
+
     // Render a preview question recursively
     function renderPreviewQuestion(item, depth = 0) {
         if (!item || !item.question_id) {
             return '';
         }
-        
+
         const question = window.questions.find(q => q.id === item.question_id);
         if (!question) {
             return '';
         }
-        
+
         // Use a stable ID for radio groups (same question = same ID)
         const questionId = `preview_q_${question.id}`;
         const required = question.required ? '<span class="required">*</span>' : '';
         const helpText = question.help_text ? `<div class="preview-question-help">${escapeHtml(question.help_text)}</div>` : '';
-        
+
         let html = `<div class="preview-question" data-question-id="${question.id}" data-depth="${depth}">`;
         html += `<label class="preview-question-label">${escapeHtml(question.question)}${required}</label>`;
         html += helpText;
-        
+
         // Render input based on type
         if (question.type === 'radio' && question.options && question.options.length > 0) {
             html += `<div class="preview-radio-group" data-question-id="${question.id}">`;
@@ -1310,9 +1310,9 @@ window.showPreview = function() {
                 const escapedOption = escapeHtml(option);
                 html += `
                     <div class="preview-radio-option">
-                        <input type="radio" 
-                               id="${optionId}" 
-                               name="${questionId}" 
+                        <input type="radio"
+                               id="${optionId}"
+                               name="${questionId}"
                                value="${escapedOption}"
                                data-question-id="${question.id}"
                                data-option-value="${escapedOption}">
@@ -1321,7 +1321,7 @@ window.showPreview = function() {
                 `;
             });
             html += `</div>`;
-            
+
             // Render nested questions for each option (hidden by default)
             if (item.children && typeof item.children === 'object') {
                 Object.entries(item.children).forEach(([optionValue, childData]) => {
@@ -1376,9 +1376,9 @@ window.showPreview = function() {
                 const escapedOptionLabel = escapeHtml(String(optionLabel));
                 html += `
                     <div class="preview-checkbox-option">
-                        <input type="checkbox" 
-                               id="${optionId}" 
-                               name="${questionId}[]" 
+                        <input type="checkbox"
+                               id="${optionId}"
+                               name="${questionId}[]"
                                value="${escapedOptionValue}"
                                ${question.required ? 'required' : ''}>
                         <label for="${optionId}">${escapedOptionLabel}</label>
@@ -1387,43 +1387,43 @@ window.showPreview = function() {
             });
             html += `</div>`;
         }
-        
+
         html += `</div>`;
         return html;
     }
-    
+
     // Initialize interactivity for preview (show/hide nested questions)
     function initializePreviewInteractivity() {
         // Remove any existing handlers to prevent duplicates
         $('#previewFormContainer').off('change', 'input[type="radio"]');
-        
+
         // Handle radio button changes - standard behavior (no deselection)
         $('#previewFormContainer').on('change', 'input[type="radio"]', function(e) {
             e.stopPropagation();
             const $radio = $(this);
             const questionId = $radio.data('question-id');
             const optionValue = $radio.data('option-value');
-            
+
             if (!questionId || !optionValue) {
                 return;
             }
-            
+
             // Hide all nested questions for this parent question
             const $allNested = $(`.preview-nested-questions[data-parent-question="${questionId}"]`);
             $allNested.removeClass('show').hide();
-            
+
             // Show nested questions for selected option (case-insensitive match)
             const $nestedContainer = $allNested.filter(function() {
                 const containerOptionValue = $(this).data('option-value');
                 return containerOptionValue && containerOptionValue.toLowerCase() === optionValue.toLowerCase();
             });
-            
+
             if ($nestedContainer.length > 0) {
                 $nestedContainer.addClass('show').show();
             }
         });
     }
-    
+
     // Escape HTML to prevent XSS
     function escapeHtml(text) {
         if (!text) return '';
@@ -1436,7 +1436,7 @@ window.showPreview = function() {
         };
         return String(text).replace(/[&<>"']/g, m => map[m]);
     }
-    
+
     // Expose renderPreview globally AFTER it's defined
     window.renderPreview = renderPreview;
 
