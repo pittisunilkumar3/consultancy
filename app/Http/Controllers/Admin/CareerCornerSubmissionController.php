@@ -115,14 +115,28 @@ class CareerCornerSubmissionController extends Controller
         if ($snapshotData && isset($snapshotData['structure']) && isset($snapshotData['questions'])) {
             // Use snapshot data
             $formData = $snapshotData['structure'];
-            $questions = collect($snapshotData['questions'])->keyBy('id');
+            // Convert to array with question IDs as keys (consistent with student view)
+            $snapshotQuestionsArray = $snapshotData['questions'];
+            $questionsArray = [];
+            foreach ($snapshotQuestionsArray as $key => $question) {
+                $questionId = is_array($question) ? ($question['id'] ?? $key) : ($question->id ?? $key);
+                if ($questionId && is_numeric($questionId)) {
+                    $questionsArray[$questionId] = is_array($question) ? $question : (array)$question;
+                }
+            }
+            $questions = $questionsArray;
             
             // Check if structure has changed
             $structureChanged = $submission->hasStructureChanged();
         } elseif ($submission->formStructure) {
             // Fallback to current structure if no snapshot
             $formData = $submission->formStructure->loadNestedStructure();
-            $questions = \App\Models\Question::orderBy('order')->get()->keyBy('id');
+            $questionsCollection = \App\Models\Question::orderBy('order')->get()->keyBy('id');
+            $questionsArray = [];
+            foreach ($questionsCollection as $id => $question) {
+                $questionsArray[$id] = $question->toArray();
+            }
+            $questions = $questionsArray;
         }
 
         $data['pageTitle'] = __('View Submission');
