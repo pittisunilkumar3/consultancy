@@ -98,6 +98,9 @@ class CareerCornerController extends Controller
                     'status' => STATUS_ACTIVE,
                 ]);
                 
+                // Refresh to get the latest updated_at timestamp
+                $existingSubmission->refresh();
+                
                 $submission = $existingSubmission;
                 $message = __('Form updated successfully!');
             } else {

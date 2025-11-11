@@ -13,7 +13,7 @@
             border-radius: 0.75rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
-        
+
         .career-form-section-title {
             font-size: 1.5rem;
             font-weight: 700;
@@ -26,14 +26,14 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        
+
         .career-form-section-description {
             color: #6b7280;
             margin-bottom: 1.5rem;
             font-size: 1rem;
             line-height: 1.6;
         }
-        
+
         .career-form-question {
             margin-bottom: 1.5rem;
             padding: 1.25rem;
@@ -41,7 +41,7 @@
             border: 1px solid #e5e7eb;
             border-radius: 0.5rem;
         }
-        
+
         .career-form-question-label {
             display: block;
             font-weight: 600;
@@ -49,12 +49,12 @@
             color: #1f2937;
             margin-bottom: 0.75rem;
         }
-        
+
         .career-form-question-label .required {
             color: #ef4444;
             margin-left: 0.25rem;
         }
-        
+
         .career-form-question-help {
             font-size: 0.875rem;
             color: #6b7280;
@@ -62,7 +62,7 @@
             margin-bottom: 0.75rem;
             font-style: italic;
         }
-        
+
         .career-form-input,
         .career-form-textarea,
         .career-form-select {
@@ -73,7 +73,7 @@
             font-size: 1rem;
             transition: all 0.2s ease;
         }
-        
+
         .career-form-input:focus:not(:readonly):not(:disabled),
         .career-form-textarea:focus:not(:readonly):not(:disabled),
         .career-form-select:focus:not(:disabled) {
@@ -81,18 +81,18 @@
             border-color: #14b8a6;
             box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
         }
-        
+
         .career-form-input:hover:not(:readonly):not(:disabled),
         .career-form-textarea:hover:not(:readonly):not(:disabled),
         .career-form-select:hover:not(:disabled) {
             border-color: #d1d5db;
         }
-        
+
         .career-form-textarea {
             resize: vertical;
             min-height: 100px;
         }
-        
+
         .career-form-select {
             padding: 0.875rem 2.5rem 0.875rem 1rem;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%23374151' d='M7 10L2 5h10z'/%3E%3C/svg%3E");
@@ -104,14 +104,14 @@
             -moz-appearance: none;
             cursor: pointer;
         }
-        
+
         .career-form-radio-group {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
             margin-top: 0.5rem;
         }
-        
+
         .career-form-radio-option {
             display: flex;
             align-items: center;
@@ -121,33 +121,33 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        
+
         .career-form-radio-option:hover:not(:has(input[type="radio"]:disabled)) {
             border-color: #14b8a6;
             background-color: #f0fdfa;
         }
-        
+
         .career-form-radio-option input[type="radio"] {
             margin-right: 0.75rem;
             cursor: pointer;
         }
-        
+
         .career-form-radio-option input[type="radio"]:checked + label {
             font-weight: 600;
             color: #0d9488;
         }
-        
+
         .career-form-radio-option:has(input[type="radio"]:checked) {
             background: #f0fdfa;
             border-color: #14b8a6;
         }
-        
+
         .career-form-checkbox-group {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
         }
-        
+
         .career-form-checkbox-option {
             display: flex;
             align-items: center;
@@ -158,27 +158,27 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        
+
         .career-form-checkbox-option:hover:not(:has(input[type="checkbox"]:disabled)) {
             border-color: #14b8a6;
             background-color: #f0fdfa;
         }
-        
+
         .career-form-checkbox-option input[type="checkbox"] {
             margin-right: 0.75rem;
             cursor: pointer;
         }
-        
+
         .career-form-checkbox-option input[type="checkbox"]:checked + label {
             font-weight: 600;
             color: #0d9488;
         }
-        
+
         .career-form-checkbox-option:has(input[type="checkbox"]:checked) {
             background: #f0fdfa;
             border-color: #14b8a6;
         }
-        
+
         .career-form-nested-questions {
             margin-top: 1.5rem;
             margin-left: 0;
@@ -186,12 +186,12 @@
             border-left: none;
             display: none !important;
         }
-        
+
         .career-form-nested-questions.show {
             display: block !important;
             animation: fadeIn 0.3s ease-out;
         }
-        
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -200,7 +200,7 @@
                 opacity: 1;
             }
         }
-        
+
         .career-form-empty-state {
             text-align: center;
             padding: 4rem 2rem;
@@ -208,26 +208,26 @@
             border-radius: 0.75rem;
             border: 2px dashed #d1d5db;
         }
-        
+
         .career-form-empty-state i {
             font-size: 4rem;
             color: #9ca3af;
             margin-bottom: 1.5rem;
         }
-        
+
         .career-form-empty-state h3 {
             font-size: 1.5rem;
             font-weight: 600;
             color: #374151;
             margin-bottom: 0.75rem;
         }
-        
+
         .career-form-empty-state p {
             font-size: 1rem;
             color: #6b7280;
             margin-bottom: 1.5rem;
         }
-        
+
         .career-form-submit-btn {
             padding: 0.875rem 2rem;
             background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
@@ -240,16 +240,16 @@
             transition: all 0.3s ease;
             box-shadow: 0 2px 4px rgba(20, 184, 166, 0.2);
         }
-        
+
         .career-form-submit-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
         }
-        
+
         .career-form-submit-btn:active {
             transform: translateY(0);
         }
-        
+
         .career-form-input:readonly,
         .career-form-textarea:readonly,
         .career-form-select:disabled,
@@ -270,7 +270,7 @@
             opacity: 0.8;
             transition: none;
         }
-        
+
         /* Force cursor not-allowed for all text, textarea, and select fields when readonly/disabled */
         .career-form-question input[readonly],
         .career-form-question textarea[readonly],
@@ -280,7 +280,7 @@
         .career-form-question select:disabled {
             cursor: not-allowed !important;
         }
-        
+
         .career-form-input:readonly:hover,
         .career-form-textarea:readonly:hover,
         .career-form-select:disabled:hover,
@@ -290,7 +290,7 @@
             transform: none;
             box-shadow: none;
         }
-        
+
         .career-form-input:readonly:focus,
         .career-form-textarea:readonly:focus,
         .career-form-select:disabled:focus,
@@ -302,7 +302,7 @@
             box-shadow: none;
             background-color: #f3f4f6;
         }
-        
+
         .career-form-radio-option input[type="radio"]:disabled + label,
         .career-form-checkbox-option input[type="checkbox"]:disabled + label,
         input[type="radio"]:disabled + label,
@@ -310,7 +310,7 @@
             color: #6b7280;
             cursor: not-allowed !important;
         }
-        
+
         .career-form-radio-option:has(input[type="radio"]:disabled),
         .career-form-checkbox-option:has(input[type="checkbox"]:disabled),
         .career-form-radio-group:has(input[type="radio"]:disabled),
@@ -318,12 +318,12 @@
             cursor: not-allowed !important;
             transition: none;
         }
-        
+
         input[type="radio"]:disabled,
         input[type="checkbox"]:disabled {
             cursor: not-allowed !important;
         }
-        
+
         /* All labels for disabled/readonly fields */
         label:has(+ input:readonly),
         label:has(+ input:disabled),
@@ -335,7 +335,7 @@
         .career-form-question:has(select:disabled) label {
             cursor: not-allowed !important;
         }
-        
+
         /* Parent containers for all disabled/readonly fields */
         .career-form-question:has(input:readonly),
         .career-form-question:has(input:disabled),
@@ -343,7 +343,7 @@
         .career-form-question:has(select:disabled) {
             cursor: not-allowed !important;
         }
-        
+
         .career-form-radio-option:has(input[type="radio"]:disabled):hover,
         .career-form-checkbox-option:has(input[type="checkbox"]:disabled):hover,
         .career-form-radio-option:has(input[type="radio"]:disabled):active,
@@ -354,7 +354,7 @@
             box-shadow: none;
             cursor: not-allowed !important;
         }
-        
+
         .career-form-file-display {
             padding: 0.875rem 1rem;
             background: #f3f4f6;
@@ -362,6 +362,15 @@
             border-radius: 0.5rem;
             color: #6b7280;
             cursor: not-allowed !important;
+        }
+
+        #cancelEditBtn {
+            transition: all 0.2s ease;
+        }
+
+        #cancelEditBtn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
         }
     </style>
 @endpush
@@ -376,28 +385,33 @@
                 <div class="alert alert-success mb-4 d-flex justify-content-between align-items-center">
                     <div>
                         <i class="fa-solid fa-check-circle me-2"></i>
-                        <strong>{{ __('Form Submitted') }}</strong> - {{ __('Submitted on') }}: {{ $submission->created_at->setTimezone(getOption('app_timezone', 'UTC'))->format('F d, Y h:i A') }}
+                        <strong>{{ __('Form Submitted') }}</strong> - {{ __('Last updated on') }}: {{ $submission->updated_at->setTimezone(getOption('app_timezone', 'UTC'))->format('F d, Y h:i A') }}
                     </div>
-                    <button type="button" class="btn btn-outline-primary btn-sm" id="changePreferencesBtn">
-                        <i class="fa-solid fa-edit me-1"></i>{{ __('Change Preferences') }}
-                    </button>
+                    <div class="d-flex gap-2 align-items-center">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="changePreferencesBtn">
+                            <i class="fa-solid fa-edit me-1"></i>{{ __('Change Preferences') }}
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" id="cancelEditBtn" style="display: none;">
+                            <i class="fa-solid fa-times me-1"></i>{{ __('Cancel') }}
+                        </button>
+                    </div>
                 </div>
             @endif
-            
+
             <form id="careerCornerForm" method="POST" action="{{ route('student.career-corner.submit') }}">
                 @csrf
-                
+
                 @foreach($formData as $element)
                     @if($element['type'] === 'section')
                         <div class="career-form-section">
                             @if(!empty($element['name']))
                                 <h3 class="career-form-section-title">{{ $element['name'] }}</h3>
                             @endif
-                            
+
                             @if(!empty($element['description']))
                                 <p class="career-form-section-description">{{ $element['description'] }}</p>
                             @endif
-                            
+
                             @if(isset($element['items']) && !empty($element['items']))
                                 @foreach($element['items'] as $item)
                                     @include('student.career-corner.partials.question', ['item' => $item, 'questions' => $questions ?? [], 'depth' => 0, 'submittedData' => $submittedData ?? null])
@@ -410,7 +424,7 @@
                         </div>
                     @endif
                 @endforeach
-                
+
                 <div class="text-center mt-4" id="submitButtonContainer" style="{{ (isset($submission) && $submission) ? 'display: none;' : '' }}">
                     <button type="submit" class="career-form-submit-btn">
                         <i class="fa-solid fa-paper-plane me-2"></i>{{ __('Submit Form') }}
@@ -433,17 +447,17 @@
         $(document).ready(function() {
             // Track if form is in readonly mode
             let isReadonly = {{ isset($submission) && $submission ? 'true' : 'false' }};
-            
+
             // Function to make form editable
             function makeFormEditable() {
                 isReadonly = false;
-                
+
                 // Remove readonly/disabled attributes from all fields
                 $('#careerCornerForm input[readonly]').removeAttr('readonly').removeAttr('style');
                 $('#careerCornerForm textarea[readonly]').removeAttr('readonly').removeAttr('style');
                 $('#careerCornerForm select[disabled]').prop('disabled', false).removeAttr('style');
                 $('#careerCornerForm input[disabled]').prop('disabled', false);
-                
+
                 // Restore required attributes for visible nested questions
                 $('.career-form-nested-questions.show').find('input, select, textarea').each(function() {
                     const $field = $(this);
@@ -451,10 +465,11 @@
                         $field.attr('required', 'required');
                     }
                 });
-                
-                // Hide change preferences button and show submit button
+
+                // Hide change preferences button and show cancel button
                 $('#changePreferencesBtn').hide();
-                
+                $('#cancelEditBtn').show();
+
                 // Remove inline style and force show - use multiple methods to ensure it works
                 const $submitContainer = $('#submitButtonContainer');
                 if ($submitContainer.length) {
@@ -464,7 +479,7 @@
                     $submitContainer.css('display', 'block');
                     $submitContainer.show();
                     $submitContainer.removeClass('d-none'); // Remove Bootstrap hide class if present
-                    
+
                     // Double-check after a small delay
                     setTimeout(function() {
                         if ($submitContainer.is(':hidden') || $submitContainer.css('display') === 'none') {
@@ -475,43 +490,71 @@
                 } else {
                     console.error('Submit button container not found!');
                 }
-                
+
                 // Initialize interactive features
                 initializeFormInteractivity();
-                
+
                 // Ensure form submission handler is attached
                 attachFormSubmitHandler();
-                
+
                 // Trigger change on all checked radio buttons to show/hide nested questions correctly
                 $('input[type="radio"][data-question-id]:checked').trigger('change');
             }
-            
+
+            // Function to revert form back to readonly mode
+            function revertToReadonlyMode() {
+                isReadonly = true;
+
+                // Store current form values before reverting
+                const formValues = {};
+                $('#careerCornerForm input, #careerCornerForm textarea, #careerCornerForm select').each(function() {
+                    const $field = $(this);
+                    const name = $field.attr('name');
+                    if (name) {
+                        if ($field.is(':checkbox') || $field.is(':radio')) {
+                            if ($field.is(':checked')) {
+                                if (!formValues[name]) {
+                                    formValues[name] = [];
+                                }
+                                formValues[name].push($field.val());
+                            }
+                        } else {
+                            formValues[name] = $field.val();
+                        }
+                    }
+                });
+
+                // Reload the page to restore original submitted values
+                // This ensures we get the exact original data back
+                window.location.reload();
+            }
+
             // Function to attach form submission handler
             function attachFormSubmitHandler() {
                 // Remove existing handler to prevent duplicates
                 $('#careerCornerForm').off('submit');
-                
+
                 // Handle form submission
                 $('#careerCornerForm').on('submit', function(e) {
                     // Remove required from all hidden nested questions before validation
                     $('.career-form-nested-questions:not(.show)').find('input[required], select[required], textarea[required]').removeAttr('required');
-                    
+
                     e.preventDefault();
-                    
+
                     // Validate form
                     if (!this.checkValidity()) {
                         this.reportValidity();
                         return;
                     }
-                    
+
                     // Show loading state
                     const $btn = $(this).find('button[type="submit"]');
                     const originalHtml = $btn.html();
                     $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>{{ __('Submitting...') }}');
-                    
+
                     // Collect all form data
                     const formData = new FormData(this);
-                    
+
                     // Submit via AJAX
                     $.ajax({
                         url: '{{ route("student.career-corner.submit") }}',
@@ -553,7 +596,7 @@
                             } else if (xhr.status === 405) {
                                 errorMessage = '{{ __('Method not allowed. Please refresh the page and try again.') }}';
                             }
-                            
+
                             if (typeof toastr !== 'undefined') {
                                 toastr.error(errorMessage);
                             } else {
@@ -564,42 +607,71 @@
                     });
                 });
             }
-            
+
             // Change Preferences button handler
             $('#changePreferencesBtn').on('click', function() {
-                if (confirm('{{ __('Are you sure you want to edit your submitted form?') }}')) {
-                    makeFormEditable();
-                }
+                Swal.fire({
+                    title: '{{ __('Edit Form') }}',
+                    text: '{{ __('Are you sure you want to edit your submitted form?') }}',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '{{ __('Yes, Edit It') }}',
+                    cancelButtonText: '{{ __('Cancel') }}'
+                }).then((result) => {
+                    if (result.isConfirmed || result.value) {
+                        makeFormEditable();
+                    }
+                });
             });
-            
+
+            // Cancel Edit button handler
+            $('#cancelEditBtn').on('click', function() {
+                Swal.fire({
+                    title: '{{ __('Cancel Editing') }}',
+                    text: '{{ __('Are you sure you want to cancel editing? Any unsaved changes will be lost.') }}',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '{{ __('Yes, Cancel') }}',
+                    cancelButtonText: '{{ __('No, Continue Editing') }}'
+                }).then((result) => {
+                    if (result.isConfirmed || result.value) {
+                        revertToReadonlyMode();
+                    }
+                });
+            });
+
             // Function to initialize form interactivity
             function initializeFormInteractivity() {
                 // Initialize radio button change handlers
                 initializeRadioHandlers();
             }
-            
+
             // Function to initialize radio button handlers
             function initializeRadioHandlers() {
                 // Remove existing handlers to prevent duplicates
                 $(document).off('change', 'input[type="radio"][data-question-id]');
-                
+
                 // Handle radio button changes to show/hide nested questions
                 $(document).on('change', 'input[type="radio"][data-question-id]', function() {
                     const $radio = $(this);
                     const questionId = $radio.data('question-id');
                     const optionValue = $radio.val();
-                    
+
                     if (!questionId || !optionValue) {
                         return;
                     }
-                    
+
                     // Hide all nested questions for this parent question
                     const $allNested = $(`.career-form-nested-questions[data-parent-question="${questionId}"]`);
                     $allNested.removeClass('show').css('display', 'none');
-                    
+
                     // Remove required from hidden nested questions
                     $allNested.find('input[required], select[required], textarea[required]').removeAttr('required');
-                    
+
                     // Show nested questions for selected option (case-insensitive match)
                     const $nestedContainer = $allNested.filter(function() {
                         const containerOptionValue = $(this).data('option-value') || $(this).attr('data-option-value');
@@ -611,10 +683,10 @@
                         const containerValue = String(containerOptionValue).trim().toLowerCase();
                         return containerValue === selectedValue;
                     });
-                    
+
                     if ($nestedContainer.length > 0) {
                         $nestedContainer.css('display', 'block').addClass('show');
-                        
+
                         // Restore required attributes for visible nested questions
                         $nestedContainer.find('input, select, textarea').each(function() {
                             const $field = $(this);
@@ -625,14 +697,14 @@
                     }
                 });
             }
-            
+
             // Function to update required attributes based on visibility
             function updateRequiredAttributes() {
                 // Remove required from all hidden nested questions
                 $('.career-form-nested-questions:not(.show)').find('input[required], select[required], textarea[required]').each(function() {
                     $(this).removeAttr('required');
                 });
-                
+
                 // Add required back to visible nested questions that should be required
                 $('.career-form-nested-questions.show').find('input, select, textarea').each(function() {
                     const $field = $(this);
@@ -649,24 +721,24 @@
                     }
                 });
             }
-            
+
             // Store original required status on page load
             $('.career-form-nested-questions input[required], .career-form-nested-questions select[required], .career-form-nested-questions textarea[required]').each(function() {
                 $(this).data('original-required', true);
             });
-            
+
             if (isReadonly) {
                 // Form is readonly, just show all nested questions that should be visible
                 // They are already shown by the server-side logic
                 return;
             }
-            
+
             // Initialize form interactivity for editable form
             initializeFormInteractivity();
-            
+
             // Attach form submission handler
             attachFormSubmitHandler();
-            
+
             // Also handle on page load - check if any radio is already selected
             $('input[type="radio"][data-question-id]:checked').trigger('change');
         });
