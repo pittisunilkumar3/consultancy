@@ -160,13 +160,36 @@ class UniversityFilterService
             $criteriaField = $filterData['field'];
             $studentAnswers = $filterData['answers'];
 
-            // Use the first answer (or combine logic if multiple questions map to same criteria)
-            $studentValue = is_array($studentAnswers) ? $studentAnswers[0] : $studentAnswers;
+            // For JSON type, we need to handle arrays properly
+            // If multiple questions map to same criteria, merge all answers
+            // For checkbox questions, the answer is already an array
+            if ($criteriaField->type === 'json') {
+                // Collect all values from all answers (handles both arrays and single values)
+                $allValues = [];
+                foreach ($studentAnswers as $answer) {
+                    if (is_array($answer)) {
+                        $allValues = array_merge($allValues, $answer);
+                    } else {
+                        $allValues[] = $answer;
+                    }
+                }
+                // Remove duplicates and empty values
+                $allValues = array_unique(array_filter($allValues));
 
-            // Check if value is valid before applying filter
-            if ($studentValue !== null && $studentValue !== '') {
-                $query = $this->applyCriteriaFilter($query, $criteriaField, $studentValue);
-                $filtersApplied++;
+                if (!empty($allValues)) {
+                    // Pass as array for JSON filtering
+                    $query = $this->applyCriteriaFilter($query, $criteriaField, $allValues);
+                    $filtersApplied++;
+                }
+            } else {
+                // For non-JSON types, use the first answer
+                $studentValue = is_array($studentAnswers) ? $studentAnswers[0] : $studentAnswers;
+
+                // Check if value is valid before applying filter
+                if ($studentValue !== null && $studentValue !== '') {
+                    $query = $this->applyCriteriaFilter($query, $criteriaField, $studentValue);
+                    $filtersApplied++;
+                }
             }
         }
 
@@ -329,11 +352,37 @@ class UniversityFilterService
      */
     protected function filterJson($query, UniversityCriteriaField $criteriaField, $studentValue)
     {
-        // Try to decode student value if it's JSON
-        $studentData = is_string($studentValue) ? json_decode($studentValue, true) : $studentValue;
+        // Student value can be:
+        // - An array (from checkbox or merged from multiple questions): ["UG", "PG"]
+        // - A string (from radio/select): "UG"
+        // - A JSON string: '["UG", "PG"]'
 
-        if (!is_array($studentData)) {
-            $studentData = [$studentValue]; // Convert to array
+        // Normalize to array
+        $studentData = [];
+
+        if (is_array($studentValue)) {
+            // Already an array - use directly
+            $studentData = array_filter(array_map('trim', $studentValue));
+        } elseif (is_string($studentValue)) {
+            // Try to decode as JSON first
+            $decoded = json_decode($studentValue, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                // Valid JSON array
+                $studentData = array_filter(array_map('trim', $decoded));
+            } else {
+                // Not JSON, treat as single value
+                $studentData = [trim($studentValue)];
+            }
+        } else {
+            // Other types - convert to string and wrap in array
+            $studentData = [trim((string)$studentValue)];
+        }
+
+        // Remove empty values
+        $studentData = array_filter($studentData);
+
+        if (empty($studentData)) {
+            return $query->whereRaw('1 = 0'); // No valid student values
         }
 
         // Find universities where JSON contains any of the student's values
@@ -347,12 +396,21 @@ class UniversityFilterService
                 continue;
             }
 
+            // Normalize university data (trim strings, remove empty)
+            $universityData = array_filter(array_map(function($item) {
+                return is_string($item) ? trim($item) : $item;
+            }, $universityData));
+
             // Check if any student value is in university's array
+            // Use case-insensitive comparison for better matching
             $hasMatch = false;
             foreach ($studentData as $studentItem) {
-                if (in_array($studentItem, $universityData)) {
-                    $hasMatch = true;
-                    break;
+                foreach ($universityData as $universityItem) {
+                    // Case-insensitive comparison
+                    if (strcasecmp(trim((string)$studentItem), trim((string)$universityItem)) === 0) {
+                        $hasMatch = true;
+                        break 2; // Break both loops
+                    }
                 }
             }
 

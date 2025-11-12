@@ -80,7 +80,7 @@ class UniversityController extends Controller
         $data['showCmsSettings'] = 'show';
         $data['countryData'] = Country::where('status',STATUS_ACTIVE)->get();
         $data['criteriaFields'] = UniversityCriteriaField::where('status', STATUS_ACTIVE)->orderBy('order')->get();
-        
+
         // Get existing criteria values keyed by criteria_field_id
         $data['existingCriteriaValues'] = [];
         if ($data['universityData'] && $data['universityData']->criteriaValues) {
@@ -155,14 +155,14 @@ class UniversityController extends Controller
             // Get all active criteria fields to handle unchecked checkboxes
             $allCriteriaFields = UniversityCriteriaField::where('status', STATUS_ACTIVE)->get();
             $submittedCriteriaValues = $request->criteria_values ?? [];
-            
+
             foreach ($allCriteriaFields as $criteriaField) {
                 $criteriaFieldId = $criteriaField->id;
-                
+
                 // Check if this criteria field was submitted in the form
                 if (isset($submittedCriteriaValues[$criteriaFieldId])) {
                     $value = $submittedCriteriaValues[$criteriaFieldId];
-                    
+
                     // For boolean type, if checkbox is checked, value will be "1"
                     if ($criteriaField->type === 'boolean') {
                         // Boolean checkbox is checked (value = "1")
@@ -175,8 +175,55 @@ class UniversityController extends Controller
                                 'value' => '1'
                             ]
                         );
+                    } elseif ($criteriaField->type === 'json') {
+                        // JSON type - handle array input
+                        if (is_array($value) && !empty($value)) {
+                            // Array of values from checkboxes - encode as JSON
+                            $jsonValue = json_encode(array_values($value));
+                            UniversityCriteriaValue::updateOrCreate(
+                                [
+                                    'university_id' => $university->id,
+                                    'criteria_field_id' => $criteriaFieldId
+                                ],
+                                [
+                                    'value' => $jsonValue
+                                ]
+                            );
+                        } elseif (is_string($value) && !empty(trim($value))) {
+                            // String value - try to validate as JSON, if not valid JSON, wrap in array
+                            $decoded = json_decode($value, true);
+                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                // Valid JSON array
+                                UniversityCriteriaValue::updateOrCreate(
+                                    [
+                                        'university_id' => $university->id,
+                                        'criteria_field_id' => $criteriaFieldId
+                                    ],
+                                    [
+                                        'value' => $value
+                                    ]
+                                );
+                            } else {
+                                // Not valid JSON, treat as single value and wrap in array
+                                $jsonValue = json_encode([$value]);
+                                UniversityCriteriaValue::updateOrCreate(
+                                    [
+                                        'university_id' => $university->id,
+                                        'criteria_field_id' => $criteriaFieldId
+                                    ],
+                                    [
+                                        'value' => $jsonValue
+                                    ]
+                                );
+                            }
+                        } else {
+                            // Empty value - remove it
+                            UniversityCriteriaValue::where('university_id', $university->id)
+                                ->where('criteria_field_id', $criteriaFieldId)
+                                ->delete();
+                        }
                     } elseif ($value !== null && $value !== '') {
-                        // Non-boolean field with a value
+                        // Non-boolean, non-JSON field with a value
                         UniversityCriteriaValue::updateOrCreate(
                             [
                                 'university_id' => $university->id,
@@ -205,6 +252,11 @@ class UniversityController extends Controller
                                 'value' => '0'
                             ]
                         );
+                    } elseif ($criteriaField->type === 'json') {
+                        // JSON type field not submitted (all checkboxes unchecked) - remove it
+                        UniversityCriteriaValue::where('university_id', $university->id)
+                            ->where('criteria_field_id', $criteriaFieldId)
+                            ->delete();
                     } else {
                         // Non-boolean field not in request - remove it (field was cleared)
                         UniversityCriteriaValue::where('university_id', $university->id)

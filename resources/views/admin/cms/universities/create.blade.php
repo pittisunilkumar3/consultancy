@@ -318,6 +318,31 @@
                                                class="form-control zForm-control-alt"
                                                step="{{ $criteriaField->type === 'decimal' ? '0.01' : '1' }}"
                                                placeholder="{{ __('Enter value') }}">
+                                    @elseif($criteriaField->type === 'json' && !empty($criteriaField->options) && is_array($criteriaField->options))
+                                        {{-- JSON type with predefined options - show checkboxes --}}
+                                        <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                            @foreach($criteriaField->options as $option)
+                                            <div class="zForm-wrap-checkbox-2 mb-2">
+                                                <input type="checkbox" 
+                                                       name="criteria_values[{{ $criteriaField->id }}][]" 
+                                                       id="criteria_{{ $criteriaField->id }}_{{ $loop->index }}" 
+                                                       class="form-check-input" 
+                                                       value="{{ $option }}">
+                                                <label for="criteria_{{ $criteriaField->id }}_{{ $loop->index }}" class="form-check-label">
+                                                    {{ $option }}
+                                                </label>
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                        <small class="form-text text-muted">{{ __('Select one or more options') }}</small>
+                                    @elseif($criteriaField->type === 'json')
+                                        {{-- JSON type without predefined options - show text input with instructions --}}
+                                        <input type="text" 
+                                               name="criteria_values[{{ $criteriaField->id }}]" 
+                                               id="criteria_{{ $criteriaField->id }}" 
+                                               class="form-control zForm-control-alt"
+                                               placeholder='{{ __('Enter JSON array, e.g., ["UG", "PG"]') }}'>
+                                        <small class="form-text text-muted">{{ __('Enter as JSON array format: ["option1", "option2"]') }}</small>
                                     @else
                                         <input type="text" 
                                                name="criteria_values[{{ $criteriaField->id }}]" 

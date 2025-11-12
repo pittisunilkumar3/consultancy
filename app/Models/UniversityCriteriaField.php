@@ -16,11 +16,13 @@ class UniversityCriteriaField extends Model
         'description',
         'status',
         'order',
+        'options',
     ];
 
     protected $casts = [
         'status' => 'integer',
         'order' => 'integer',
+        'options' => 'array',
     ];
 
     /**

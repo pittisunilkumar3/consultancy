@@ -64,9 +64,23 @@ class UniversityCriteriaFieldController extends Controller
                 'description' => 'nullable|string',
                 'status' => 'required|integer|in:' . STATUS_ACTIVE . ',' . STATUS_DEACTIVATE,
                 'order' => 'nullable|integer|min:0',
+                'options' => 'nullable|string',
             ];
 
             $request->validate($rules);
+
+            // Parse options if provided (for JSON type)
+            $options = null;
+            if ($request->filled('options') && $request->type === 'json') {
+                $decoded = json_decode($request->options, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $options = $decoded;
+                } else {
+                    // Try to parse as comma-separated values
+                    $optionsArray = array_map('trim', explode(',', $request->options));
+                    $options = array_filter($optionsArray);
+                }
+            }
 
             $criteriaField = UniversityCriteriaField::create([
                 'name' => $request->name,
@@ -75,6 +89,7 @@ class UniversityCriteriaFieldController extends Controller
                 'description' => $request->description,
                 'status' => $request->status,
                 'order' => $request->order ?? 0,
+                'options' => $options,
             ]);
 
             DB::commit();
@@ -122,9 +137,26 @@ class UniversityCriteriaFieldController extends Controller
                 'description' => 'nullable|string',
                 'status' => 'required|integer|in:' . STATUS_ACTIVE . ',' . STATUS_DEACTIVATE,
                 'order' => 'nullable|integer|min:0',
+                'options' => 'nullable|string',
             ];
 
             $request->validate($rules);
+
+            // Parse options if provided (for JSON type)
+            $options = null;
+            if ($request->filled('options') && $request->type === 'json') {
+                $decoded = json_decode($request->options, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $options = $decoded;
+                } else {
+                    // Try to parse as comma-separated values
+                    $optionsArray = array_map('trim', explode(',', $request->options));
+                    $options = array_filter($optionsArray);
+                }
+            } elseif ($request->type !== 'json') {
+                // Clear options if type is not JSON
+                $options = null;
+            }
 
             $criteriaField->update([
                 'name' => $request->name,
@@ -133,6 +165,7 @@ class UniversityCriteriaFieldController extends Controller
                 'description' => $request->description,
                 'status' => $request->status,
                 'order' => $request->order ?? 0,
+                'options' => $options,
             ]);
 
             DB::commit();

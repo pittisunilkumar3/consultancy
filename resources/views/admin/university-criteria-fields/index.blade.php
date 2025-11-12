@@ -84,6 +84,11 @@
                             <label for="description" class="zForm-label">{{ __('Description') }}</label>
                             <textarea name="description" id="description" class="form-control zForm-control" rows="3" placeholder="{{ __('Optional description for this criteria field') }}"></textarea>
                         </div>
+                        <div class="col-12 options-field-wrapper d-none">
+                            <label for="options" class="zForm-label">{{ __('Options') }} <small class="text-muted">({{ __('For JSON type only') }})</small></label>
+                            <textarea name="options" id="options" class="form-control zForm-control" rows="3" placeholder='{{ __('Enter as JSON array, e.g., ["UG", "PG"]') }}'></textarea>
+                            <small class="form-text text-muted">{{ __('Define predefined options for JSON type fields. Universities will see checkboxes for these options. Example: ["UG", "PG"] for degree types.') }}</small>
+                        </div>
                         <div class="col-12">
                             <label for="order" class="zForm-label">{{ __('Order') }}</label>
                             <input type="number" name="order" id="order" class="form-control zForm-control" value="0" min="0">
@@ -142,6 +147,11 @@
                         <div class="col-12">
                             <label for="edit_description" class="zForm-label">{{ __('Description') }}</label>
                             <textarea name="description" id="edit_description" class="form-control zForm-control" rows="3"></textarea>
+                        </div>
+                        <div class="col-12 edit-options-field-wrapper d-none">
+                            <label for="edit_options" class="zForm-label">{{ __('Options') }} <small class="text-muted">({{ __('For JSON type only') }})</small></label>
+                            <textarea name="options" id="edit_options" class="form-control zForm-control" rows="3" placeholder='{{ __('Enter as JSON array, e.g., ["UG", "PG"]') }}'></textarea>
+                            <small class="form-text text-muted">{{ __('Define predefined options for JSON type fields. Universities will see checkboxes for these options. Example: ["UG", "PG"] for degree types.') }}</small>
                         </div>
                         <div class="col-12">
                             <label for="edit_order" class="zForm-label">{{ __('Order') }}</label>
@@ -224,12 +234,78 @@
                             $('#edit_id').val(data.id);
                             $('#edit_name').val(data.name);
                             $('#edit_slug').val(data.slug);
+                            
+                            // Set type value - need to update niceSelect plugin
                             $('#edit_type').val(data.type);
+                            // Update niceSelect if it's initialized
+                            if ($('#edit_type').next('.nice-select').length) {
+                                $('#edit_type').niceSelect('update');
+                            }
+                            
                             $('#edit_description').val(data.description);
                             $('#edit_order').val(data.order);
+                            
+                            // Set status value - need to update niceSelect plugin
                             $('#edit_status').val(data.status);
+                            // Update niceSelect if it's initialized
+                            if ($('#edit_status').next('.nice-select').length) {
+                                $('#edit_status').niceSelect('update');
+                            }
+                            
+                            // Set form action first
                             $('#editForm').attr('action', $('#criteriaFieldsUpdateBase').val() + '/' + id);
+                            
+                            // Handle options field - show if type is JSON
+                            if (data.type === 'json') {
+                                // Show options field
+                                $('.edit-options-field-wrapper').removeClass('d-none');
+                                // Populate options if they exist
+                                if (data.options) {
+                                    if (Array.isArray(data.options) && data.options.length > 0) {
+                                        // Format as readable JSON
+                                        $('#edit_options').val(JSON.stringify(data.options, null, 2));
+                                    } else if (typeof data.options === 'string' && data.options.trim() !== '') {
+                                        // If options is already a string (JSON), use it directly
+                                        $('#edit_options').val(data.options);
+                                    } else {
+                                        $('#edit_options').val('');
+                                    }
+                                } else {
+                                    $('#edit_options').val('');
+                                }
+                            } else {
+                                // Hide options field for non-JSON types
+                                $('.edit-options-field-wrapper').addClass('d-none');
+                                $('#edit_options').val('');
+                            }
+                            
+                            // Show modal after all data is set
                             $('#edit-modal').modal('show');
+                            
+                            // After modal is shown, ensure niceSelect is updated (one-time event)
+                            $('#edit-modal').one('shown.bs.modal', function() {
+                                // Update niceSelect for type field
+                                var $typeSelect = $('#edit_type');
+                                if ($typeSelect.length) {
+                                    // Destroy existing niceSelect if it exists
+                                    if ($typeSelect.next('.nice-select').length) {
+                                        $typeSelect.niceSelect('destroy');
+                                    }
+                                    // Reinitialize niceSelect with current value
+                                    $typeSelect.niceSelect();
+                                }
+                                
+                                // Update niceSelect for status field
+                                var $statusSelect = $('#edit_status');
+                                if ($statusSelect.length) {
+                                    // Destroy existing niceSelect if it exists
+                                    if ($statusSelect.next('.nice-select').length) {
+                                        $statusSelect.niceSelect('destroy');
+                                    }
+                                    // Reinitialize niceSelect with current value
+                                    $statusSelect.niceSelect();
+                                }
+                            });
                         }
                     }
                 });
@@ -273,9 +349,48 @@
                 });
             });
 
+            // Show/hide options field based on type selection (create form)
+            $(document).on('change', '#type', function() {
+                if ($(this).val() === 'json') {
+                    $('.options-field-wrapper').removeClass('d-none');
+                } else {
+                    $('.options-field-wrapper').addClass('d-none');
+                    $('#options').val('');
+                }
+            });
+
+            // Show/hide options field based on type selection (edit form)
+            $(document).on('change', '#edit_type', function() {
+                var selectedType = $(this).val();
+                if (selectedType === 'json') {
+                    $('.edit-options-field-wrapper').removeClass('d-none');
+                    // If options field is empty and we're switching to JSON, don't clear it
+                } else {
+                    $('.edit-options-field-wrapper').addClass('d-none');
+                    $('#edit_options').val('');
+                }
+            });
+            
+            // Ensure options field visibility is correct when modal is shown
+            $('#edit-modal').on('shown.bs.modal', function() {
+                // Double-check visibility after modal is fully shown
+                var currentType = $('#edit_type').val();
+                if (currentType === 'json') {
+                    $('.edit-options-field-wrapper').removeClass('d-none');
+                } else {
+                    $('.edit-options-field-wrapper').addClass('d-none');
+                }
+            });
+
             // Reset form on modal close
             $('#add-modal').on('hidden.bs.modal', function() {
                 $('#addForm')[0].reset();
+                $('.options-field-wrapper').addClass('d-none');
+            });
+            
+            $('#edit-modal').on('hidden.bs.modal', function() {
+                $('#editForm')[0].reset();
+                $('.edit-options-field-wrapper').addClass('d-none');
             });
         });
     </script>
