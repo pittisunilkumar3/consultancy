@@ -15,15 +15,17 @@ class UniversityFilterService
      * Filter universities based on a student's career corner submission
      *
      * @param CareerCornerSubmission $submission
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return array ['universities' => Collection, 'helperMessages' => array]
      */
     public function filterBySubmission(CareerCornerSubmission $submission)
     {
         $formData = $submission->form_data ?? [];
-        
+
         if (empty($formData)) {
-            // No form data, return empty collection
-            return collect([]);
+            return [
+                'universities' => collect([]),
+                'helperMessages' => []
+            ];
         }
 
         // Start with all active universities
@@ -39,54 +41,149 @@ class UniversityFilterService
         }
 
         if (empty($questionIds)) {
-            return collect([]);
+            return [
+                'universities' => collect([]),
+                'helperMessages' => []
+            ];
         }
 
-        // Get all question-criteria mappings for these questions
-        $mappings = QuestionCriteriaMapping::whereIn('question_id', $questionIds)
-            ->with('criteriaField')
+        // Get ALL question-criteria mappings (not just for answered questions)
+        // This helps us identify which criteria fields exist but weren't answered
+        $allMappings = QuestionCriteriaMapping::with(['criteriaField', 'question'])
             ->get();
 
-        if ($mappings->isEmpty()) {
-            // No mappings found, return all active universities
-            return $query->with('country')->get();
+        // Get mappings for answered questions only
+        $mappings = $allMappings->whereIn('question_id', $questionIds);
+
+        // Track helper messages for unanswered criteria
+        $helperMessages = [];
+
+        // Get all unique criteria fields that have mappings
+        $allCriteriaFieldsWithMappings = $allMappings->pluck('criteriaField')->unique('id')->filter();
+
+        // Check which criteria fields are mapped but not answered
+        foreach ($allCriteriaFieldsWithMappings as $criteriaField) {
+            // Get all questions mapped to this criteria field
+            $mappedQuestions = $allMappings->where('criteria_field_id', $criteriaField->id);
+
+            // Check if any of these questions were answered
+            $hasAnswer = false;
+            $mappedQuestionIds = [];
+
+            foreach ($mappedQuestions as $mapping) {
+                $mappedQuestionIds[] = $mapping->question_id;
+                $formKey = 'career_q_' . $mapping->question_id;
+
+                if (isset($formData[$formKey]) && $formData[$formKey] !== null && $formData[$formKey] !== '') {
+                    $answer = $formData[$formKey];
+                    if (is_string($answer) && trim($answer) !== '') {
+                        $hasAnswer = true;
+                        break;
+                    }
+                }
+            }
+
+            // If no answer found for this criteria field, add helper message
+            if (!$hasAnswer) {
+                $questionTexts = [];
+                foreach ($mappedQuestions as $mapping) {
+                    if ($mapping->question) {
+                        $questionTexts[] = $mapping->question->question;
+                    }
+                }
+
+                $helperMessages[] = [
+                    'criteria_field_id' => $criteriaField->id,
+                    'criteria_field_name' => $criteriaField->name,
+                    'criteria_field_slug' => $criteriaField->slug,
+                    'message' => "This is a criteria to enter. You have not attempted: {$criteriaField->name}",
+                    'related_questions' => $questionTexts,
+                    'related_question_ids' => $mappedQuestionIds
+                ];
+            }
         }
 
-        // Group mappings by criteria field
+        if ($mappings->isEmpty()) {
+            // Return empty universities but with helper messages
+            return [
+                'universities' => collect([]),
+                'helperMessages' => $helperMessages
+            ];
+        }
+
+        // Group mappings by criteria field - only for questions that have answers
         $criteriaFilters = [];
+        $filtersApplied = 0;
+
         foreach ($mappings as $mapping) {
             $criteriaField = $mapping->criteriaField;
             $questionId = $mapping->question_id;
             $formKey = 'career_q_' . $questionId;
-            
+
+            // Skip if no answer for this question
             if (!isset($formData[$formKey])) {
-                continue; // Skip if no answer for this question
+                continue;
             }
 
             $studentAnswer = $formData[$formKey];
-            
+
+            if ($studentAnswer === null || $studentAnswer === '') {
+                continue;
+            }
+
+            // Skip empty answers
+            if (is_string($studentAnswer) && trim($studentAnswer) === '') {
+                continue;
+            }
+
             if (!isset($criteriaFilters[$criteriaField->id])) {
                 $criteriaFilters[$criteriaField->id] = [
                     'field' => $criteriaField,
                     'answers' => []
                 ];
             }
-            
+
             $criteriaFilters[$criteriaField->id]['answers'][] = $studentAnswer;
         }
 
-        // Apply filters for each criteria field
+        // If no criteria filters have answers, return empty (don't show all universities)
+        if (empty($criteriaFilters)) {
+            return [
+                'universities' => collect([]),
+                'helperMessages' => $helperMessages
+            ];
+        }
+
+        // Apply filters for each criteria field that has an answer
         foreach ($criteriaFilters as $criteriaFieldId => $filterData) {
             $criteriaField = $filterData['field'];
             $studentAnswers = $filterData['answers'];
-            
+
             // Use the first answer (or combine logic if multiple questions map to same criteria)
             $studentValue = is_array($studentAnswers) ? $studentAnswers[0] : $studentAnswers;
-            
-            $query = $this->applyCriteriaFilter($query, $criteriaField, $studentValue);
+
+            // Check if value is valid before applying filter
+            if ($studentValue !== null && $studentValue !== '') {
+                $query = $this->applyCriteriaFilter($query, $criteriaField, $studentValue);
+                $filtersApplied++;
+            }
         }
 
-        return $query->with('country')->get();
+        // Only return results if at least one filter was successfully applied
+        // This prevents showing all universities when mapped questions are not answered
+        if ($filtersApplied === 0) {
+            return [
+                'universities' => collect([]),
+                'helperMessages' => $helperMessages
+            ];
+        }
+
+        $results = $query->with('country')->get();
+
+        return [
+            'universities' => $results,
+            'helperMessages' => $helperMessages
+        ];
     }
 
     /**
@@ -106,17 +203,17 @@ class UniversityFilterService
         switch ($criteriaField->type) {
             case 'boolean':
                 return $this->filterBoolean($query, $criteriaField, $studentValue);
-            
+
             case 'number':
             case 'decimal':
                 return $this->filterNumeric($query, $criteriaField, $studentValue);
-            
+
             case 'text':
                 return $this->filterText($query, $criteriaField, $studentValue);
-            
+
             case 'json':
                 return $this->filterJson($query, $criteriaField, $studentValue);
-            
+
             default:
                 return $query;
         }
@@ -130,19 +227,20 @@ class UniversityFilterService
     {
         // Normalize student answer to boolean
         $studentBool = $this->normalizeBoolean($studentValue);
-        
+
         if ($studentBool === null) {
             return $query; // Invalid answer, skip
         }
 
+        $targetValue = $studentBool ? '1' : '0';
+
         // Find universities where this criteria value matches student's answer
         $universityIds = UniversityCriteriaValue::where('criteria_field_id', $criteriaField->id)
-            ->where('value', $studentBool ? '1' : '0')
+            ->where('value', $targetValue)
             ->pluck('university_id')
             ->toArray();
 
         if (empty($universityIds)) {
-            // No universities match, return empty query
             return $query->whereRaw('1 = 0'); // Force empty result
         }
 
@@ -156,7 +254,7 @@ class UniversityFilterService
     protected function filterNumeric($query, UniversityCriteriaField $criteriaField, $studentValue)
     {
         $studentNumeric = $this->normalizeNumeric($studentValue);
-        
+
         if ($studentNumeric === null) {
             return $query; // Invalid answer, skip
         }
@@ -166,10 +264,10 @@ class UniversityFilterService
             ->get();
 
         $matchingUniversityIds = [];
-        
+
         foreach ($criteriaValues as $criteriaValue) {
             $universityValue = $this->normalizeNumeric($criteriaValue->value);
-            
+
             if ($universityValue === null) {
                 continue; // Skip invalid values
             }
@@ -183,7 +281,6 @@ class UniversityFilterService
         }
 
         if (empty($matchingUniversityIds)) {
-            // No universities match, return empty query
             return $query->whereRaw('1 = 0'); // Force empty result
         }
 
@@ -197,7 +294,7 @@ class UniversityFilterService
     protected function filterText($query, UniversityCriteriaField $criteriaField, $studentValue)
     {
         $studentText = trim((string)$studentValue);
-        
+
         if (empty($studentText)) {
             return $query; // Skip empty
         }
@@ -226,7 +323,7 @@ class UniversityFilterService
     {
         // Try to decode student value if it's JSON
         $studentData = is_string($studentValue) ? json_decode($studentValue, true) : $studentValue;
-        
+
         if (!is_array($studentData)) {
             $studentData = [$studentValue]; // Convert to array
         }
@@ -234,10 +331,10 @@ class UniversityFilterService
         // Find universities where JSON contains any of the student's values
         $universityIds = [];
         $criteriaValues = UniversityCriteriaValue::where('criteria_field_id', $criteriaField->id)->get();
-        
+
         foreach ($criteriaValues as $criteriaValue) {
             $universityData = json_decode($criteriaValue->value, true);
-            
+
             if (!is_array($universityData)) {
                 continue;
             }
@@ -274,18 +371,18 @@ class UniversityFilterService
         }
 
         $value = strtolower(trim((string)$value));
-        
+
         $trueValues = ['yes', 'true', '1', 'on', 'y'];
         $falseValues = ['no', 'false', '0', 'off', 'n', ''];
-        
+
         if (in_array($value, $trueValues)) {
             return true;
         }
-        
+
         if (in_array($value, $falseValues)) {
             return false;
         }
-        
+
         return null; // Invalid
     }
 

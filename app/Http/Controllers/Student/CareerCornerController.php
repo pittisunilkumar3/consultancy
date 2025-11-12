@@ -209,7 +209,9 @@ class CareerCornerController extends Controller
 
                     // Get matching universities based on submission
                     $filterService = new UniversityFilterService();
-                    $data['matchingUniversities'] = $filterService->filterBySubmission($submission);
+                    $filterResult = $filterService->filterBySubmission($submission);
+                    $data['matchingUniversities'] = $filterResult['universities'];
+                    $data['helperMessages'] = $filterResult['helperMessages'];
                 } else {
                     // No submission yet - use current structure
                     $data['formData'] = $structure->loadNestedStructure();
@@ -357,12 +359,15 @@ class CareerCornerController extends Controller
 
             // Filter universities
             $filterService = new UniversityFilterService();
-            $universities = $filterService->filterBySubmission($submission);
+            $filterResult = $filterService->filterBySubmission($submission);
 
             return response()->json([
                 'status' => true,
                 'message' => __('Matching universities retrieved successfully'),
-                'data' => $universities->load('country')
+                'data' => [
+                    'universities' => $filterResult['universities']->load('country'),
+                    'helperMessages' => $filterResult['helperMessages']
+                ]
             ]);
 
         } catch (\Exception $e) {

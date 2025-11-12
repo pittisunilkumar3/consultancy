@@ -405,6 +405,46 @@
                     </div>
                 </div>
 
+                {{-- Helper Messages for Missed Criteria --}}
+                @if(isset($helperMessages) && !empty($helperMessages))
+                <div class="alert alert-warning mb-4" id="helperMessagesSection">
+                    <div class="d-flex align-items-start">
+                        <i class="fa-solid fa-exclamation-triangle me-3 mt-1" style="font-size: 1.5rem;"></i>
+                        <div class="flex-grow-1">
+                            <h5 class="alert-heading mb-3">
+                                <i class="fa-solid fa-info-circle me-2"></i>{{ __('Additional Criteria Information') }}
+                            </h5>
+                            <p class="mb-3">{{ __('The following criteria are used by universities for filtering, but you haven\'t provided information for them yet:') }}</p>
+                            <ul class="list-unstyled mb-0">
+                                @foreach($helperMessages as $helper)
+                                <li class="mb-3 pb-3 border-bottom">
+                                    <div class="d-flex align-items-start">
+                                        <i class="fa-solid fa-circle-info me-2 mt-1 text-primary"></i>
+                                        <div class="flex-grow-1">
+                                            <strong class="d-block mb-1">{{ $helper['criteria_field_name'] }}</strong>
+                                            <p class="mb-1 text-muted small">{{ $helper['message'] }}</p>
+                                            @if(!empty($helper['related_questions']))
+                                            <p class="mb-0 small">
+                                                <em>{{ __('Related questions:') }}</em>
+                                                @foreach($helper['related_questions'] as $index => $question)
+                                                    {{ $question }}@if(!$loop->last), @endif
+                                                @endforeach
+                                            </p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </li>
+                                @endforeach
+                            </ul>
+                            <p class="mb-0 mt-3 small text-muted">
+                                <i class="fa-solid fa-lightbulb me-1"></i>
+                                <strong>{{ __('Tip:') }}</strong> {{ __('You can click "Change Preferences" above to update your form and provide information for these criteria to get more accurate university recommendations.') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 {{-- Matching Universities Section --}}
                 @if(isset($matchingUniversities) && $matchingUniversities->count() > 0)
                 <div class="career-form-section mb-4" id="matchingUniversitiesSection">
@@ -620,9 +660,10 @@
                     });
                 });
 
-                // Hide matching universities section when editing
+                // Hide matching universities section and helper messages when editing
                 $('#matchingUniversitiesSection').slideUp(300);
                 $('#noMatchingUniversitiesAlert').slideUp(300);
+                $('#helperMessagesSection').slideUp(300);
 
                 // Hide change preferences button and show cancel button
                 $('#changePreferencesBtn').hide();
@@ -666,9 +707,10 @@
             function revertToReadonlyMode() {
                 isReadonly = true;
 
-                // Show matching universities section again when canceling edit
+                // Show matching universities section and helper messages again when canceling edit
                 $('#matchingUniversitiesSection').slideDown(300);
                 $('#noMatchingUniversitiesAlert').slideDown(300);
+                $('#helperMessagesSection').slideDown(300);
 
                 // Store current form values before reverting
                 const formValues = {};
