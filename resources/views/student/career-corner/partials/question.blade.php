@@ -1,7 +1,7 @@
 @php
     // Handle both snapshot questions (arrays) and current questions (objects)
     $questionData = $questions[$item['question_id']] ?? null;
-    
+
     // Debug: Log if question is missing
     if (!$questionData && isset($item['question_id'])) {
         \Log::warning('Career Corner: Question not found in questions array', [
@@ -10,7 +10,7 @@
             'item' => $item
         ]);
     }
-    
+
     if (!$questionData) {
         return;
     }
@@ -37,20 +37,20 @@
 
     // Check if form is readonly (submitted or explicitly set)
     $isReadonly = isset($isReadonly) ? $isReadonly : (isset($submittedData) && $submittedData !== null && !empty($submittedData));
-    
+
     // Get field value from submitted data
     $fieldValue = null;
     if ($isReadonly && isset($submittedData) && is_array($submittedData) && !empty($submittedData)) {
         // Check for the field value using the question ID as key
         $fieldValue = $submittedData[$questionId] ?? null;
-        
+
         // For checkbox fields, ensure fieldValue is an array
         // Laravel normalizes checkbox arrays (removes brackets from key)
         if ($questionType === 'checkbox' && $fieldValue !== null) {
             $fieldValue = is_array($fieldValue) ? $fieldValue : [$fieldValue];
         }
     }
-    
+
     // Debug data attributes
     $debugInfo = [
         'questionId' => $questionId,
@@ -62,8 +62,8 @@
     ];
 @endphp
 
-<div class="career-form-question" 
-     data-question-id="{{ is_array($questionData) ? $questionData['id'] : $questionData->id }}" 
+<div class="career-form-question"
+     data-question-id="{{ is_array($questionData) ? $questionData['id'] : $questionData->id }}"
      data-depth="{{ $depth }}"
      data-question-key="{{ $questionId }}"
      data-field-value="{{ is_array($fieldValue) ? json_encode($fieldValue) : ($fieldValue ?? '') }}"
@@ -91,7 +91,7 @@
                             $fieldValueTrimmed = trim((string)$fieldValue);
                             $optionValueTrimmed = trim((string)$optionValue);
                             // Check both exact match and case-insensitive match
-                            $isChecked = ($fieldValueTrimmed === $optionValueTrimmed) || 
+                            $isChecked = ($fieldValueTrimmed === $optionValueTrimmed) ||
                                         (strtolower($fieldValueTrimmed) === strtolower($optionValueTrimmed));
                         }
                     @endphp
@@ -126,11 +126,11 @@
                             'submittedValue' => null,
                             'matchResult' => false
                         ];
-                        
+
                         if ($isReadonly && isset($submittedData[$questionId])) {
                             $submittedValue = trim((string)$submittedData[$questionId]);
                             $debugMatch['submittedValue'] = $submittedValue;
-                            
+
                             // Case-insensitive comparison
                             $exactMatch = ($submittedValue === $optionValueStr);
                             $caseInsensitiveMatch = (strtolower($submittedValue) === strtolower($optionValueStr));
@@ -166,7 +166,7 @@
                     if ($isReadonly && $fieldValue !== null) {
                         $fieldValueTrimmed = trim((string)$fieldValue);
                         $optionValueTrimmed = trim((string)$optionValue);
-                        $isSelected = ($fieldValueTrimmed === $optionValueTrimmed) || 
+                        $isSelected = ($fieldValueTrimmed === $optionValueTrimmed) ||
                                      (strtolower($fieldValueTrimmed) === strtolower($optionValueTrimmed));
                     }
                 @endphp
