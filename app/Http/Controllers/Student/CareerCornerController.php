@@ -59,12 +59,33 @@ class CareerCornerController extends Controller
                         'submitted_data_keys' => is_array($formData) ? array_keys($formData) : []
                     ]);
 
-                    // Use snapshot if available, otherwise use current structure
-                    $snapshotData = $submission->getFormStructureData();
+                    // Check if structure has changed FIRST
+                    $structureChanged = $submission->hasStructureChanged();
+                    $data['structureChanged'] = $structureChanged;
 
-                    if ($snapshotData && isset($snapshotData['structure']) && isset($snapshotData['questions'])) {
-                        // Use snapshot data for displaying submitted form
-                        $data['formData'] = $snapshotData['structure'];
+                    // If structure has changed, use CURRENT structure so student can see new questions
+                    // Otherwise, use snapshot to preserve original submission view
+                    if ($structureChanged) {
+                        // Structure changed - use current structure with all new questions
+                        $data['formData'] = $structure->loadNestedStructure();
+                        $questionsCollection = Question::orderBy('order')->get()->keyBy('id');
+                        $questionsArray = [];
+                        foreach ($questionsCollection as $id => $question) {
+                            $questionsArray[$id] = $question->toArray();
+                        }
+                        $data['questions'] = $questionsArray;
+
+                        \Log::info('Career Corner: Structure changed - using current structure', [
+                            'current_question_ids' => array_keys($questionsArray),
+                            'current_question_count' => count($questionsArray)
+                        ]);
+                    } else {
+                        // Structure unchanged - use snapshot to preserve original view
+                        $snapshotData = $submission->getFormStructureData();
+
+                        if ($snapshotData && isset($snapshotData['structure']) && isset($snapshotData['questions'])) {
+                            // Use snapshot data for displaying submitted form
+                            $data['formData'] = $snapshotData['structure'];
 
                         // Convert snapshot questions to collection, ensuring they're keyed by question ID
                         // Handle both array format (from JSON) and collection format
@@ -186,25 +207,23 @@ class CareerCornerController extends Controller
                             'final_question_count' => count($data['questions']),
                             'final_questions_sample' => array_slice($data['questions'], 0, 3, true)
                         ]);
+                        } else {
+                            // Fallback to current structure
+                            $data['formData'] = $structure->loadNestedStructure();
+                            $questionsCollection = Question::orderBy('order')->get()->keyBy('id');
+                            // Convert to array with question IDs as keys
+                            $questionsArray = [];
+                            foreach ($questionsCollection as $id => $question) {
+                                $questionsArray[$id] = $question->toArray();
+                            }
+                            $data['questions'] = $questionsArray;
 
-                        // Check if structure has changed
-                        $data['structureChanged'] = $submission->hasStructureChanged();
-                    } else {
-                        // Fallback to current structure
-                        $data['formData'] = $structure->loadNestedStructure();
-                        $questionsCollection = Question::orderBy('order')->get()->keyBy('id');
-                        // Convert to array with question IDs as keys
-                        $questionsArray = [];
-                        foreach ($questionsCollection as $id => $question) {
-                            $questionsArray[$id] = $question->toArray();
+                            // Debug: Log questions in current structure
+                            \Log::info('Career Corner: Using current structure', [
+                                'current_question_ids' => array_keys($data['questions']),
+                                'current_question_count' => count($data['questions'])
+                            ]);
                         }
-                        $data['questions'] = $questionsArray;
-
-                        // Debug: Log questions in current structure
-                        \Log::info('Career Corner: Using current structure', [
-                            'current_question_ids' => array_keys($data['questions']),
-                            'current_question_count' => count($data['questions'])
-                        ]);
                     }
 
                     // Get matching universities based on submission
