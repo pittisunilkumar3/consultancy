@@ -520,194 +520,8 @@
 @push('script')
     <script>
         $(document).ready(function() {
-            // Debug: Log submitted data from server
-            @if(isset($submittedData) && is_array($submittedData))
-            console.log('=== CAREER CORNER FORM DEBUG ===');
-            console.log('Submitted Data from Server:', @json($submittedData));
-            console.log('Submission exists:', {{ isset($submission) && $submission ? 'true' : 'false' }});
-            console.log('Is Readonly Mode:', {{ isset($submission) && $submission ? 'true' : 'false' }});
-
-            // Debug: Log form structure to see nested questions
-            @if(isset($formData) && is_array($formData))
-            console.log('\n=== FORM STRUCTURE DEBUG ===');
-            console.log('Form Data Structure:', @json($formData));
-
-            // Check for nested questions in structure
-            function findNestedQuestions(structure, path = '') {
-                const nested = [];
-                if (Array.isArray(structure)) {
-                    structure.forEach((element, index) => {
-                        if (element.type === 'section' && element.items) {
-                            element.items.forEach((item, itemIndex) => {
-                                const itemPath = `${path}[${index}].items[${itemIndex}]`;
-                                if (item.children) {
-                                    nested.push({
-                                        path: itemPath,
-                                        questionId: item.question_id,
-                                        children: Object.keys(item.children)
-                                    });
-                                    // Recursively check nested items
-                                    Object.values(item.children).forEach(childGroup => {
-                                        if (childGroup.items) {
-                                            childGroup.items.forEach(childItem => {
-                                                nested.push(...findNestedQuestions([childItem], `${itemPath}.children`));
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                        } else if (element.type === 'item' && element.item) {
-                            const item = element.item;
-                            const itemPath = `${path}[${index}].item`;
-                            if (item.children) {
-                                nested.push({
-                                    path: itemPath,
-                                    questionId: item.question_id,
-                                    children: Object.keys(item.children)
-                                });
-                                // Recursively check nested items
-                                Object.values(item.children).forEach(childGroup => {
-                                    if (childGroup.items) {
-                                        childGroup.items.forEach(childItem => {
-                                            nested.push(...findNestedQuestions([childItem], `${itemPath}.children`));
-                                        });
-                                    }
-                                });
-                            }
-                        }
-                    });
-                }
-                return nested;
-            }
-
-            const nestedInStructure = findNestedQuestions(@json($formData));
-            console.log('Nested questions found in structure:', nestedInStructure);
-
-            // Debug: Check which questions are available
-            @if(isset($questions))
-            const availableQuestions = @json(is_array($questions) ? array_keys($questions) : $questions->keys()->toArray());
-            console.log('Available question IDs in $questions array:', availableQuestions);
-
-            // Check if nested questions from structure are in available questions
-            nestedInStructure.forEach(nested => {
-                if (nested.children) {
-                    nested.children.forEach(optionValue => {
-                        // Find nested items under this option
-                        // This is a simplified check - we'd need to traverse the structure
-                    });
-                }
-            });
-            @endif
-            console.log('=== END FORM STRUCTURE DEBUG ===\n');
-            @endif
-            @endif
-
             // Track if form is in readonly mode
             let isReadonly = {{ isset($submission) && $submission ? 'true' : 'false' }};
-
-            // Debug: Log all questions and their values on the page (including nested)
-            console.log('\n=== QUESTIONS AND ANSWERS ON PAGE ===');
-            const questionsData = [];
-
-            // Function to check if question is nested and visible
-            function isQuestionVisible($question) {
-                const $nestedContainer = $question.closest('.career-form-nested-questions');
-                if ($nestedContainer.length === 0) {
-                    return true; // Not nested, so visible
-                }
-                return $nestedContainer.hasClass('show') || $nestedContainer.css('display') !== 'none';
-            }
-
-            $('.career-form-question').each(function() {
-                const $question = $(this);
-                const questionId = $question.data('question-id');
-                const questionKey = $question.data('question-key');
-                const fieldValue = $question.data('field-value');
-                const isReadonlyField = $question.data('is-readonly');
-                const debugInfo = $question.data('debug-info');
-
-                // Get the actual question text
-                const questionText = $question.find('.career-form-question-label').text().trim();
-
-                // Get the actual field value from the form
-                let actualFieldValue = null;
-                const $input = $question.find('input[type="text"], input[type="number"], input[type="email"], textarea');
-                const $select = $question.find('select');
-                const $radio = $question.find('input[type="radio"]:checked');
-                const $checkbox = $question.find('input[type="checkbox"]:checked');
-
-                if ($input.length) {
-                    actualFieldValue = $input.val();
-                } else if ($select.length) {
-                    actualFieldValue = $select.val();
-                } else if ($radio.length) {
-                    actualFieldValue = $radio.val();
-                } else if ($checkbox.length) {
-                    actualFieldValue = $checkbox.map(function() { return $(this).val(); }).get();
-                }
-
-                const isNested = $question.closest('.career-form-nested-questions').length > 0;
-                const isVisible = isQuestionVisible($question);
-                const parentQuestionId = $question.closest('.career-form-nested-questions').data('parent-question') || null;
-
-                const questionInfo = {
-                    questionId: questionId,
-                    questionKey: questionKey,
-                    questionText: questionText,
-                    fieldValueFromData: fieldValue,
-                    actualFieldValue: actualFieldValue,
-                    isReadonly: isReadonlyField,
-                    isNested: isNested,
-                    isVisible: isVisible,
-                    parentQuestionId: parentQuestionId,
-                    debugInfo: debugInfo
-                };
-
-                questionsData.push(questionInfo);
-
-                const nestedPrefix = isNested ? '[NESTED] ' : '';
-                console.log(`\n${nestedPrefix}Question ID: ${questionId} (Key: ${questionKey})`);
-                if (isNested) {
-                    console.log(`  Parent Question ID: ${parentQuestionId}`);
-                    console.log(`  Is Visible: ${isVisible}`);
-                }
-                console.log(`  Text: "${questionText}"`);
-                console.log(`  Value from data attribute:`, fieldValue);
-                console.log(`  Actual field value:`, actualFieldValue);
-                console.log(`  Is Readonly: ${isReadonlyField}`);
-                console.log(`  Debug Info:`, debugInfo);
-            });
-
-            // Debug: Check nested containers
-            console.log('\n=== NESTED CONTAINERS DEBUG ===');
-            $('.career-form-nested-questions').each(function() {
-                const $container = $(this);
-                const parentQuestionId = $container.data('parent-question');
-                const optionValue = $container.data('option-value');
-                const debugMatch = $container.data('debug-match');
-                const isVisible = $container.hasClass('show') || $container.css('display') !== 'none';
-                const questionCount = $container.find('.career-form-question').length;
-
-                console.log(`Nested Container:`);
-                console.log(`  Parent Question ID: ${parentQuestionId}`);
-                console.log(`  Option Value: "${optionValue}"`);
-                console.log(`  Is Visible: ${isVisible}`);
-                console.log(`  Questions inside: ${questionCount}`);
-                console.log(`  Debug Match Info:`, debugMatch);
-            });
-            console.log('=== END NESTED CONTAINERS DEBUG ===\n');
-
-            console.log('\n=== SUMMARY ===');
-            console.log(`Total questions found: ${questionsData.length}`);
-            console.log(`  - Nested questions: ${questionsData.filter(q => q.isNested).length}`);
-            console.log(`  - Visible nested questions: ${questionsData.filter(q => q.isNested && q.isVisible).length}`);
-            console.log(`  - Hidden nested questions: ${questionsData.filter(q => q.isNested && !q.isVisible).length}`);
-            console.log(`Total nested containers: ${$('.career-form-nested-questions').length}`);
-            console.log(`Visible nested containers: ${$('.career-form-nested-questions.show').length}`);
-            console.log(`Questions with values: ${questionsData.filter(q => q.actualFieldValue && q.actualFieldValue !== '').length}`);
-            console.log(`Questions with data values: ${questionsData.filter(q => q.fieldValueFromData !== null && q.fieldValueFromData !== '').length}`);
-            console.log(`Hidden nested questions with data:`, questionsData.filter(q => q.isNested && !q.isVisible && q.fieldValueFromData));
-            console.log('\n=== END DEBUG ===\n');
 
             // Function to make form editable
             function makeFormEditable() {
@@ -719,12 +533,91 @@
                 $('#careerCornerForm select[disabled]').prop('disabled', false).removeAttr('style');
                 $('#careerCornerForm input[disabled]').prop('disabled', false);
 
-                // Restore required attributes for visible nested questions
-                $('.career-form-nested-questions.show').find('input, select, textarea').each(function() {
-                    const $field = $(this);
-                    if ($field.data('original-required') === true || $field.data('original-required') === 'true') {
-                        $field.attr('required', 'required');
+                // STEP 1: Remove required from ALL hidden nested questions
+                $('.career-form-nested-questions').each(function() {
+                    const $container = $(this);
+                    const parentQuestionId = $container.data('parent-question');
+                    const containerOptionValue = $container.data('option-value');
+
+                    let isVisible = false;
+                    if (parentQuestionId && containerOptionValue) {
+                        const $checkedRadio = $(`input[type="radio"][data-question-id="${parentQuestionId}"]:checked`);
+                        if ($checkedRadio.length > 0) {
+                            const selectedValue = String($checkedRadio.val()).trim().toLowerCase();
+                            const containerValue = String(containerOptionValue).trim().toLowerCase();
+                            isVisible = (selectedValue === containerValue);
+                        }
                     }
+
+                    if (!isVisible || !$container.hasClass('show') || $container.css('display') === 'none') {
+                        $container.find('input, select, textarea').each(function() {
+                            $(this).removeAttr('required');
+                            $(this).prop('required', false);
+                            if (this.removeAttribute) this.removeAttribute('required');
+                        });
+                    }
+                });
+
+                // STEP 2: For ALL visible questions, set required based on database value
+                $('.career-form-question').each(function() {
+                    const $question = $(this);
+                    const questionRequired = $question.data('question-required');
+                    const isRequired = questionRequired === '1' || questionRequired === 1 || questionRequired === true;
+
+                    // Check if question is visible
+                    const $nestedContainer = $question.closest('.career-form-nested-questions');
+                    let isQuestionVisible = true;
+
+                    if ($nestedContainer.length > 0) {
+                        const parentQuestionId = $nestedContainer.data('parent-question');
+                        const containerOptionValue = $nestedContainer.data('option-value');
+
+                        if (parentQuestionId && containerOptionValue) {
+                            const $checkedRadio = $(`input[type="radio"][data-question-id="${parentQuestionId}"]:checked`);
+                            if ($checkedRadio.length === 0) {
+                                isQuestionVisible = false;
+                            } else {
+                                const selectedValue = String($checkedRadio.val()).trim().toLowerCase();
+                                const containerValue = String(containerOptionValue).trim().toLowerCase();
+                                isQuestionVisible = (selectedValue === containerValue);
+                            }
+                        }
+
+                        if (!$nestedContainer.hasClass('show') || $nestedContainer.css('display') === 'none') {
+                            isQuestionVisible = false;
+                        }
+                    }
+
+                    // Set required attribute based on database value
+                    $question.find('input, select, textarea').each(function() {
+                        const $field = $(this);
+
+                        if (!isQuestionVisible || $field.is(':hidden') || $field.css('display') === 'none') {
+                            // Hidden field - remove required
+                            $field.removeAttr('required');
+                            $field.prop('required', false);
+                            if ($field[0] && $field[0].removeAttribute) {
+                                $field[0].removeAttribute('required');
+                            }
+                        } else if (isRequired) {
+                            // Visible and required in database - add required
+                            $field.attr('required', 'required');
+                        } else {
+                            // Visible but optional in database - remove required
+                            $field.removeAttr('required');
+                            $field.prop('required', false);
+                            if ($field[0] && $field[0].removeAttribute) {
+                                $field[0].removeAttribute('required');
+                            }
+                            // For radio buttons, clear validation
+                            if ($field[0] && $field[0].type === 'radio') {
+                                const fieldName = $field.attr('name');
+                                $(`input[type="radio"][name="${fieldName}"]`).each(function() {
+                                    if (this.setCustomValidity) this.setCustomValidity('');
+                                });
+                            }
+                        }
+                    });
                 });
 
                 // Hide matching universities section when editing
@@ -752,8 +645,6 @@
                             $submitContainer[0].style.setProperty('display', 'block', 'important');
                         }
                     }, 50);
-                } else {
-                    console.error('Submit button container not found!');
                 }
 
                 // Initialize interactive features
@@ -764,6 +655,11 @@
 
                 // Trigger change on all checked radio buttons to show/hide nested questions correctly
                 $('input[type="radio"][data-question-id]:checked').trigger('change');
+
+                // Final check after radio changes
+                setTimeout(function() {
+                    updateRequiredAttributes();
+                }, 100);
             }
 
             // Function to revert form back to readonly mode
@@ -805,15 +701,133 @@
 
                 // Handle form submission
                 $('#careerCornerForm').on('submit', function(e) {
-                    // Remove required from all hidden nested questions before validation
-                    $('.career-form-nested-questions:not(.show)').find('input[required], select[required], textarea[required]').removeAttr('required');
-
                     e.preventDefault();
 
-                    // Validate form
+                    // STEP 1: Remove required from ALL hidden nested questions (when parent is not selected)
+                    $('.career-form-nested-questions').each(function() {
+                        const $container = $(this);
+                        const parentQuestionId = $container.data('parent-question');
+                        const containerOptionValue = $container.data('option-value');
+
+                        let isVisible = false;
+                        if (parentQuestionId && containerOptionValue) {
+                            const $checkedRadio = $(`input[type="radio"][data-question-id="${parentQuestionId}"]:checked`);
+                            if ($checkedRadio.length > 0) {
+                                const selectedValue = String($checkedRadio.val()).trim().toLowerCase();
+                                const containerValue = String(containerOptionValue).trim().toLowerCase();
+                                isVisible = (selectedValue === containerValue);
+                            }
+                        }
+
+                        if (!isVisible || !$container.hasClass('show') || $container.css('display') === 'none') {
+                            // Hidden nested question - remove required from all fields
+                            $container.find('input, select, textarea').each(function() {
+                                $(this).removeAttr('required');
+                                $(this).prop('required', false);
+                                if (this.removeAttribute) this.removeAttribute('required');
+                            });
+                        }
+                    });
+
+                    // STEP 2: For ALL visible questions, set required based on database value
+                    $('.career-form-question').each(function() {
+                        const $question = $(this);
+                        const questionRequired = $question.data('question-required');
+                        const isRequired = questionRequired === '1' || questionRequired === 1 || questionRequired === true;
+
+                        // Check if question is visible (not in hidden nested container)
+                        const $nestedContainer = $question.closest('.career-form-nested-questions');
+                        let isQuestionVisible = true;
+
+                        if ($nestedContainer.length > 0) {
+                            const parentQuestionId = $nestedContainer.data('parent-question');
+                            const containerOptionValue = $nestedContainer.data('option-value');
+
+                            if (parentQuestionId && containerOptionValue) {
+                                const $checkedRadio = $(`input[type="radio"][data-question-id="${parentQuestionId}"]:checked`);
+                                if ($checkedRadio.length === 0) {
+                                    isQuestionVisible = false;
+                                } else {
+                                    const selectedValue = String($checkedRadio.val()).trim().toLowerCase();
+                                    const containerValue = String(containerOptionValue).trim().toLowerCase();
+                                    isQuestionVisible = (selectedValue === containerValue);
+                                }
+                            }
+
+                            if (!$nestedContainer.hasClass('show') || $nestedContainer.css('display') === 'none') {
+                                isQuestionVisible = false;
+                            }
+                        }
+
+                        // Set required attribute based on database value
+                        $question.find('input, select, textarea').each(function() {
+                            const $field = $(this);
+
+                            if (!isQuestionVisible || $field.is(':hidden') || $field.css('display') === 'none') {
+                                // Hidden field - remove required
+                                $field.removeAttr('required');
+                                $field.prop('required', false);
+                                if ($field[0] && $field[0].removeAttribute) {
+                                    $field[0].removeAttribute('required');
+                                }
+                            } else if (isRequired) {
+                                // Visible and required in database - add required
+                                $field.attr('required', 'required');
+                            } else {
+                                // Visible but optional in database - remove required
+                                $field.removeAttr('required');
+                                $field.prop('required', false);
+                                if ($field[0] && $field[0].removeAttribute) {
+                                    $field[0].removeAttribute('required');
+                                }
+                                // For radio buttons, also clear validation for all in group
+                                if ($field[0] && $field[0].type === 'radio') {
+                                    const fieldName = $field.attr('name');
+                                    $(`input[type="radio"][name="${fieldName}"]`).each(function() {
+                                        if (this.setCustomValidity) this.setCustomValidity('');
+                                    });
+                                }
+                            }
+                        });
+                    });
+
+                    // STEP 3: Validate form
                     if (!this.checkValidity()) {
-                        this.reportValidity();
-                        return;
+                        // If validation fails, check if any optional questions are invalid
+                        $(this).find(':invalid').each(function() {
+                            const $field = $(this);
+                            const $question = $field.closest('.career-form-question');
+                            if ($question.length) {
+                                const questionRequired = $question.data('question-required');
+                                const isRequired = questionRequired === '1' || questionRequired === 1 || questionRequired === true;
+
+                                if (!isRequired) {
+                                    // Optional question is invalid - force it valid
+                                    if ($field[0] && $field[0].setCustomValidity) {
+                                        $field[0].setCustomValidity('');
+                                        // For radio buttons, mark all in group as valid
+                                        if ($field[0].type === 'radio') {
+                                            const fieldName = $field.attr('name');
+                                            $(`input[type="radio"][name="${fieldName}"]`).each(function() {
+                                                if (this.setCustomValidity) this.setCustomValidity('');
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        // Re-check validity
+                        if (!this.checkValidity()) {
+                            // Still invalid - show error for required fields only
+                            const firstInvalid = this.querySelector(':invalid');
+                            if (firstInvalid) {
+                                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                firstInvalid.focus();
+                            }
+                            this.reportValidity();
+                            return;
+                        }
                     }
 
                     // Show loading state
@@ -1049,6 +1063,9 @@
                     // Remove required from hidden nested questions
                     $allNested.find('input[required], select[required], textarea[required]').removeAttr('required');
 
+                    // Update required attributes for visible questions
+                    updateRequiredAttributes();
+
                     // Show nested questions for selected option (case-insensitive match)
                     const $nestedContainer = $allNested.filter(function() {
                         const containerOptionValue = $(this).data('option-value') || $(this).attr('data-option-value');
@@ -1065,43 +1082,147 @@
                         $nestedContainer.css('display', 'block').addClass('show');
 
                         // Restore required attributes for visible nested questions
-                        $nestedContainer.find('input, select, textarea').each(function() {
+                        $nestedContainer.find('.career-form-question').each(function() {
+                            const $question = $(this);
+                            // Get required status from data attribute (from question table)
+                            const questionRequired = $question.data('question-required');
+                            const isRequired = questionRequired === '1' || questionRequired === 1 || questionRequired === true;
+
+                            $question.find('input, select, textarea').each(function() {
                             const $field = $(this);
-                            if ($field.data('original-required') === true || $field.data('original-required') === 'true') {
+
+                                // Double-check field is visible
+                                if ($field.is(':hidden') || $field.css('display') === 'none') {
+                                    $field.removeAttr('required');
+                                    return;
+                                }
+
+                                // ONLY use the database value (isRequired from data-question-required)
+                                // This is the source of truth - optional questions should never be required
+                                if (isRequired) {
                                 $field.attr('required', 'required');
+                                } else {
+                                    $field.removeAttr('required');
                             }
+                            });
                         });
                     }
+
+                    // Update required attributes after showing/hiding nested questions
+                    updateRequiredAttributes();
                 });
             }
 
             // Function to update required attributes based on visibility
             function updateRequiredAttributes() {
-                // Remove required from all hidden nested questions
-                $('.career-form-nested-questions:not(.show)').find('input[required], select[required], textarea[required]').each(function() {
-                    $(this).removeAttr('required');
-                });
+                // Only update if form is not readonly
+                if (isReadonly) {
+                    return;
+                }
 
-                // Add required back to visible nested questions that should be required
-                $('.career-form-nested-questions.show').find('input, select, textarea').each(function() {
-                    const $field = $(this);
-                    // Check if the original question was required by checking data attribute or parent
-                    const $question = $field.closest('.career-form-question');
-                    const questionId = $question.data('question-id');
-                    if (questionId) {
-                        // Check if this field should be required based on the question's required status
-                        // We'll check the data-required attribute or check the original question
-                        const originalRequired = $field.data('original-required');
-                        if (originalRequired === true || originalRequired === 'true') {
-                            $field.attr('required', 'required');
+                // STEP 1: Remove required from ALL hidden nested questions
+                $('.career-form-nested-questions').each(function() {
+                    const $container = $(this);
+                    const parentQuestionId = $container.data('parent-question');
+                    const containerOptionValue = $container.data('option-value');
+
+                    let isVisible = false;
+                    if (parentQuestionId && containerOptionValue) {
+                        const $checkedRadio = $(`input[type="radio"][data-question-id="${parentQuestionId}"]:checked`);
+                        if ($checkedRadio.length > 0) {
+                            const selectedValue = String($checkedRadio.val()).trim().toLowerCase();
+                            const containerValue = String(containerOptionValue).trim().toLowerCase();
+                            isVisible = (selectedValue === containerValue);
                         }
                     }
+
+                    if (!isVisible || !$container.hasClass('show') || $container.css('display') === 'none') {
+                        $container.find('input, select, textarea').each(function() {
+                            $(this).removeAttr('required');
+                            $(this).prop('required', false);
+                            if (this.removeAttribute) this.removeAttribute('required');
+                        });
+                    }
+                });
+
+                // STEP 2: For ALL visible questions, set required based on database value
+                $('.career-form-question').each(function() {
+                    const $question = $(this);
+                    const questionRequired = $question.data('question-required');
+                    const isRequired = questionRequired === '1' || questionRequired === 1 || questionRequired === true;
+
+                    // Check if question is visible
+                    const $nestedContainer = $question.closest('.career-form-nested-questions');
+                    let isQuestionVisible = true;
+
+                    if ($nestedContainer.length > 0) {
+                        const parentQuestionId = $nestedContainer.data('parent-question');
+                        const containerOptionValue = $nestedContainer.data('option-value');
+
+                        if (parentQuestionId && containerOptionValue) {
+                            const $checkedRadio = $(`input[type="radio"][data-question-id="${parentQuestionId}"]:checked`);
+                            if ($checkedRadio.length === 0) {
+                                isQuestionVisible = false;
+                            } else {
+                                const selectedValue = String($checkedRadio.val()).trim().toLowerCase();
+                                const containerValue = String(containerOptionValue).trim().toLowerCase();
+                                isQuestionVisible = (selectedValue === containerValue);
+                            }
+                        }
+
+                        if (!$nestedContainer.hasClass('show') || $nestedContainer.css('display') === 'none') {
+                            isQuestionVisible = false;
+                        }
+                    }
+
+                    // Set required attribute based on database value
+                    $question.find('input, select, textarea').each(function() {
+                        const $field = $(this);
+
+                        if (!isQuestionVisible || $field.is(':hidden') || $field.css('display') === 'none') {
+                            // Hidden field - remove required
+                            $field.removeAttr('required');
+                            $field.prop('required', false);
+                            if ($field[0] && $field[0].removeAttribute) {
+                                $field[0].removeAttribute('required');
+                            }
+                        } else if (isRequired) {
+                            // Visible and required in database - add required
+                            $field.attr('required', 'required');
+                        } else {
+                            // Visible but optional in database - remove required
+                            $field.removeAttr('required');
+                            $field.prop('required', false);
+                            if ($field[0] && $field[0].removeAttribute) {
+                                $field[0].removeAttribute('required');
+                            }
+                            // For radio buttons, clear validation
+                            if ($field[0] && $field[0].type === 'radio') {
+                                const fieldName = $field.attr('name');
+                                $(`input[type="radio"][name="${fieldName}"]`).each(function() {
+                                    if (this.setCustomValidity) this.setCustomValidity('');
+                                });
+                            }
+                        }
+                    });
                 });
             }
 
-            // Store original required status on page load
-            $('.career-form-nested-questions input[required], .career-form-nested-questions select[required], .career-form-nested-questions textarea[required]').each(function() {
-                $(this).data('original-required', true);
+            // Store original required status on page load for ALL questions (not just nested)
+            // This ensures we can restore required attributes when making form editable
+            // Use the data-question-required attribute which comes from the database
+            $('.career-form-question').each(function() {
+                const $question = $(this);
+                // Get required status from data attribute (comes from question table)
+                const questionRequired = $question.data('question-required');
+                const isRequired = questionRequired === '1' || questionRequired === 1 || questionRequired === true;
+
+                // Store required status for all fields in this question
+                $question.find('input, select, textarea').each(function() {
+                    const $field = $(this);
+                    // Store the actual required status from the database
+                    $field.data('original-required', isRequired);
+                });
             });
 
             if (isReadonly) {

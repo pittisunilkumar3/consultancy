@@ -68,6 +68,7 @@
      data-question-key="{{ $questionId }}"
      data-field-value="{{ is_array($fieldValue) ? json_encode($fieldValue) : ($fieldValue ?? '') }}"
      data-is-readonly="{{ $isReadonly ? '1' : '0' }}"
+     data-question-required="{{ $questionRequired ? '1' : '0' }}"
      data-debug-info="{{ json_encode($debugInfo) }}">
     <label class="career-form-question-label">
         {{ e($questionText) }}{!! $required !!}
