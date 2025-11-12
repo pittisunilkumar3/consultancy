@@ -74,12 +74,16 @@ class QuestionController extends Controller
             }
         }
 
+        // Check if "Use Countries from Database" checkbox was checked
+        $isCountryQuestion = $request->has('use_countries') && $request->input('use_countries') == '1';
+
         $question = Question::create([
             'question' => $request->question,
             'type' => $request->type,
             'order' => $request->order ?? 0,
             'required' => $request->required ? true : false,
-            'options' => $options
+            'options' => $options,
+            'is_country_question' => $isCountryQuestion
         ]);
 
         // Save criteria field mappings
@@ -153,13 +157,17 @@ class QuestionController extends Controller
             }
         }
 
+        // Check if "Use Countries from Database" checkbox was checked
+        $isCountryQuestion = $request->has('use_countries') && $request->input('use_countries') == '1';
+
         $question = Question::findOrFail($id);
         $question->update([
             'question' => $request->question,
             'type' => $request->type,
             'order' => $request->order ?? 0,
             'required' => $request->required ? true : false,
-            'options' => $options
+            'options' => $options,
+            'is_country_question' => $isCountryQuestion
         ]);
 
         // Update criteria field mappings

@@ -17,11 +17,13 @@ class Question extends Model
         'options',
         'order',
         'required',
+        'is_country_question',
     ];
 
     protected $casts = [
         'options' => 'array',
         'required' => 'boolean',
+        'is_country_question' => 'boolean',
     ];
 
     /**

@@ -8,6 +8,7 @@ use App\Models\QuestionCriteriaMapping;
 use App\Models\University;
 use App\Models\UniversityCriteriaField;
 use App\Models\UniversityCriteriaValue;
+use App\Models\Country;
 
 class UniversityFilterService
 {
@@ -167,6 +168,13 @@ class UniversityFilterService
                 $query = $this->applyCriteriaFilter($query, $criteriaField, $studentValue);
                 $filtersApplied++;
             }
+        }
+
+        // Apply country filter if country questions were answered
+        $countryIds = $this->extractCountryIdsFromAnswers($formData, $questionIds);
+        if (!empty($countryIds)) {
+            $query->whereIn('country_id', $countryIds);
+            $filtersApplied++;
         }
 
         // Only return results if at least one filter was successfully applied
@@ -402,6 +410,127 @@ class UniversityFilterService
         }
 
         return null; // Invalid
+    }
+
+    /**
+     * Extract country IDs from form answers for country questions
+     *
+     * @param array $formData
+     * @param array $questionIds
+     * @return array Array of country IDs
+     */
+    protected function extractCountryIdsFromAnswers(array $formData, array $questionIds): array
+    {
+        if (empty($questionIds)) {
+            return [];
+        }
+
+        // Get all country questions
+        $countryQuestions = Question::whereIn('id', $questionIds)
+            ->where('is_country_question', true)
+            ->get();
+
+        if ($countryQuestions->isEmpty()) {
+            return [];
+        }
+
+        $countryIds = [];
+
+        foreach ($countryQuestions as $question) {
+            $formKey = 'career_q_' . $question->id;
+
+            // Skip if no answer for this question
+            if (!isset($formData[$formKey])) {
+                continue;
+            }
+
+            $studentAnswer = $formData[$formKey];
+
+            if ($studentAnswer === null || $studentAnswer === '') {
+                continue;
+            }
+
+            // Handle different question types
+            if ($question->type === 'select') {
+                // For select: answer is the value (country ID)
+                $countryId = $this->extractCountryIdFromSelectAnswer($studentAnswer);
+                if ($countryId) {
+                    $countryIds[] = $countryId;
+                }
+            } elseif ($question->type === 'radio') {
+                // For radio: answer could be country ID (if using countries) or country name
+                $countryId = $this->extractCountryIdFromRadioAnswer($studentAnswer, $question);
+                if ($countryId) {
+                    $countryIds[] = $countryId;
+                }
+            } elseif ($question->type === 'checkbox') {
+                // For checkbox: answer is array, extract all country IDs
+                $answerArray = is_array($studentAnswer) ? $studentAnswer : [$studentAnswer];
+                foreach ($answerArray as $answer) {
+                    $countryId = $this->extractCountryIdFromCheckboxAnswer($answer, $question);
+                    if ($countryId) {
+                        $countryIds[] = $countryId;
+                    }
+                }
+            }
+        }
+
+        // Remove duplicates and return
+        return array_unique(array_filter($countryIds));
+    }
+
+    /**
+     * Extract country ID from select answer
+     * For select type, the answer is directly the country ID (value)
+     */
+    protected function extractCountryIdFromSelectAnswer($answer)
+    {
+        // Answer is the value (country ID) from select
+        $countryId = is_numeric($answer) ? (int)$answer : null;
+        return $countryId;
+    }
+
+    /**
+     * Extract country ID from radio answer
+     * Could be country ID (if using countries) or country name (backward compatible)
+     */
+    protected function extractCountryIdFromRadioAnswer($answer, Question $question)
+    {
+        // Check if answer is numeric (country ID)
+        if (is_numeric($answer)) {
+            return (int)$answer;
+        }
+
+        // Check if options are stored as {value, label} format
+        $options = $question->options ?? [];
+        if (is_array($options)) {
+            foreach ($options as $option) {
+                if (is_array($option) && isset($option['value']) && isset($option['label'])) {
+                    // If answer matches label, return the value (country ID)
+                    if ($option['label'] === $answer) {
+                        return is_numeric($option['value']) ? (int)$option['value'] : null;
+                    }
+                    // If answer matches value, return it
+                    if ($option['value'] == $answer) {
+                        return is_numeric($option['value']) ? (int)$option['value'] : null;
+                    }
+                }
+            }
+        }
+
+        // Fallback: try to find country by name (backward compatible)
+        $country = \App\Models\Country::where('name', $answer)->first();
+        return $country ? $country->id : null;
+    }
+
+    /**
+     * Extract country ID from checkbox answer
+     * Could be country ID (if using countries) or country name (backward compatible)
+     */
+    protected function extractCountryIdFromCheckboxAnswer($answer, Question $question)
+    {
+        // Same logic as radio
+        return $this->extractCountryIdFromRadioAnswer($answer, $question);
     }
 }
 
