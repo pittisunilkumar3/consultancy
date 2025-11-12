@@ -9,6 +9,7 @@ use App\Models\University;
 use App\Models\UniversityCriteriaField;
 use App\Models\UniversityCriteriaValue;
 use App\Models\Country;
+use Illuminate\Support\Facades\Log;
 
 class UniversityFilterService
 {
@@ -177,9 +178,19 @@ class UniversityFilterService
                 $allValues = array_unique(array_filter($allValues));
 
                 if (!empty($allValues)) {
+                    // Get current university IDs before applying filter
+                    $beforeCount = $query->count();
                     // Pass as array for JSON filtering
                     $query = $this->applyCriteriaFilter($query, $criteriaField, $allValues);
+                    $afterCount = $query->count();
                     $filtersApplied++;
+
+                    Log::info('University Filter: JSON criteria applied', [
+                        'criteria_field' => $criteriaField->name,
+                        'student_values' => $allValues,
+                        'universities_before' => $beforeCount,
+                        'universities_after' => $afterCount
+                    ]);
                 }
             } else {
                 // For non-JSON types, use the first answer
@@ -187,8 +198,20 @@ class UniversityFilterService
 
                 // Check if value is valid before applying filter
                 if ($studentValue !== null && $studentValue !== '') {
+                    // Get current university IDs before applying filter
+                    $beforeCount = $query->count();
                     $query = $this->applyCriteriaFilter($query, $criteriaField, $studentValue);
+                    $afterCount = $query->count();
                     $filtersApplied++;
+
+                    Log::info('University Filter: Criteria applied', [
+                        'criteria_field' => $criteriaField->name,
+                        'criteria_type' => $criteriaField->type,
+                        'student_value' => $studentValue,
+                        'is_maximum_constraint' => $criteriaField->type === 'number' || $criteriaField->type === 'decimal' ? $this->isMaximumConstraint($criteriaField) : null,
+                        'universities_before' => $beforeCount,
+                        'universities_after' => $afterCount
+                    ]);
                 }
             }
         }
@@ -280,7 +303,7 @@ class UniversityFilterService
 
     /**
      * Filter by numeric criteria (number or decimal)
-     * If student has value X, find universities where value <= X (for minimum requirements)
+     * Handles both minimum requirements and maximum constraints
      */
     protected function filterNumeric($query, UniversityCriteriaField $criteriaField, $studentValue)
     {
@@ -289,6 +312,10 @@ class UniversityFilterService
         if ($studentNumeric === null) {
             return $query; // Invalid answer, skip
         }
+
+        // Determine if this is a maximum constraint or minimum requirement
+        // Check slug/name for keywords indicating maximum constraint
+        $isMaximumConstraint = $this->isMaximumConstraint($criteriaField);
 
         // Get all universities with this criteria
         $criteriaValues = UniversityCriteriaValue::where('criteria_field_id', $criteriaField->id)
@@ -303,11 +330,20 @@ class UniversityFilterService
                 continue; // Skip invalid values
             }
 
-            // For minimum requirements (like minimum GPA, minimum IELTS):
-            // Student's value should be >= university's requirement
-            // Example: Student GPA 3.8 >= University minimum 3.5 ✅
-            if ($studentNumeric >= $universityValue) {
-                $matchingUniversityIds[] = $criteriaValue->university_id;
+            if ($isMaximumConstraint) {
+                // For maximum constraints (like maximum backlogs):
+                // Student's value should be <= university's maximum
+                // Example: Student has 2 backlogs <= University max 3 backlogs ✅
+                if ($studentNumeric <= $universityValue) {
+                    $matchingUniversityIds[] = $criteriaValue->university_id;
+                }
+            } else {
+                // For minimum requirements (like minimum GPA, minimum IELTS):
+                // Student's value should be >= university's requirement
+                // Example: Student GPA 3.8 >= University minimum 3.5 ✅
+                if ($studentNumeric >= $universityValue) {
+                    $matchingUniversityIds[] = $criteriaValue->university_id;
+                }
             }
         }
 
@@ -316,6 +352,29 @@ class UniversityFilterService
         }
 
         return $query->whereIn('id', $matchingUniversityIds);
+    }
+
+    /**
+     * Check if a criteria field represents a maximum constraint
+     * (e.g., maximum backlogs) vs minimum requirement (e.g., minimum GPA)
+     */
+    protected function isMaximumConstraint(UniversityCriteriaField $criteriaField): bool
+    {
+        $slug = strtolower($criteriaField->slug);
+        $name = strtolower($criteriaField->name);
+
+        // Keywords that indicate maximum constraint
+        $maximumKeywords = ['max', 'maximum', 'backlog', 'backlogs', 'limit', 'upto', 'up_to', 'at_most', 'atmost'];
+
+        // Check if slug or name contains maximum keywords
+        foreach ($maximumKeywords as $keyword) {
+            if (strpos($slug, $keyword) !== false || strpos($name, $keyword) !== false) {
+                return true;
+            }
+        }
+
+        // Default to minimum requirement (for GPA, IELTS scores, etc.)
+        return false;
     }
 
     /**
@@ -352,6 +411,12 @@ class UniversityFilterService
      */
     protected function filterJson($query, UniversityCriteriaField $criteriaField, $studentValue)
     {
+        // Check if this is a structured JSON field (e.g., English tests with scores)
+        if ($criteriaField->is_structured) {
+            return $this->filterStructuredJson($query, $criteriaField, $studentValue);
+        }
+
+        // Regular JSON field (simple arrays like ["UG", "PG"])
         // Student value can be:
         // - An array (from checkbox or merged from multiple questions): ["UG", "PG"]
         // - A string (from radio/select): "UG"
@@ -410,6 +475,104 @@ class UniversityFilterService
                     if (strcasecmp(trim((string)$studentItem), trim((string)$universityItem)) === 0) {
                         $hasMatch = true;
                         break 2; // Break both loops
+                    }
+                }
+            }
+
+            if ($hasMatch) {
+                $universityIds[] = $criteriaValue->university_id;
+            }
+        }
+
+        if (empty($universityIds)) {
+            return $query->whereRaw('1 = 0'); // Force empty result
+        }
+
+        return $query->whereIn('id', $universityIds);
+    }
+
+    /**
+     * Filter by structured JSON criteria (e.g., English tests with scores)
+     * University data format: {"IELTS": 6.5, "TOEFL": 80, "PTE": 58}
+     * Student data format: Can be array of objects like [{"test": "IELTS", "score": 7.0}] or simple array ["IELTS"]
+     */
+    protected function filterStructuredJson($query, UniversityCriteriaField $criteriaField, $studentValue)
+    {
+        // Normalize student value
+        $studentTests = [];
+
+        if (is_array($studentValue)) {
+            foreach ($studentValue as $item) {
+                if (is_array($item) && isset($item['test'])) {
+                    // Structured format: [{"test": "IELTS", "score": 7.0}]
+                    $studentTests[] = [
+                        'test' => trim((string)$item['test']),
+                        'score' => isset($item['score']) ? (float)$item['score'] : null
+                    ];
+                } elseif (is_string($item)) {
+                    // Simple format: ["IELTS"] (just test name, no score)
+                    $studentTests[] = [
+                        'test' => trim($item),
+                        'score' => null
+                    ];
+                }
+            }
+        } elseif (is_string($studentValue)) {
+            // Try to decode as JSON
+            $decoded = json_decode($studentValue, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                foreach ($decoded as $item) {
+                    if (is_array($item) && isset($item['test'])) {
+                        $studentTests[] = [
+                            'test' => trim((string)$item['test']),
+                            'score' => isset($item['score']) ? (float)$item['score'] : null
+                        ];
+                    } elseif (is_string($item)) {
+                        $studentTests[] = [
+                            'test' => trim($item),
+                            'score' => null
+                        ];
+                    }
+                }
+            } else {
+                // Single test name
+                $studentTests[] = [
+                    'test' => trim($studentValue),
+                    'score' => null
+                ];
+            }
+        }
+
+        if (empty($studentTests)) {
+            return $query->whereRaw('1 = 0'); // No valid student values
+        }
+
+        // Find universities where student's test matches and score meets requirement
+        $universityIds = [];
+        $criteriaValues = UniversityCriteriaValue::where('criteria_field_id', $criteriaField->id)->get();
+
+        foreach ($criteriaValues as $criteriaValue) {
+            $universityData = json_decode($criteriaValue->value, true);
+
+            if (!is_array($universityData)) {
+                continue;
+            }
+
+            // Check if any student test matches university's accepted tests
+            $hasMatch = false;
+            foreach ($studentTests as $studentTest) {
+                $testName = $studentTest['test'];
+                $studentScore = $studentTest['score'];
+
+                // Check if university accepts this test
+                if (isset($universityData[$testName])) {
+                    $minScore = (float)$universityData[$testName];
+
+                    // If student provided score, check if it meets minimum
+                    // If student didn't provide score, just check if test is accepted
+                    if ($studentScore === null || $studentScore >= $minScore) {
+                        $hasMatch = true;
+                        break;
                     }
                 }
             }

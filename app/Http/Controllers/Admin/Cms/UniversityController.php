@@ -153,11 +153,45 @@ class UniversityController extends Controller
 
             // Save criteria values
             // Get all active criteria fields to handle unchecked checkboxes
-            $allCriteriaFields = UniversityCriteriaField::where('status', STATUS_ACTIVE)->get();
+            $allCriteriaFields = UniversityCriteriaField::where('status', STATUS_ACTIVE)
+                ->with('dependsOn')
+                ->orderByRaw('depends_on_criteria_field_id IS NULL DESC, `order` ASC')
+                ->get();
             $submittedCriteriaValues = $request->criteria_values ?? [];
+            $submittedStructuredValues = $request->criteria_structured ?? [];
 
             foreach ($allCriteriaFields as $criteriaField) {
                 $criteriaFieldId = $criteriaField->id;
+
+                // Handle structured JSON fields (e.g., English tests with scores)
+                if ($criteriaField->type === 'json' && $criteriaField->is_structured && isset($submittedStructuredValues[$criteriaFieldId])) {
+                    $structuredData = $submittedStructuredValues[$criteriaFieldId];
+                    $structuredJson = [];
+
+                    foreach ($structuredData as $option => $data) {
+                        if (isset($data['enabled']) && $data['enabled'] == '1' && isset($data['value']) && !empty(trim($data['value']))) {
+                            $structuredJson[$option] = (float)$data['value'];
+                        }
+                    }
+
+                    if (!empty($structuredJson)) {
+                        UniversityCriteriaValue::updateOrCreate(
+                            [
+                                'university_id' => $university->id,
+                                'criteria_field_id' => $criteriaFieldId
+                            ],
+                            [
+                                'value' => json_encode($structuredJson)
+                            ]
+                        );
+                    } else {
+                        // Remove if empty
+                        UniversityCriteriaValue::where('university_id', $university->id)
+                            ->where('criteria_field_id', $criteriaFieldId)
+                            ->delete();
+                    }
+                    continue; // Skip to next field
+                }
 
                 // Check if this criteria field was submitted in the form
                 if (isset($submittedCriteriaValues[$criteriaFieldId])) {

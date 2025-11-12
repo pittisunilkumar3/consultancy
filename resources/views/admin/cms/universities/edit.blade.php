@@ -273,19 +273,37 @@
                         </div>
                         <div class="row rg-20">
                             @foreach($criteriaFields as $criteriaField)
-                            <div class="col-md-6">
+                            @php
+                                $isConditional = $criteriaField->depends_on_criteria_field_id !== null;
+                                $parentFieldId = $criteriaField->depends_on_criteria_field_id;
+                                $parentValue = $criteriaField->depends_on_value;
+                                $conditionalClass = $isConditional ? 'conditional-criteria-field' : '';
+                                // Check if parent value matches to show conditional field
+                                $shouldShow = true;
+                                if ($isConditional && isset($existingCriteriaValues[$parentFieldId])) {
+                                    $shouldShow = (string)$existingCriteriaValues[$parentFieldId] === (string)$parentValue;
+                                } elseif ($isConditional) {
+                                    $shouldShow = false;
+                                }
+                                $conditionalAttr = $isConditional ? 'data-depends-on="' . $parentFieldId . '" data-depends-value="' . $parentValue . '"' : '';
+                                $displayStyle = ($isConditional && !$shouldShow) ? 'style="display: none;"' : '';
+                            @endphp
+                            <div class="col-md-6 {{ $conditionalClass }}" {!! $conditionalAttr !!} {!! $displayStyle !!}>
                                 <label for="criteria_{{ $criteriaField->id }}" class="zForm-label-alt">
                                     {{ $criteriaField->name }}
                                     @if($criteriaField->description)
                                     <small class="text-muted d-block">{{ $criteriaField->description }}</small>
                                     @endif
+                                    @if($isConditional)
+                                    <small class="text-info d-block"><i class="fa fa-info-circle"></i> {{ __('This field depends on another criteria') }}</small>
+                                    @endif
                                 </label>
                                 @if($criteriaField->type === 'boolean')
                                     <div class="zCheck form-switch">
-                                        <input class="form-check-input" type="checkbox" 
-                                               name="criteria_values[{{ $criteriaField->id }}]" 
-                                               id="criteria_{{ $criteriaField->id }}" 
-                                               value="1" 
+                                        <input class="form-check-input" type="checkbox"
+                                               name="criteria_values[{{ $criteriaField->id }}]"
+                                               id="criteria_{{ $criteriaField->id }}"
+                                               value="1"
                                                {{ isset($existingCriteriaValues[$criteriaField->id]) && $existingCriteriaValues[$criteriaField->id] == '1' ? 'checked' : '' }}
                                                role="switch">
                                         <label for="criteria_{{ $criteriaField->id }}" class="zForm-label-alt ms-2">
@@ -293,13 +311,62 @@
                                         </label>
                                     </div>
                                 @elseif($criteriaField->type === 'number' || $criteriaField->type === 'decimal')
-                                    <input type="number" 
-                                           name="criteria_values[{{ $criteriaField->id }}]" 
-                                           id="criteria_{{ $criteriaField->id }}" 
+                                    <input type="number"
+                                           name="criteria_values[{{ $criteriaField->id }}]"
+                                           id="criteria_{{ $criteriaField->id }}"
                                            class="form-control zForm-control-alt"
                                            step="{{ $criteriaField->type === 'decimal' ? '0.01' : '1' }}"
                                            value="{{ isset($existingCriteriaValues[$criteriaField->id]) ? $existingCriteriaValues[$criteriaField->id] : '' }}"
                                            placeholder="{{ __('Enter value') }}">
+                                @elseif($criteriaField->type === 'json' && $criteriaField->is_structured && !empty($criteriaField->options) && is_array($criteriaField->options))
+                                    {{-- Structured JSON type (e.g., English tests with scores) --}}
+                                    @php
+                                        // Decode existing structured JSON value if it exists
+                                        $existingValue = isset($existingCriteriaValues[$criteriaField->id]) ? $existingCriteriaValues[$criteriaField->id] : '';
+                                        $existingStructured = [];
+                                        if ($existingValue) {
+                                            $decoded = json_decode($existingValue, true);
+                                            $existingStructured = is_array($decoded) ? $decoded : [];
+                                        }
+                                    @endphp
+                                    <div class="border rounded p-3" id="structured_json_{{ $criteriaField->id }}">
+                                        @foreach($criteriaField->options as $option)
+                                        @php
+                                            $isEnabled = isset($existingStructured[$option]) && $existingStructured[$option] !== null;
+                                            $existingScore = $isEnabled ? $existingStructured[$option] : '';
+                                        @endphp
+                                        <div class="row mb-3 align-items-center structured-option-row" data-option="{{ $option }}">
+                                            <div class="col-md-6">
+                                                <div class="zForm-wrap-checkbox-2">
+                                                    <input type="checkbox"
+                                                           name="criteria_structured[{{ $criteriaField->id }}][{{ $option }}][enabled]"
+                                                           id="criteria_{{ $criteriaField->id }}_{{ $option }}_enabled"
+                                                           class="form-check-input structured-checkbox"
+                                                           value="1"
+                                                           data-field-id="{{ $criteriaField->id }}"
+                                                           data-option="{{ $option }}"
+                                                           {{ $isEnabled ? 'checked' : '' }}>
+                                                    <label for="criteria_{{ $criteriaField->id }}_{{ $option }}_enabled" class="form-check-label">
+                                                        {{ $option }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input type="number"
+                                                       name="criteria_structured[{{ $criteriaField->id }}][{{ $option }}][value]"
+                                                       id="criteria_{{ $criteriaField->id }}_{{ $option }}_value"
+                                                       class="form-control zForm-control-alt structured-value-input"
+                                                       step="0.01"
+                                                       value="{{ $existingScore }}"
+                                                       placeholder="{{ __('Min. Score') }}"
+                                                       data-field-id="{{ $criteriaField->id }}"
+                                                       data-option="{{ $option }}"
+                                                       {{ $isEnabled ? '' : 'disabled' }}>
+                                            </div>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                    <small class="form-text text-muted">{{ __('Check accepted tests and enter minimum scores') }}</small>
                                 @elseif($criteriaField->type === 'json' && !empty($criteriaField->options) && is_array($criteriaField->options))
                                     {{-- JSON type with predefined options - show checkboxes --}}
                                     @php
@@ -314,10 +381,10 @@
                                     <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
                                         @foreach($criteriaField->options as $option)
                                         <div class="zForm-wrap-checkbox-2 mb-2">
-                                            <input type="checkbox" 
-                                                   name="criteria_values[{{ $criteriaField->id }}][]" 
-                                                   id="criteria_{{ $criteriaField->id }}_{{ $loop->index }}" 
-                                                   class="form-check-input" 
+                                            <input type="checkbox"
+                                                   name="criteria_values[{{ $criteriaField->id }}][]"
+                                                   id="criteria_{{ $criteriaField->id }}_{{ $loop->index }}"
+                                                   class="form-check-input"
                                                    value="{{ $option }}"
                                                    {{ in_array($option, $existingArray) ? 'checked' : '' }}>
                                             <label for="criteria_{{ $criteriaField->id }}_{{ $loop->index }}" class="form-check-label">
@@ -329,17 +396,17 @@
                                     <small class="form-text text-muted">{{ __('Select one or more options') }}</small>
                                 @elseif($criteriaField->type === 'json')
                                     {{-- JSON type without predefined options - show text input with instructions --}}
-                                    <input type="text" 
-                                           name="criteria_values[{{ $criteriaField->id }}]" 
-                                           id="criteria_{{ $criteriaField->id }}" 
+                                    <input type="text"
+                                           name="criteria_values[{{ $criteriaField->id }}]"
+                                           id="criteria_{{ $criteriaField->id }}"
                                            class="form-control zForm-control-alt"
                                            value="{{ isset($existingCriteriaValues[$criteriaField->id]) ? $existingCriteriaValues[$criteriaField->id] : '' }}"
                                            placeholder='{{ __('Enter JSON array, e.g., ["UG", "PG"]') }}'>
                                     <small class="form-text text-muted">{{ __('Enter as JSON array format: ["option1", "option2"]') }}</small>
                                 @else
-                                    <input type="text" 
-                                           name="criteria_values[{{ $criteriaField->id }}]" 
-                                           id="criteria_{{ $criteriaField->id }}" 
+                                    <input type="text"
+                                           name="criteria_values[{{ $criteriaField->id }}]"
+                                           id="criteria_{{ $criteriaField->id }}"
                                            class="form-control zForm-control-alt"
                                            value="{{ isset($existingCriteriaValues[$criteriaField->id]) ? $existingCriteriaValues[$criteriaField->id] : '' }}"
                                            placeholder="{{ __('Enter value') }}">

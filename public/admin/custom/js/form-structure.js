@@ -324,7 +324,7 @@ window.showPreview = function() {
             },
             animation: 150,
             handle: '.handle, .section-handle',
-            filter: '.section-content, .option-list',
+            filter: '.section-content, .option-list, .remove-item',
             // Auto-scroll options
             scroll: true,
             scrollSensitivity: 100,
@@ -399,7 +399,9 @@ window.showPreview = function() {
         });
 
         // Remove item handler
-        $(document).on('click', '.remove-item', function() {
+        $(document).on('click', '.remove-item', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             $(this).closest('.question-item').fadeOut(300, function() {
                 $(this).remove();
                 updateSectionQuestionCounts();

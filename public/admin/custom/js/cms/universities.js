@@ -89,5 +89,152 @@
         ]
     });
 
+    // Handle conditional criteria fields (show/hide based on parent field value)
+    function updateConditionalFields() {
+        $('.conditional-criteria-field').each(function() {
+            const $field = $(this);
+            const dependsOn = $field.data('depends-on');
+            const dependsValue = $field.data('depends-value');
+            
+            if (!dependsOn) return;
+            
+            // Get parent field value - try multiple selectors
+            let $parentField = $('#criteria_' + dependsOn);
+            let parentValue = '';
+            
+            // If not found, try finding by name attribute
+            if (!$parentField.length) {
+                $parentField = $('input[name="criteria_values[' + dependsOn + ']"], select[name="criteria_values[' + dependsOn + ']"]');
+            }
+            
+            if ($parentField.length) {
+                if ($parentField.is(':checkbox')) {
+                    parentValue = $parentField.is(':checked') ? '1' : '0';
+                } else if ($parentField.is('select')) {
+                    parentValue = $parentField.val() || '';
+                } else {
+                    parentValue = $parentField.val() || '';
+                }
+            }
+            
+            // Show/hide based on parent value
+            // Normalize both values to strings for comparison
+            const normalizedParentValue = String(parentValue).trim();
+            const normalizedDependsValue = String(dependsValue).trim();
+            
+            if (normalizedParentValue === normalizedDependsValue) {
+                $field.slideDown(200).show().css('display', ''); // Remove inline display:none
+                // Enable all inputs in the field
+                $field.find('input, select, textarea').not('[type="hidden"]').prop('disabled', false);
+                // Enable required fields
+                $field.find('input[required], select[required], textarea[required]').prop('required', true);
+            } else {
+                $field.slideUp(200).hide();
+                // Clear and disable all inputs
+                $field.find('input, select, textarea').not('[type="hidden"]').val('').prop('disabled', true).prop('required', false);
+            }
+        });
+    }
+
+    // Listen for changes on criteria fields that might have dependents
+    // Handle checkboxes (boolean fields)
+    $(document).on('change', 'input[name^="criteria_values["]', function() {
+        updateConditionalFields();
+    });
+    
+    // Handle select fields
+    $(document).on('change', 'select[name^="criteria_values["]', function() {
+        updateConditionalFields();
+    });
+    
+    // Handle text inputs
+    $(document).on('input change', 'input[type="text"][name^="criteria_values["], input[type="number"][name^="criteria_values["]', function() {
+        updateConditionalFields();
+    });
+
+    // Initialize conditional fields on page load
+    $(document).ready(function() {
+        // Small delay to ensure DOM is ready
+        setTimeout(function() {
+            updateConditionalFields();
+        }, 100);
+    });
+    
+    // Also update when form is loaded dynamically (for AJAX forms)
+    $(document).on('DOMNodeInserted', function(e) {
+        if ($(e.target).find('.conditional-criteria-field').length || $(e.target).hasClass('conditional-criteria-field')) {
+            setTimeout(function() {
+                updateConditionalFields();
+            }, 50);
+        }
+    });
+
+    // Handle structured JSON fields (enable/disable score inputs based on checkbox)
+    $(document).on('change', '.structured-checkbox', function() {
+        const $checkbox = $(this);
+        const fieldId = $checkbox.data('field-id');
+        const option = $checkbox.data('option');
+        
+        // Find the score input - try multiple methods
+        let $scoreInput = null;
+        
+        // Method 1: Find in the same row (most reliable)
+        $scoreInput = $checkbox.closest('.structured-option-row').find('.structured-value-input');
+        
+        // Method 2: By ID
+        if (!$scoreInput.length) {
+            $scoreInput = $('#criteria_' + fieldId + '_' + option + '_value');
+        }
+        
+        // Method 3: By name attribute
+        if (!$scoreInput.length) {
+            $scoreInput = $('input[name="criteria_structured[' + fieldId + '][' + option + '][value]"]');
+        }
+        
+        // Method 4: By data attributes in same row
+        if (!$scoreInput.length) {
+            $scoreInput = $checkbox.closest('.structured-option-row').find('input[data-field-id="' + fieldId + '"][data-option="' + option + '"]');
+        }
+        
+        if ($scoreInput.length) {
+            if ($checkbox.is(':checked')) {
+                $scoreInput.prop('disabled', false).removeAttr('readonly').removeClass('disabled').focus();
+            } else {
+                $scoreInput.prop('disabled', true).addClass('disabled').val('');
+            }
+        } else {
+            console.warn('Could not find score input for field:', fieldId, 'option:', option);
+        }
+    });
+
+    // Initialize structured JSON fields on page load
+    $(document).ready(function() {
+        // Small delay to ensure DOM is ready
+        setTimeout(function() {
+            $('.structured-checkbox').each(function() {
+                const $checkbox = $(this);
+                const fieldId = $checkbox.data('field-id');
+                const option = $checkbox.data('option');
+                
+                // Find the score input - use same method as change handler
+                let $scoreInput = $checkbox.closest('.structured-option-row').find('.structured-value-input');
+                if (!$scoreInput.length) {
+                    $scoreInput = $('#criteria_' + fieldId + '_' + option + '_value');
+                }
+                if (!$scoreInput.length) {
+                    $scoreInput = $('input[name="criteria_structured[' + fieldId + '][' + option + '][value]"]');
+                }
+                
+                if ($scoreInput.length) {
+                    if (!$checkbox.is(':checked')) {
+                        $scoreInput.prop('disabled', true).addClass('disabled');
+                    } else {
+                        $scoreInput.prop('disabled', false).removeAttr('readonly').removeClass('disabled');
+                    }
+                }
+            });
+        }, 100);
+    });
+
 
 })(jQuery)
