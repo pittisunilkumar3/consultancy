@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Question;
 use App\Models\UniversityCriteriaField;
 use App\Models\QuestionCriteriaMapping;
+use App\Models\Country;
 use Illuminate\Http\Request;
 
 class QuestionController extends Controller
@@ -199,6 +200,21 @@ class QuestionController extends Controller
         return response()->json([
             'status' => true,
             'message' => __('Question deleted successfully')
+        ]);
+    }
+
+    /**
+     * Fetch countries for use in question options.
+     */
+    public function getCountries()
+    {
+        $countries = Country::where('status', STATUS_ACTIVE)
+            ->orderBy('name', 'asc')
+            ->get(['id', 'name']);
+
+        return response()->json([
+            'status' => true,
+            'data' => $countries
         ]);
     }
 }

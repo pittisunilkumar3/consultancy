@@ -408,6 +408,7 @@ Route::group(['prefix' => 'questions', 'as' => 'questions.', 'middleware' => 'ca
     Route::get('show/{id}', [QuestionController::class, 'show'])->name('show');
     Route::post('update/{id}', [QuestionController::class, 'update'])->name('update');
     Route::delete('delete/{id}', [QuestionController::class, 'delete'])->name('delete');
+    Route::get('countries', [QuestionController::class, 'getCountries'])->name('countries');
     // further CRUD routes will be added later
 });
 

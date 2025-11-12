@@ -75,6 +75,13 @@
                         </select>
                     </div>
                     <div class="col-12 options-wrapper d-none">
+                        <div class="mb-3">
+                            <div class="zForm-wrap-checkbox-2 mb-2">
+                                <input type="checkbox" name="use_countries" id="use_countries" class="form-check-input" value="1">
+                                <label for="use_countries" class="form-check-label">{{ __('Use Countries from Database') }}</label>
+                            </div>
+                            <small class="form-text text-muted d-block">{{ __('Check this to automatically populate options with countries from the database.') }}</small>
+                        </div>
                         <label class="zForm-label">{{ __('Options') }} <span class="text-danger">*</span></label>
                         <div class="option-list border rounded p-2 mb-2" id="optionList" data-draggable="true">
                             <!-- Option rows inserted here -->
@@ -136,6 +143,7 @@
     <input type="hidden" id="questionsShowBase" value="{{ url('admin/questions/show') }}">
     <input type="hidden" id="questionsUpdateBase" value="{{ url('admin/questions/update') }}">
     <input type="hidden" id="questionsDeleteBase" value="{{ url('admin/questions/delete') }}">
+    <input type="hidden" id="questionsCountriesRoute" value="{{ route('admin.questions.countries') }}">
 
 @endsection
 

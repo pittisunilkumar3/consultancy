@@ -8,10 +8,23 @@
         var csrf = $('meta[name="csrf-token"]').attr('content');
         var indexUrl = $('#questionsIndexRoute').val();
 
+        // Get countries route - try to get it dynamically in case modal is loaded later
+        function getCountriesRoute() {
+            var route = $('#questionsCountriesRoute').val();
+            if (!route) {
+                // Try to construct it from base URL
+                var baseUrl = window.location.origin;
+                route = baseUrl + '/admin/questions/countries';
+            }
+            return route;
+        }
+
         // Show/hide options field based on question type
         $('#type').on('change', function() {
             var type = $(this).val();
             var $options = $('.options-wrapper');
+            var useCountries = $('#use_countries').is(':checked');
+
             if (['select', 'radio', 'checkbox'].includes(type)) {
                 $options.removeClass('d-none');
                 if (type === 'select') {
@@ -19,12 +32,126 @@
                 } else {
                     $options.find('small').text('Enter options and drag to reorder.');
                 }
+
+                // If use_countries is checked, re-populate countries for the new type
+                if (useCountries) {
+                    var countriesRoute = getCountriesRoute();
+                    if (countriesRoute) {
+                        $.get(countriesRoute, function(res) {
+                            if (res && res.status && res.data) {
+                                $('#optionList').empty();
+                                res.data.forEach(function(country) {
+                                    if (type === 'select') {
+                                        $('#optionList').append(createOptionRow(country.id, country.name));
+                                    } else {
+                                        $('#optionList').append(createOptionRow('', country.name));
+                                    }
+                                });
+                                updateOptionInputsForType(type);
+                                // Make option inputs read-only when using countries
+                                $('#optionList .option-label, #optionList .option-value').prop('readonly', true).addClass('bg-light');
+                                $('#addOptionBtn').prop('disabled', true).addClass('opacity-50');
+                                $('#optionList .remove-option').prop('disabled', true).addClass('opacity-50');
+                                // Serialize options immediately
+                                serializeOptions();
+                            }
+                        });
+                    }
+                } else {
+                    // Enable editing when not using countries
+                    $('#optionList .option-label, #optionList .option-value').prop('readonly', false).removeClass('bg-light');
+                    $('#addOptionBtn').prop('disabled', false).removeClass('opacity-50');
+                    $('#optionList .remove-option').prop('disabled', false).removeClass('opacity-50');
+                }
             } else {
                 $options.addClass('d-none');
+                // Uncheck use_countries when options are hidden
+                $('#use_countries').prop('checked', false);
+                $('#addOptionBtn').prop('disabled', false).removeClass('opacity-50');
             }
             // update option row inputs (show/hide value field for select)
             if (typeof updateOptionInputsForType === 'function') {
                 updateOptionInputsForType(type);
+            }
+        });
+
+        // Handle "Use Countries from Database" checkbox
+        $(document).on('change', '#use_countries', function() {
+            var isChecked = $(this).is(':checked');
+            var type = $('#type').val();
+
+            // Ensure options wrapper is visible
+            if (!['select', 'radio', 'checkbox'].includes(type)) {
+                toastr.warning('Please select a question type (Select, Radio, or Checkbox) first.');
+                $(this).prop('checked', false);
+                return;
+            }
+
+            // Get countries route dynamically
+            var countriesRoute = getCountriesRoute();
+            if (!countriesRoute) {
+                toastr.error('Countries route not found. Please refresh the page.');
+                $(this).prop('checked', false);
+                return;
+            }
+
+            if (isChecked) {
+                // Show loading indicator
+                var $optionsWrapper = $('.options-wrapper');
+                if ($optionsWrapper.hasClass('d-none')) {
+                    $optionsWrapper.removeClass('d-none');
+                }
+
+                // Fetch countries from backend
+                $.ajax({
+                    url: countriesRoute,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res && res.status && res.data && res.data.length > 0) {
+                            // Clear existing options
+                            $('#optionList').empty();
+
+                            // Populate with countries
+                            res.data.forEach(function(country) {
+                                if (type === 'select') {
+                                    // For select type: use country id as value, name as label
+                                    $('#optionList').append(createOptionRow(country.id, country.name));
+                                } else {
+                                    // For radio/checkbox: use country name as option
+                                    $('#optionList').append(createOptionRow('', country.name));
+                                }
+                            });
+
+                            // Update option inputs visibility based on type
+                            updateOptionInputsForType(type);
+
+                            // Make option inputs read-only and disable manual add option button when using countries
+                            $('#optionList .option-label, #optionList .option-value').prop('readonly', true).addClass('bg-light');
+                            $('#addOptionBtn').prop('disabled', true).addClass('opacity-50');
+                            // Disable remove buttons for country options
+                            $('#optionList .remove-option').prop('disabled', true).addClass('opacity-50');
+
+                            // Serialize options immediately after loading countries
+                            serializeOptions();
+                        } else {
+                            toastr.error('No countries found in the database');
+                            $('#use_countries').prop('checked', false);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        toastr.error('Error loading countries from server. Please try again.');
+                        $('#use_countries').prop('checked', false);
+                    }
+                });
+            } else {
+                // Unchecked: make options editable (keep existing options, just make them editable)
+                $('#addOptionBtn').prop('disabled', false).removeClass('opacity-50');
+                // Make inputs editable
+                $('#optionList .option-label, #optionList .option-value').prop('readonly', false).removeClass('bg-light');
+                $('#optionList .remove-option').prop('disabled', false).removeClass('opacity-50');
+                // Re-serialize options after making them editable
+                serializeOptions();
             }
         });
         // Option list UI: add/remove/reorder and serialize to hidden input before submit
@@ -55,6 +182,16 @@
         // Remove option
         $(document).on('click', '.remove-option', function () {
             $(this).closest('.option-item').remove();
+            // Re-serialize options after removal
+            serializeOptions();
+        });
+
+        // Re-serialize options when option values change (for manual edits)
+        $(document).on('input change', '.option-label, .option-value', function() {
+            // Only serialize if not using countries (countries are readonly)
+            if (!$('#use_countries').is(':checked')) {
+                serializeOptions();
+            }
         });
 
         // Initialize SortableJS on option list (drag-handle only)
@@ -82,15 +219,21 @@
             }
         }
 
-        // Serialize options into hidden #options before submit
-        $('#add-modal form').on('submit', function(e) {
+        // Serialize options to hidden input
+        function serializeOptions() {
             var type = $('#type').val();
             if (['select', 'radio', 'checkbox'].includes(type)) {
                 var items = [];
                 $('#optionList .option-item').each(function () {
-                    var label = $(this).find('.option-label').val().trim();
-                    var value = $(this).find('.option-value').val().trim();
+                    var $item = $(this);
+                    var label = $item.find('.option-label').val();
+                    var value = $item.find('.option-value').val();
+
+                    label = label ? String(label).trim() : '';
+                    value = value ? String(value).trim() : '';
+
                     if (!label) return; // skip empty
+
                     if (type === 'select') {
                         if (!value) value = label;
                         items.push({ value: value, label: label });
@@ -99,16 +242,29 @@
                     }
                 });
 
-                if (items.length === 0) {
+                $('#options').val(JSON.stringify(items));
+                return items.length > 0;
+            } else {
+                $('#options').val('');
+                return true;
+            }
+        }
+
+        // Serialize options into hidden #options before submit
+        $('#add-modal form').on('submit', function(e) {
+            var type = $('#type').val();
+            if (['select', 'radio', 'checkbox'].includes(type)) {
+                var hasOptions = serializeOptions();
+
+                if (!hasOptions) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     toastr.error('Please add at least one option for ' + type + ' type questions.');
                     return false;
                 }
-
-                $('#options').val(JSON.stringify(items));
             } else {
                 $('#options').val('');
             }
-
         });
 
         var table = null;
@@ -196,6 +352,12 @@
                 $form.find('[name="options"]').val('');
                 // clear dynamic option rows as well
                 $('#optionList').empty();
+                // Uncheck use_countries checkbox
+                $('#use_countries').prop('checked', false);
+                // Enable add option button and make inputs editable
+                $('#addOptionBtn').prop('disabled', false).removeClass('opacity-50');
+                $('#optionList .option-label, #optionList .option-value').prop('readonly', false).removeClass('bg-light');
+                $('#optionList .remove-option').prop('disabled', false).removeClass('opacity-50');
                 updateOptionInputsForType('text');
                 // Clear criteria field checkboxes ONLY in create mode
                 $form.find('.criteria-field-checkbox').prop('checked', false);
@@ -236,7 +398,15 @@
 
                     // Handle options for select/radio/checkbox - populate optionList UI
                     $('#optionList').empty();
+                    // Reset use_countries checkbox initially
+                    $('#use_countries').prop('checked', false);
+                    $('#addOptionBtn').prop('disabled', false).removeClass('opacity-50');
+                    // Make inputs editable initially
+                    $('#optionList .option-label, #optionList .option-value').prop('readonly', false).removeClass('bg-light');
+                    $('#optionList .remove-option').prop('disabled', false).removeClass('opacity-50');
+
                     if (data.options && ['select', 'radio', 'checkbox'].includes(data.type)) {
+                        // First, populate the options as they are
                         if (data.type === 'select') {
                             // data.options expected as array of {value,label}
                             data.options.forEach(function (opt) {
@@ -252,6 +422,75 @@
                         }
                         // ensure option inputs reflect type (show/hide value inputs)
                         updateOptionInputsForType(data.type);
+
+                        // Check if options match countries from database
+                        var countriesRoute = getCountriesRoute();
+                        if (countriesRoute) {
+                            $.get(countriesRoute, function(countriesRes) {
+                                if (countriesRes && countriesRes.status && countriesRes.data) {
+                                    var countries = countriesRes.data;
+                                    var questionOptions = data.options || [];
+                                    var matchesCountries = false;
+
+                                    if (data.type === 'select') {
+                                        // For select: check if all question options exist in countries (value = id, label = name)
+                                        // Allow for countries to be added/removed, but all question options must match
+                                        if (questionOptions.length > 0) {
+                                            matchesCountries = true;
+                                            for (var i = 0; i < questionOptions.length; i++) {
+                                                var opt = questionOptions[i];
+                                                var val = (typeof opt === 'object' && opt.value) ? String(opt.value) : String(opt || '');
+                                                var lbl = (typeof opt === 'object' && opt.label) ? opt.label : (opt || '');
+
+                                                var found = false;
+                                                for (var j = 0; j < countries.length; j++) {
+                                                    if (String(countries[j].id) === val && countries[j].name === lbl) {
+                                                        found = true;
+                                                        break;
+                                                    }
+                                                }
+                                                if (!found) {
+                                                    matchesCountries = false;
+                                                    break;
+                                                }
+                                            }
+                                            // Also check if all countries are in question options (to ensure it's a complete match)
+                                            if (matchesCountries && questionOptions.length === countries.length) {
+                                                // Perfect match - all countries are present
+                                            } else if (matchesCountries) {
+                                                // Partial match - some countries might have been added/removed, but all question options are valid countries
+                                                // Still consider it a match if all question options are countries
+                                            }
+                                        }
+                                    } else {
+                                        // For radio/checkbox: check if all question options match country names
+                                        if (questionOptions.length > 0) {
+                                            var countryNames = countries.map(function(c) { return c.name; });
+                                            matchesCountries = true;
+
+                                            for (var k = 0; k < questionOptions.length; k++) {
+                                                var optName = typeof questionOptions[k] === 'string' ? questionOptions[k] : (questionOptions[k].label || questionOptions[k].value || questionOptions[k]);
+                                                if (countryNames.indexOf(optName) === -1) {
+                                                    matchesCountries = false;
+                                                    break;
+                                                }
+                                            }
+
+                                            // If all question options are countries, check if count matches (optional - allows for flexibility)
+                                            // We'll consider it a match if all options are valid country names
+                                        }
+                                    }
+
+                                    // If options match countries, check the checkbox and make read-only
+                                    if (matchesCountries) {
+                                        $('#use_countries').prop('checked', true);
+                                        $('#optionList .option-label, #optionList .option-value').prop('readonly', true).addClass('bg-light');
+                                        $('#addOptionBtn').prop('disabled', true).addClass('opacity-50');
+                                        $('#optionList .remove-option').prop('disabled', true).addClass('opacity-50');
+                                    }
+                                }
+                            });
+                        }
                     }
 
                     // Show modal FIRST, then set checkboxes after it's fully shown
@@ -365,6 +604,12 @@
             $form.find('[name="options"]').val('');
             // clear dynamic option rows
             $('#optionList').empty();
+            // Reset use_countries checkbox
+            $('#use_countries').prop('checked', false);
+            // Enable add option button and make inputs editable
+            $('#addOptionBtn').prop('disabled', false).removeClass('opacity-50');
+            $('#optionList .option-label, #optionList .option-value').prop('readonly', false).removeClass('bg-light');
+            $('#optionList .remove-option').prop('disabled', false).removeClass('opacity-50');
             $form.find('.is-invalid').removeClass('is-invalid');
             $form.find('.error-message').remove();
         });
