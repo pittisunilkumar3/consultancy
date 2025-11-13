@@ -65,6 +65,56 @@ class UniversityFilterService
 
         // Check which criteria fields are mapped but not answered
         foreach ($allCriteriaFieldsWithMappings as $criteriaField) {
+            // Check if this criteria field depends on another criteria field
+            $parentCriteriaMatches = true; // Default to true if no dependency
+
+            if ($criteriaField->depends_on_criteria_field_id) {
+                // This criteria field depends on a parent criteria field
+                // Find the parent criteria field and check if it's answered with the correct value
+                $parentCriteriaField = $allCriteriaFieldsWithMappings->firstWhere('id', $criteriaField->depends_on_criteria_field_id);
+
+                if ($parentCriteriaField) {
+                    // Get all questions mapped to the parent criteria field
+                    $parentMappedQuestions = $allMappings->where('criteria_field_id', $parentCriteriaField->id);
+
+                    // Check if parent criteria is answered with the correct value
+                    $parentHasMatchingAnswer = false;
+
+                    foreach ($parentMappedQuestions as $parentMapping) {
+                        $parentFormKey = 'career_q_' . $parentMapping->question_id;
+
+                        if (isset($formData[$parentFormKey]) && $formData[$parentFormKey] !== null && $formData[$parentFormKey] !== '') {
+                            $parentAnswer = $formData[$parentFormKey];
+
+                            // Handle array answers (e.g., checkboxes)
+                            if (is_array($parentAnswer)) {
+                                $parentAnswer = implode(',', $parentAnswer);
+                            }
+
+                            // Convert to string for comparison
+                            $parentAnswer = (string)$parentAnswer;
+
+                            // Check if parent answer matches the required value
+                            if ($criteriaField->shouldBeShown($parentAnswer)) {
+                                $parentHasMatchingAnswer = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Only show helper message if parent criteria matches
+                    $parentCriteriaMatches = $parentHasMatchingAnswer;
+                } else {
+                    // Parent criteria field not found, don't show helper message
+                    $parentCriteriaMatches = false;
+                }
+            }
+
+            // Only proceed to check for answers if parent criteria matches (or no dependency)
+            if (!$parentCriteriaMatches) {
+                continue; // Skip this criteria field - parent doesn't match
+            }
+
             // Get all questions mapped to this criteria field
             $mappedQuestions = $allMappings->where('criteria_field_id', $criteriaField->id);
 
@@ -78,14 +128,27 @@ class UniversityFilterService
 
                 if (isset($formData[$formKey]) && $formData[$formKey] !== null && $formData[$formKey] !== '') {
                     $answer = $formData[$formKey];
-                    if (is_string($answer) && trim($answer) !== '') {
+
+                    // Handle different answer types
+                    if (is_array($answer)) {
+                        // For checkboxes, check if array is not empty
+                        $hasAnswer = !empty($answer);
+                    } elseif (is_string($answer)) {
+                        // For text inputs, check if string is not empty after trimming
+                        $hasAnswer = trim($answer) !== '';
+                    } else {
+                        // For other types (numbers, etc.), just check if not null/empty
                         $hasAnswer = true;
+                    }
+
+                    if ($hasAnswer) {
                         break;
                     }
                 }
             }
 
             // If no answer found for this criteria field, add helper message
+            // (Only if parent criteria matches, which we already checked above)
             if (!$hasAnswer) {
                 $questionTexts = [];
                 foreach ($mappedQuestions as $mapping) {
