@@ -19,14 +19,12 @@ class UniversityCriteriaField extends Model
         'options',
         'depends_on_criteria_field_id',
         'depends_on_value',
-        'is_structured',
     ];
 
     protected $casts = [
         'status' => 'integer',
         'order' => 'integer',
         'options' => 'array',
-        'is_structured' => 'boolean',
     ];
 
     /**

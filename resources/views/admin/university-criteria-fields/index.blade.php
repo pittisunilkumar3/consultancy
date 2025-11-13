@@ -89,15 +89,6 @@
                             <textarea name="options" id="options" class="form-control zForm-control" rows="3" placeholder='{{ __('Enter as JSON array, e.g., ["UG", "PG"]') }}'></textarea>
                             <small class="form-text text-muted">{{ __('Define predefined options for JSON type fields. Universities will see checkboxes for these options. Example: ["UG", "PG"] for degree types.') }}</small>
                         </div>
-                        <div class="col-12 structured-field-wrapper d-none">
-                            <div class="zForm-wrap-checkbox-2">
-                                <input type="checkbox" name="is_structured" id="is_structured" class="form-check-input" value="1">
-                                <label for="is_structured" class="form-check-label">
-                                    {{ __('Structured JSON') }} <small class="text-muted">({{ __('For fields with multiple values like English tests with scores') }})</small>
-                                </label>
-                            </div>
-                            <small class="form-text text-muted">{{ __('Enable this for fields that need multiple sub-values (e.g., English tests: IELTS with score 6.5, TOEFL with score 80)') }}</small>
-                        </div>
                         <div class="col-12 depends-on-field-wrapper">
                             <label for="depends_on_criteria_field_id" class="zForm-label">{{ __('Depends On (Optional)') }}</label>
                             <select name="depends_on_criteria_field_id" id="depends_on_criteria_field_id" class="form-select zForm-control sf-select-without-search">
@@ -173,15 +164,6 @@
                             <label for="edit_options" class="zForm-label">{{ __('Options') }} <small class="text-muted">({{ __('For JSON type only') }})</small></label>
                             <textarea name="options" id="edit_options" class="form-control zForm-control" rows="3" placeholder='{{ __('Enter as JSON array, e.g., ["UG", "PG"]') }}'></textarea>
                             <small class="form-text text-muted">{{ __('Define predefined options for JSON type fields. Universities will see checkboxes for these options. Example: ["UG", "PG"] for degree types.') }}</small>
-                        </div>
-                        <div class="col-12 edit-structured-field-wrapper d-none">
-                            <div class="zForm-wrap-checkbox-2">
-                                <input type="checkbox" name="is_structured" id="edit_is_structured" class="form-check-input" value="1">
-                                <label for="edit_is_structured" class="form-check-label">
-                                    {{ __('Structured JSON') }} <small class="text-muted">({{ __('For fields with multiple values like English tests with scores') }})</small>
-                                </label>
-                            </div>
-                            <small class="form-text text-muted">{{ __('Enable this for fields that need multiple sub-values (e.g., English tests: IELTS with score 6.5, TOEFL with score 80)') }}</small>
                         </div>
                         <div class="col-12 edit-depends-on-field-wrapper">
                             <label for="edit_depends_on_criteria_field_id" class="zForm-label">{{ __('Depends On (Optional)') }}</label>
@@ -297,15 +279,6 @@
                             // Update niceSelect if it's initialized
                             if ($('#edit_status').next('.nice-select').length) {
                                 $('#edit_status').niceSelect('update');
-                            }
-                            
-                            // Handle structured field
-                            if (data.is_structured) {
-                                $('#edit_is_structured').prop('checked', true);
-                                $('.edit-structured-field-wrapper').removeClass('d-none');
-                            } else {
-                                $('#edit_is_structured').prop('checked', false);
-                                $('.edit-structured-field-wrapper').addClass('d-none');
                             }
                             
                             // Set form action first
@@ -479,12 +452,9 @@
             $(document).on('change', '#type', function() {
                 if ($(this).val() === 'json') {
                     $('.options-field-wrapper').removeClass('d-none');
-                    $('.structured-field-wrapper').removeClass('d-none');
                 } else {
                     $('.options-field-wrapper').addClass('d-none');
-                    $('.structured-field-wrapper').addClass('d-none');
                     $('#options').val('');
-                    $('#is_structured').prop('checked', false);
                 }
             });
 
@@ -493,13 +463,10 @@
                 var selectedType = $(this).val();
                 if (selectedType === 'json') {
                     $('.edit-options-field-wrapper').removeClass('d-none');
-                    $('.edit-structured-field-wrapper').removeClass('d-none');
                     // If options field is empty and we're switching to JSON, don't clear it
                 } else {
                     $('.edit-options-field-wrapper').addClass('d-none');
-                    $('.edit-structured-field-wrapper').addClass('d-none');
                     $('#edit_options').val('');
-                    $('#edit_is_structured').prop('checked', false);
                 }
             });
             
@@ -518,7 +485,6 @@
             $('#add-modal').on('hidden.bs.modal', function() {
                 $('#addForm')[0].reset();
                 $('.options-field-wrapper').addClass('d-none');
-                $('.structured-field-wrapper').addClass('d-none');
                 $('.depends-value-field-wrapper').addClass('d-none');
                 populateDependsOnDropdown($('#depends_on_criteria_field_id'));
             });
@@ -526,7 +492,6 @@
             $('#edit-modal').on('hidden.bs.modal', function() {
                 $('#editForm')[0].reset();
                 $('.edit-options-field-wrapper').addClass('d-none');
-                $('.edit-structured-field-wrapper').addClass('d-none');
                 $('.edit-depends-value-field-wrapper').addClass('d-none');
                 populateDependsOnDropdown($('#edit_depends_on_criteria_field_id'));
             });

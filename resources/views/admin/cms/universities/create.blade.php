@@ -328,40 +328,6 @@
                                                class="form-control zForm-control-alt"
                                                step="{{ $criteriaField->type === 'decimal' ? '0.01' : '1' }}"
                                                placeholder="{{ __('Enter value') }}">
-                                    @elseif($criteriaField->type === 'json' && $criteriaField->is_structured && !empty($criteriaField->options) && is_array($criteriaField->options))
-                                        {{-- Structured JSON type (e.g., English tests with scores) --}}
-                                        <div class="border rounded p-3" id="structured_json_{{ $criteriaField->id }}">
-                                            @foreach($criteriaField->options as $option)
-                                            <div class="row mb-3 align-items-center structured-option-row" data-option="{{ $option }}">
-                                                <div class="col-md-6">
-                                                    <div class="zForm-wrap-checkbox-2">
-                                                        <input type="checkbox" 
-                                                               name="criteria_structured[{{ $criteriaField->id }}][{{ $option }}][enabled]" 
-                                                               id="criteria_{{ $criteriaField->id }}_{{ $option }}_enabled" 
-                                                               class="form-check-input structured-checkbox" 
-                                                               value="1"
-                                                               data-field-id="{{ $criteriaField->id }}"
-                                                               data-option="{{ $option }}">
-                                                        <label for="criteria_{{ $criteriaField->id }}_{{ $option }}_enabled" class="form-check-label">
-                                                            {{ $option }}
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <input type="number" 
-                                                           name="criteria_structured[{{ $criteriaField->id }}][{{ $option }}][value]" 
-                                                           id="criteria_{{ $criteriaField->id }}_{{ $option }}_value" 
-                                                           class="form-control zForm-control-alt structured-value-input" 
-                                                           step="0.01"
-                                                           placeholder="{{ __('Min. Score') }}"
-                                                           disabled
-                                                           data-field-id="{{ $criteriaField->id }}"
-                                                           data-option="{{ $option }}">
-                                                </div>
-                                            </div>
-                                            @endforeach
-                                        </div>
-                                        <small class="form-text text-muted">{{ __('Check accepted tests and enter minimum scores') }}</small>
                                     @elseif($criteriaField->type === 'json' && !empty($criteriaField->options) && is_array($criteriaField->options))
                                         {{-- JSON type with predefined options - show checkboxes --}}
                                         <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">

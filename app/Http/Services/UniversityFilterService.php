@@ -411,11 +411,6 @@ class UniversityFilterService
      */
     protected function filterJson($query, UniversityCriteriaField $criteriaField, $studentValue)
     {
-        // Check if this is a structured JSON field (e.g., English tests with scores)
-        if ($criteriaField->is_structured) {
-            return $this->filterStructuredJson($query, $criteriaField, $studentValue);
-        }
-
         // Regular JSON field (simple arrays like ["UG", "PG"])
         // Student value can be:
         // - An array (from checkbox or merged from multiple questions): ["UG", "PG"]
@@ -475,104 +470,6 @@ class UniversityFilterService
                     if (strcasecmp(trim((string)$studentItem), trim((string)$universityItem)) === 0) {
                         $hasMatch = true;
                         break 2; // Break both loops
-                    }
-                }
-            }
-
-            if ($hasMatch) {
-                $universityIds[] = $criteriaValue->university_id;
-            }
-        }
-
-        if (empty($universityIds)) {
-            return $query->whereRaw('1 = 0'); // Force empty result
-        }
-
-        return $query->whereIn('id', $universityIds);
-    }
-
-    /**
-     * Filter by structured JSON criteria (e.g., English tests with scores)
-     * University data format: {"IELTS": 6.5, "TOEFL": 80, "PTE": 58}
-     * Student data format: Can be array of objects like [{"test": "IELTS", "score": 7.0}] or simple array ["IELTS"]
-     */
-    protected function filterStructuredJson($query, UniversityCriteriaField $criteriaField, $studentValue)
-    {
-        // Normalize student value
-        $studentTests = [];
-
-        if (is_array($studentValue)) {
-            foreach ($studentValue as $item) {
-                if (is_array($item) && isset($item['test'])) {
-                    // Structured format: [{"test": "IELTS", "score": 7.0}]
-                    $studentTests[] = [
-                        'test' => trim((string)$item['test']),
-                        'score' => isset($item['score']) ? (float)$item['score'] : null
-                    ];
-                } elseif (is_string($item)) {
-                    // Simple format: ["IELTS"] (just test name, no score)
-                    $studentTests[] = [
-                        'test' => trim($item),
-                        'score' => null
-                    ];
-                }
-            }
-        } elseif (is_string($studentValue)) {
-            // Try to decode as JSON
-            $decoded = json_decode($studentValue, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                foreach ($decoded as $item) {
-                    if (is_array($item) && isset($item['test'])) {
-                        $studentTests[] = [
-                            'test' => trim((string)$item['test']),
-                            'score' => isset($item['score']) ? (float)$item['score'] : null
-                        ];
-                    } elseif (is_string($item)) {
-                        $studentTests[] = [
-                            'test' => trim($item),
-                            'score' => null
-                        ];
-                    }
-                }
-            } else {
-                // Single test name
-                $studentTests[] = [
-                    'test' => trim($studentValue),
-                    'score' => null
-                ];
-            }
-        }
-
-        if (empty($studentTests)) {
-            return $query->whereRaw('1 = 0'); // No valid student values
-        }
-
-        // Find universities where student's test matches and score meets requirement
-        $universityIds = [];
-        $criteriaValues = UniversityCriteriaValue::where('criteria_field_id', $criteriaField->id)->get();
-
-        foreach ($criteriaValues as $criteriaValue) {
-            $universityData = json_decode($criteriaValue->value, true);
-
-            if (!is_array($universityData)) {
-                continue;
-            }
-
-            // Check if any student test matches university's accepted tests
-            $hasMatch = false;
-            foreach ($studentTests as $studentTest) {
-                $testName = $studentTest['test'];
-                $studentScore = $studentTest['score'];
-
-                // Check if university accepts this test
-                if (isset($universityData[$testName])) {
-                    $minScore = (float)$universityData[$testName];
-
-                    // If student provided score, check if it meets minimum
-                    // If student didn't provide score, just check if test is accepted
-                    if ($studentScore === null || $studentScore >= $minScore) {
-                        $hasMatch = true;
-                        break;
                     }
                 }
             }
