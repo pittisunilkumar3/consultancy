@@ -105,28 +105,100 @@ class CareerCornerSubmissionController extends Controller
             ->first();
 
         // Load the form structure data - use snapshot if available, otherwise current structure
+        // Match exactly how student view handles it
         $formData = null;
         $questions = [];
         $structureChanged = false;
 
         // Try to use snapshot first (preserves original form structure)
         $snapshotData = $submission->getFormStructureData();
-        
+
         if ($snapshotData && isset($snapshotData['structure']) && isset($snapshotData['questions'])) {
             // Use snapshot data
             $formData = $snapshotData['structure'];
-            // Convert to array with question IDs as keys (consistent with student view)
+
+            // Convert snapshot questions exactly like student view does
             $snapshotQuestionsArray = $snapshotData['questions'];
+
+            // Always rekey by question ID to handle both old (numeric keys) and new (ID keys) formats
+            if (is_array($snapshotQuestionsArray) && !empty($snapshotQuestionsArray)) {
+                $firstKey = array_key_first($snapshotQuestionsArray);
+                $firstValue = $snapshotQuestionsArray[$firstKey] ?? null;
+
+                if (is_numeric($firstKey) && is_array($firstValue) && isset($firstValue['id'])) {
+                    $snapshotQuestions = collect($snapshotQuestionsArray)->keyBy('id');
+                } elseif (is_numeric($firstKey) && !isset($firstValue['id'])) {
+                    $snapshotQuestions = collect($snapshotQuestionsArray);
+                } else {
+                    $allKeysAreQuestionIds = true;
+                    foreach ($snapshotQuestionsArray as $key => $question) {
+                        if (is_array($question) && isset($question['id'])) {
+                            if ($key != $question['id']) {
+                                $allKeysAreQuestionIds = false;
+                                break;
+                            }
+                        } else {
+                            $allKeysAreQuestionIds = false;
+                            break;
+                        }
+                    }
+
+                    if ($allKeysAreQuestionIds) {
+                        $snapshotQuestions = collect($snapshotQuestionsArray);
+                    } else {
+                        $snapshotQuestions = collect($snapshotQuestionsArray)->keyBy('id');
+                    }
+                }
+            } else {
+                $snapshotQuestions = collect();
+            }
+
+            // Extract all question IDs from the snapshot structure to ensure we have all questions
+            $structureQuestionIds = $this->extractQuestionIdsFromStructure($snapshotData['structure']);
+            $structureQuestionIds = array_values(array_unique($structureQuestionIds));
+
+            // Get question IDs from snapshot
+            $snapshotQuestionIds = $snapshotQuestions->keys()->filter(function($key) {
+                return is_numeric($key) && $key > 0;
+            })->toArray();
+
+            if (empty($snapshotQuestionIds) || count($snapshotQuestionIds) !== $snapshotQuestions->count()) {
+                $snapshotQuestionIds = $snapshotQuestions->map(function($question) {
+                    return is_array($question) ? ($question['id'] ?? null) : ($question->id ?? null);
+                })->filter()->unique()->values()->toArray();
+            }
+
+            $missingQuestionIds = array_diff($structureQuestionIds, $snapshotQuestionIds);
+
+            if (!empty($missingQuestionIds)) {
+                $missingQuestions = \App\Models\Question::whereIn('id', $missingQuestionIds)
+                    ->get()
+                    ->map(function ($question) {
+                        return [
+                            'id' => $question->id,
+                            'key' => $question->key,
+                            'question' => $question->question,
+                            'type' => $question->type,
+                            'options' => $question->options,
+                            'required' => $question->required,
+                            'help_text' => $question->help_text,
+                        ];
+                    })
+                    ->keyBy('id');
+
+                $snapshotQuestions = $snapshotQuestions->union($missingQuestions);
+            }
+
+            // Convert to array keyed by question ID
             $questionsArray = [];
-            foreach ($snapshotQuestionsArray as $key => $question) {
+            foreach ($snapshotQuestions as $key => $question) {
                 $questionId = is_array($question) ? ($question['id'] ?? $key) : ($question->id ?? $key);
                 if ($questionId && is_numeric($questionId)) {
                     $questionsArray[$questionId] = is_array($question) ? $question : (array)$question;
                 }
             }
             $questions = $questionsArray;
-            
-            // Check if structure has changed
+
             $structureChanged = $submission->hasStructureChanged();
         } elseif ($submission->formStructure) {
             // Fallback to current structure if no snapshot
@@ -139,16 +211,70 @@ class CareerCornerSubmissionController extends Controller
             $questions = $questionsArray;
         }
 
+        // Ensure submittedData is always an array
+        $formDataFromSubmission = $submission->form_data;
+        $submittedData = is_array($formDataFromSubmission) && !empty($formDataFromSubmission) ? $formDataFromSubmission : [];
+
         $data['pageTitle'] = __('View Submission');
         $data['activeCareerCornerSubmissions'] = 'active';
         $data['submission'] = $submission;
         $data['formData'] = $formData;
         $data['questions'] = $questions;
-        $data['submittedData'] = $submission->form_data;
+        $data['submittedData'] = $submittedData;
         $data['previousSubmission'] = $previousSubmission;
         $data['nextSubmission'] = $nextSubmission;
         $data['structureChanged'] = $structureChanged;
 
         return view('admin.career-corner-submissions.show', $data);
+    }
+
+    /**
+     * Extract all question IDs from a form structure (for ensuring all questions are loaded)
+     */
+    private function extractQuestionIdsFromStructure($structure)
+    {
+        $ids = [];
+
+        if (!is_array($structure)) {
+            return $ids;
+        }
+
+        foreach ($structure as $element) {
+            if (isset($element['type'])) {
+                if ($element['type'] === 'section' && isset($element['items'])) {
+                    $ids = array_merge($ids, $this->extractQuestionIds($element['items']));
+                } elseif ($element['type'] === 'item' && isset($element['item'])) {
+                    $ids = array_merge($ids, $this->extractQuestionIds([$element['item']]));
+                }
+            }
+        }
+
+        // Return unique question IDs as a simple array (not keyed)
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * Recursively extract question IDs from form structure items
+     */
+    private function extractQuestionIds($items)
+    {
+        $ids = [];
+
+        foreach ($items as $item) {
+            if (isset($item['question_id'])) {
+                $ids[] = $item['question_id'];
+            }
+
+            // Recursively check children
+            if (isset($item['children']) && is_array($item['children'])) {
+                foreach ($item['children'] as $optionValue => $childGroup) {
+                    if (isset($childGroup['items']) && is_array($childGroup['items'])) {
+                        $ids = array_merge($ids, $this->extractQuestionIds($childGroup['items']));
+                    }
+                }
+            }
+        }
+
+        return $ids;
     }
 }

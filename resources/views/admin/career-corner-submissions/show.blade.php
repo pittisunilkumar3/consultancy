@@ -85,6 +85,33 @@
             color: #6b7280;
         }
 
+        .career-form-nested-questions {
+            margin-top: 1.5rem;
+            margin-left: 0;
+            padding-left: 0;
+            border-left: none;
+        }
+
+        .career-form-nested-questions:not(.show) {
+            display: none !important;
+        }
+
+        .career-form-nested-questions.show {
+            display: block !important;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .submission-info {
             background: #f9fafb;
             border: 1px solid #e5e7eb;
@@ -233,4 +260,85 @@
         @endif
     </div>
 @endsection
+
+@push('script')
+    <script>
+        $(document).ready(function() {
+            // Ensure nested questions are shown correctly in readonly mode
+            // This handles cases where the inline style might not be enough
+            function showNestedQuestions() {
+                $('.career-form-nested-questions').each(function(index) {
+                    const $nestedContainer = $(this);
+                    const parentQuestionId = $nestedContainer.data('parent-question');
+                    const containerOptionValue = $nestedContainer.data('option-value');
+
+                    if (parentQuestionId && containerOptionValue) {
+                        let shouldShow = false;
+
+                        // Method 1: Check if inline style says to show
+                        const inlineStyle = $nestedContainer.attr('style') || '';
+                        if (inlineStyle.includes('display: block')) {
+                            shouldShow = true;
+                        }
+
+                        // Method 2: Check if the parent radio button is checked
+                        const $parentRadio = $(`input[type="radio"][data-question-id="${parentQuestionId}"]:checked`);
+                        if ($parentRadio.length > 0) {
+                            $parentRadio.each(function() {
+                                const selectedValue = String($(this).val()).trim();
+                                const containerValue = String(containerOptionValue).trim();
+
+                                // Case-insensitive comparison
+                                if (selectedValue.toLowerCase() === containerValue.toLowerCase()) {
+                                    shouldShow = true;
+                                    return false; // break
+                                }
+                            });
+                        }
+
+                        // Method 3: Check all radio buttons with the parent question ID (even if not :checked selector works)
+                        if (!shouldShow) {
+                            const $allRadios = $(`input[type="radio"][data-question-id="${parentQuestionId}"]`);
+                            $allRadios.each(function() {
+                                const isChecked = $(this).is(':checked') || $(this).prop('checked');
+                                if (isChecked) {
+                                    const selectedValue = String($(this).val()).trim();
+                                    const containerValue = String(containerOptionValue).trim();
+                                    if (selectedValue.toLowerCase() === containerValue.toLowerCase()) {
+                                        shouldShow = true;
+                                        return false; // break
+                                    }
+                                }
+                            });
+                        }
+
+                        // Apply the display
+                        if (shouldShow) {
+                            // Force show with multiple methods to ensure it works
+                            $nestedContainer
+                                .addClass('show')
+                                .css({'display': 'block !important'})
+                                .attr('style', 'display: block !important;')
+                                .show(); // jQuery show() as backup
+
+                            // Force remove any conflicting styles
+                            $nestedContainer.removeAttr('hidden');
+                        } else {
+                            // Only hide if we're sure it shouldn't be shown
+                            if (!$nestedContainer.hasClass('show') && inlineStyle.includes('display: none')) {
+                                $nestedContainer.css({'display': 'none'}).removeClass('show').attr('style', 'display: none !important;');
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Run immediately
+            showNestedQuestions();
+
+            // Also run after a short delay to ensure DOM is fully ready
+            setTimeout(showNestedQuestions, 100);
+        });
+    </script>
+@endpush
 

@@ -106,20 +106,58 @@
                         // Use case-insensitive comparison to handle "No" vs "no" etc.
                         $shouldShow = false;
 
-                        if ($isReadonly && isset($submittedData[$questionId])) {
-                            $submittedValue = trim((string)$submittedData[$questionId]);
+                        if ($isReadonly && isset($submittedData) && is_array($submittedData) && !empty($submittedData)) {
+                            // Check if the submitted data has the parent question's answer
+                            // Try multiple key formats to be safe
+                            $submittedValue = null;
 
-                            // Case-insensitive comparison
-                            $exactMatch = ($submittedValue === $optionValueStr);
-                            $caseInsensitiveMatch = (strtolower($submittedValue) === strtolower($optionValueStr));
-                            $shouldShow = $exactMatch || $caseInsensitiveMatch;
+                            // First try with career_q_ prefix
+                            if (isset($submittedData[$questionId])) {
+                                $submittedValue = $submittedData[$questionId];
+                            }
+
+                            // If not found, try with just the question ID (for backward compatibility)
+                            if ($submittedValue === null) {
+                                $questionIdOnly = is_array($questionData) ? $questionData['id'] : $questionData->id;
+                                if (isset($submittedData[$questionIdOnly])) {
+                                    $submittedValue = $submittedData[$questionIdOnly];
+                                }
+                            }
+
+                            // Also try with 'career_q_' prefix but numeric ID
+                            if ($submittedValue === null) {
+                                $questionIdOnly = is_array($questionData) ? $questionData['id'] : $questionData->id;
+                                $altKey = 'career_q_' . $questionIdOnly;
+                                if (isset($submittedData[$altKey])) {
+                                    $submittedValue = $submittedData[$altKey];
+                                }
+                            }
+
+                            if ($submittedValue !== null && $submittedValue !== '') {
+                                $submittedValueStr = trim((string)$submittedValue);
+                                $optionValueStrTrimmed = trim((string)$optionValueStr);
+
+                                // Case-insensitive comparison
+                                $exactMatch = ($submittedValueStr === $optionValueStrTrimmed);
+                                $caseInsensitiveMatch = (strtolower($submittedValueStr) === strtolower($optionValueStrTrimmed));
+
+                                // Also check if optionValue is an array with value/label structure
+                                if (!$exactMatch && !$caseInsensitiveMatch && is_array($optionValue)) {
+                                    $optionValueFromArray = trim((string)($optionValue['value'] ?? $optionValue['label'] ?? ''));
+                                    if ($optionValueFromArray) {
+                                        $exactMatch = ($submittedValueStr === $optionValueFromArray);
+                                        $caseInsensitiveMatch = (strtolower($submittedValueStr) === strtolower($optionValueFromArray));
+                                    }
+                                }
+
+                                $shouldShow = $exactMatch || $caseInsensitiveMatch;
+                            }
                         }
                     @endphp
-                    <div class="career-form-nested-questions"
+                    <div class="career-form-nested-questions{{ $shouldShow ? ' show' : '' }}"
                          data-parent-question="{{ is_array($questionData) ? $questionData['id'] : $questionData->id }}"
                          data-option-value="{{ e($optionValueStr) }}"
-                         style="display: {{ $shouldShow ? 'block' : 'none' }} !important;"
-                         {{ $shouldShow ? 'class="show"' : '' }}>
+                         style="display: {{ $shouldShow ? 'block' : 'none' }} !important;">
                         @foreach($childData['items'] as $childItem)
                             @include('student.career-corner.partials.question', ['item' => $childItem, 'questions' => $questions, 'depth' => $depth + 1, 'submittedData' => $submittedData ?? null, 'isReadonly' => $isReadonly])
                         @endforeach
@@ -181,13 +219,10 @@
                 <div class="career-form-file-display">
                     @php
                         // Get file URL from storage path
-                        // Check if file exists in storage, then generate URL
-                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($fieldValue)) {
-                            $fileUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($fieldValue);
-                        } else {
-                            // Fallback to asset() if Storage::url() doesn't work
-                            $fileUrl = asset('storage/' . $fieldValue);
-                        }
+                        // Use asset() for better localhost compatibility
+                        // The file path stored in DB is like: uploads/career-corner/filename.pdf
+                        // So we need: storage/uploads/career-corner/filename.pdf
+                        $fileUrl = asset('storage/' . $fieldValue);
                         $fileName = basename($fieldValue);
                     @endphp
                     <div class="d-inline-flex align-items-center cg-2">
