@@ -9,6 +9,7 @@ use App\Models\Country;
 use App\Models\FormStructure;
 use App\Models\Question;
 use App\Models\StudyLevel;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -289,6 +290,17 @@ class CareerCornerController extends Controller
 
                 $submission = $existingSubmission;
                 $message = __('Form updated successfully!');
+
+                // Notify all active admin users about form update
+                $admins = User::where(['role' => USER_ROLE_ADMIN, 'status' => STATUS_ACTIVE])->get();
+                foreach ($admins as $admin) {
+                    setCommonNotification(
+                        $admin->id,
+                        __('Career Corner Form Updated'),
+                        __('Career corner form has been updated by ') . $user->first_name . ' ' . $user->last_name,
+                        route('admin.career-corner-submissions.show', $submission->id)
+                    );
+                }
             } else {
                 // Create new submission
                 $submission = CareerCornerSubmission::create([
@@ -300,6 +312,17 @@ class CareerCornerController extends Controller
                 ]);
 
                 $message = __('Form submitted successfully!');
+
+                // Notify all active admin users about new submission
+                $admins = User::where(['role' => USER_ROLE_ADMIN, 'status' => STATUS_ACTIVE])->get();
+                foreach ($admins as $admin) {
+                    setCommonNotification(
+                        $admin->id,
+                        __('New Career Corner Form Submission'),
+                        __('A new career corner form has been submitted by ') . $user->first_name . ' ' . $user->last_name,
+                        route('admin.career-corner-submissions.show', $submission->id)
+                    );
+                }
             }
 
             return response()->json([

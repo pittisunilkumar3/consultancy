@@ -2947,7 +2947,7 @@ Version: 1.0
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background-color: var(--tertiary);
+  background-color: #ff3a3a;
   font-size: 13px;
   font-weight: 600;
   line-height: 16px;
