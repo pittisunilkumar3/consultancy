@@ -51,7 +51,8 @@ class UniversityFilterService
 
         // Get ALL question-criteria mappings (not just for answered questions)
         // This helps us identify which criteria fields exist but weren't answered
-        $allMappings = QuestionCriteriaMapping::with(['criteriaField', 'question'])
+        // Also load dependsOn relationship for dependency checking
+        $allMappings = QuestionCriteriaMapping::with(['criteriaField.dependsOn', 'question'])
             ->get();
 
         // Get mappings for answered questions only
@@ -160,6 +161,27 @@ class UniversityFilterService
         foreach ($criteriaFilters as $criteriaFieldId => $filterData) {
             $criteriaField = $filterData['field'];
             $studentAnswers = $filterData['answers'];
+
+            // Check if this criteria field depends on another field
+            // If it does, validate the parent condition before applying the filter
+            if ($criteriaField->depends_on_criteria_field_id) {
+                $parentConditionMet = $this->checkParentCondition(
+                    $criteriaField,
+                    $formData,
+                    $questionIds,
+                    $allMappings
+                );
+
+                if (!$parentConditionMet) {
+                    // Parent condition not met, skip this filter
+                    Log::info('University Filter: Skipping dependent criteria - parent condition not met', [
+                        'criteria_field' => $criteriaField->name,
+                        'depends_on' => $criteriaField->depends_on_criteria_field_id,
+                        'depends_value' => $criteriaField->depends_on_value
+                    ]);
+                    continue;
+                }
+            }
 
             // For JSON type, we need to handle arrays properly
             // If multiple questions map to same criteria, merge all answers
@@ -484,6 +506,142 @@ class UniversityFilterService
         }
 
         return $query->whereIn('id', $universityIds);
+    }
+
+    /**
+     * Check if parent condition is met for a dependent criteria field
+     *
+     * @param UniversityCriteriaField $criteriaField The dependent criteria field
+     * @param array $formData Student form submission data
+     * @param array $questionIds Array of answered question IDs
+     * @param \Illuminate\Support\Collection $allMappings All question-criteria mappings
+     * @return bool True if parent condition is met, false otherwise
+     */
+    protected function checkParentCondition(
+        UniversityCriteriaField $criteriaField,
+        array $formData,
+        array $questionIds,
+        $allMappings
+    ) {
+        $parentFieldId = $criteriaField->depends_on_criteria_field_id;
+        $requiredParentValue = $criteriaField->depends_on_value;
+
+        if (!$parentFieldId || $requiredParentValue === null) {
+            return true; // No dependency or no specific value required
+        }
+
+        // Load parent field with relationship
+        $parentField = $criteriaField->dependsOn;
+        if (!$parentField) {
+            Log::warning('University Filter: Parent criteria field not found', [
+                'parent_field_id' => $parentFieldId,
+                'child_field' => $criteriaField->name
+            ]);
+            return false;
+        }
+
+        // Get all questions mapped to the parent criteria field
+        $parentMappings = $allMappings->where('criteria_field_id', $parentFieldId);
+
+        if ($parentMappings->isEmpty()) {
+            // No questions mapped to parent field - condition cannot be met
+            return false;
+        }
+
+        // Get parent field's answer from student form data
+        $parentAnswers = [];
+        foreach ($parentMappings as $parentMapping) {
+            $parentQuestionId = $parentMapping->question_id;
+            $parentFormKey = 'career_q_' . $parentQuestionId;
+
+            if (isset($formData[$parentFormKey]) && $formData[$parentFormKey] !== null && $formData[$parentFormKey] !== '') {
+                $parentAnswer = $formData[$parentFormKey];
+
+                // Skip empty answers
+                if (is_string($parentAnswer) && trim($parentAnswer) === '') {
+                    continue;
+                }
+
+                $parentAnswers[] = $parentAnswer;
+            }
+        }
+
+        if (empty($parentAnswers)) {
+            // No answer for parent field - condition not met
+            return false;
+        }
+
+        // Check if parent is JSON checkbox field (has options)
+        if ($parentField->type === 'json' && !empty($parentField->options) && is_array($parentField->options)) {
+            // Parent is JSON checkbox - check if required value is in selected options
+            $selectedOptions = [];
+            foreach ($parentAnswers as $answer) {
+                if (is_array($answer)) {
+                    $selectedOptions = array_merge($selectedOptions, $answer);
+                } else {
+                    // Try to decode as JSON
+                    $decoded = json_decode($answer, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $selectedOptions = array_merge($selectedOptions, $decoded);
+                    } else {
+                        $selectedOptions[] = $answer;
+                    }
+                }
+            }
+
+            // Normalize selected options (trim, remove empty)
+            $selectedOptions = array_map('trim', array_filter($selectedOptions));
+            $normalizedRequiredValue = trim((string)$requiredParentValue);
+
+            // Check if required value is in selected options (case-insensitive)
+            $conditionMet = false;
+            foreach ($selectedOptions as $option) {
+                if (strcasecmp(trim((string)$option), $normalizedRequiredValue) === 0) {
+                    $conditionMet = true;
+                    break;
+                }
+            }
+
+            Log::info('University Filter: Parent condition check (JSON checkbox)', [
+                'parent_field' => $parentField->name,
+                'required_value' => $requiredParentValue,
+                'selected_options' => $selectedOptions,
+                'condition_met' => $conditionMet
+            ]);
+
+            return $conditionMet;
+        } else {
+            // Parent is single value field (boolean, text, number, select)
+            // Use first answer (or merge if multiple)
+            $parentValue = is_array($parentAnswers) ? $parentAnswers[0] : $parentAnswers;
+
+            // Normalize values for comparison
+            $normalizedParentValue = trim((string)$parentValue);
+            $normalizedRequiredValue = trim((string)$requiredParentValue);
+
+            // For boolean fields, normalize to "1" or "0"
+            if ($parentField->type === 'boolean') {
+                $parentBool = $this->normalizeBoolean($parentValue);
+                if ($parentBool === null) {
+                    return false;
+                }
+                $normalizedParentValue = $parentBool ? '1' : '0';
+            }
+
+            $conditionMet = (strcasecmp($normalizedParentValue, $normalizedRequiredValue) === 0);
+
+            Log::info('University Filter: Parent condition check (single value)', [
+                'parent_field' => $parentField->name,
+                'parent_type' => $parentField->type,
+                'parent_value' => $parentValue,
+                'normalized_parent_value' => $normalizedParentValue,
+                'required_value' => $requiredParentValue,
+                'normalized_required_value' => $normalizedRequiredValue,
+                'condition_met' => $conditionMet
+            ]);
+
+            return $conditionMet;
+        }
     }
 
     /**

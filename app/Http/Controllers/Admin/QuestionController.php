@@ -18,7 +18,7 @@ class QuestionController extends Controller
     {
         // server-side datatable response
         if ($request->ajax()) {
-            $data = Question::orderBy('order');
+            $data = Question::orderBy('id', 'DESC');
             return datatables()->of($data)
                 ->addIndexColumn()
                 ->editColumn('required', function ($row) {
@@ -34,7 +34,7 @@ class QuestionController extends Controller
         }
 
         // set sidebar active variables and page title for normal view
-        $questions = Question::orderBy('order')->get();
+        $questions = Question::orderBy('id', 'DESC')->get();
         $criteriaFields = UniversityCriteriaField::where('status', STATUS_ACTIVE)->orderBy('order')->get();
         $showQuestions = 'show';
         $activeQuestion = 'active';
