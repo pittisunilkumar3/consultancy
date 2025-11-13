@@ -95,14 +95,14 @@
             const $field = $(this);
             const dependsOn = $field.data('depends-on');
             const dependsValue = $field.data('depends-value');
-            
+
             if (!dependsOn) return;
-            
+
             let shouldShow = false;
-            
+
             // Check if parent is a JSON checkbox field (multiple checkboxes with same name pattern)
             const $jsonCheckboxes = $('input[type="checkbox"][name="criteria_values[' + dependsOn + '][]"]');
-            
+
             if ($jsonCheckboxes.length > 0) {
                 // Parent is a JSON checkbox field - check if dependsValue is in checked options
                 const checkedValues = [];
@@ -111,7 +111,7 @@
                         checkedValues.push($(this).val().trim());
                     }
                 });
-                
+
                 // Check if dependsValue is in the checked values array
                 const normalizedDependsValue = String(dependsValue).trim();
                 shouldShow = checkedValues.some(function(val) {
@@ -121,12 +121,12 @@
                 // Parent is a single value field (boolean, select, text, number)
                 let $parentField = $('#criteria_' + dependsOn);
                 let parentValue = '';
-                
+
                 // If not found, try finding by name attribute
                 if (!$parentField.length) {
                     $parentField = $('input[name="criteria_values[' + dependsOn + ']"], select[name="criteria_values[' + dependsOn + ']"]');
                 }
-                
+
                 if ($parentField.length) {
                     if ($parentField.is(':checkbox')) {
                         parentValue = $parentField.is(':checked') ? '1' : '0';
@@ -136,14 +136,14 @@
                         parentValue = $parentField.val() || '';
                     }
                 }
-                
+
                 // Show/hide based on parent value
                 // Normalize both values to strings for comparison
                 const normalizedParentValue = String(parentValue).trim();
                 const normalizedDependsValue = String(dependsValue).trim();
                 shouldShow = normalizedParentValue === normalizedDependsValue;
             }
-            
+
             if (shouldShow) {
                 $field.slideDown(200).show().css('display', ''); // Remove inline display:none
                 // Enable all inputs in the field
@@ -163,12 +163,12 @@
     $(document).on('change', 'input[name^="criteria_values["]', function() {
         updateConditionalFields();
     });
-    
+
     // Handle select fields
     $(document).on('change', 'select[name^="criteria_values["]', function() {
         updateConditionalFields();
     });
-    
+
     // Handle text inputs
     $(document).on('input change', 'input[type="text"][name^="criteria_values["], input[type="number"][name^="criteria_values["]', function() {
         updateConditionalFields();
@@ -181,7 +181,7 @@
             updateConditionalFields();
         }, 100);
     });
-    
+
     // Also update when form is loaded dynamically (for AJAX forms)
     $(document).on('DOMNodeInserted', function(e) {
         if ($(e.target).find('.conditional-criteria-field').length || $(e.target).hasClass('conditional-criteria-field')) {
