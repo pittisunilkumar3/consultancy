@@ -98,31 +98,53 @@
             
             if (!dependsOn) return;
             
-            // Get parent field value - try multiple selectors
-            let $parentField = $('#criteria_' + dependsOn);
-            let parentValue = '';
+            let shouldShow = false;
             
-            // If not found, try finding by name attribute
-            if (!$parentField.length) {
-                $parentField = $('input[name="criteria_values[' + dependsOn + ']"], select[name="criteria_values[' + dependsOn + ']"]');
-            }
+            // Check if parent is a JSON checkbox field (multiple checkboxes with same name pattern)
+            const $jsonCheckboxes = $('input[type="checkbox"][name="criteria_values[' + dependsOn + '][]"]');
             
-            if ($parentField.length) {
-                if ($parentField.is(':checkbox')) {
-                    parentValue = $parentField.is(':checked') ? '1' : '0';
-                } else if ($parentField.is('select')) {
-                    parentValue = $parentField.val() || '';
-                } else {
-                    parentValue = $parentField.val() || '';
+            if ($jsonCheckboxes.length > 0) {
+                // Parent is a JSON checkbox field - check if dependsValue is in checked options
+                const checkedValues = [];
+                $jsonCheckboxes.each(function() {
+                    if ($(this).is(':checked')) {
+                        checkedValues.push($(this).val().trim());
+                    }
+                });
+                
+                // Check if dependsValue is in the checked values array
+                const normalizedDependsValue = String(dependsValue).trim();
+                shouldShow = checkedValues.some(function(val) {
+                    return String(val).trim() === normalizedDependsValue;
+                });
+            } else {
+                // Parent is a single value field (boolean, select, text, number)
+                let $parentField = $('#criteria_' + dependsOn);
+                let parentValue = '';
+                
+                // If not found, try finding by name attribute
+                if (!$parentField.length) {
+                    $parentField = $('input[name="criteria_values[' + dependsOn + ']"], select[name="criteria_values[' + dependsOn + ']"]');
                 }
+                
+                if ($parentField.length) {
+                    if ($parentField.is(':checkbox')) {
+                        parentValue = $parentField.is(':checked') ? '1' : '0';
+                    } else if ($parentField.is('select')) {
+                        parentValue = $parentField.val() || '';
+                    } else {
+                        parentValue = $parentField.val() || '';
+                    }
+                }
+                
+                // Show/hide based on parent value
+                // Normalize both values to strings for comparison
+                const normalizedParentValue = String(parentValue).trim();
+                const normalizedDependsValue = String(dependsValue).trim();
+                shouldShow = normalizedParentValue === normalizedDependsValue;
             }
             
-            // Show/hide based on parent value
-            // Normalize both values to strings for comparison
-            const normalizedParentValue = String(parentValue).trim();
-            const normalizedDependsValue = String(dependsValue).trim();
-            
-            if (normalizedParentValue === normalizedDependsValue) {
+            if (shouldShow) {
                 $field.slideDown(200).show().css('display', ''); // Remove inline display:none
                 // Enable all inputs in the field
                 $field.find('input, select, textarea').not('[type="hidden"]').prop('disabled', false);
@@ -137,7 +159,7 @@
     }
 
     // Listen for changes on criteria fields that might have dependents
-    // Handle checkboxes (boolean fields)
+    // Handle all input changes (including JSON checkbox arrays)
     $(document).on('change', 'input[name^="criteria_values["]', function() {
         updateConditionalFields();
     });
