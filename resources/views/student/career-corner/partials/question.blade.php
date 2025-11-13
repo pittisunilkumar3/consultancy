@@ -176,10 +176,49 @@
                placeholder="{{ $questionPlaceholder ? e($questionPlaceholder) : __('Enter your email address') }}">
 
     @elseif($questionType === 'file')
-        @if($isReadonly && $fieldValue)
-            <div class="career-form-file-display">
-                <i class="fa-solid fa-file me-2"></i>{{ __('File uploaded: ') }}{{ basename($fieldValue) }}
-            </div>
+        @if($isReadonly)
+            @if($fieldValue)
+                <div class="career-form-file-display">
+                    @php
+                        // Get file URL from storage path
+                        // Check if file exists in storage, then generate URL
+                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($fieldValue)) {
+                            $fileUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($fieldValue);
+                        } else {
+                            // Fallback to asset() if Storage::url() doesn't work
+                            $fileUrl = asset('storage/' . $fieldValue);
+                        }
+                        $fileName = basename($fieldValue);
+                    @endphp
+                    <div class="d-inline-flex align-items-center cg-2">
+                        <i class="fa-solid fa-file me-2"></i>
+                        <span>{{ __('File uploaded: ') }}{{ $fileName }}</span>
+                        <a href="{{ $fileUrl }}" target="_blank" class="ms-2 text-primary text-decoration-none" title="{{ __('Download file') }}">
+                            <i class="fa-solid fa-download"></i>
+                        </a>
+                    </div>
+                </div>
+                {{-- Always include file input for editing, but hide it in readonly mode --}}
+                <input type="file"
+                       class="career-form-input"
+                       name="{{ $questionId }}"
+                       style="display: none;"
+                       {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}
+                       accept="*/*">
+            @else
+                {{-- No file uploaded - show message in readonly mode --}}
+                <div class="career-form-file-display text-muted">
+                    <i class="fa-solid fa-file me-2"></i>
+                    <span>{{ __('No file uploaded') }}</span>
+                </div>
+                {{-- Always include file input for editing, but hide it in readonly mode --}}
+                <input type="file"
+                       class="career-form-input"
+                       name="{{ $questionId }}"
+                       style="display: none;"
+                       {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}
+                       accept="*/*">
+            @endif
         @else
             <input type="file"
                    class="career-form-input"

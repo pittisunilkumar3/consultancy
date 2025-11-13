@@ -583,6 +583,10 @@
 @push('script')
     <script>
         $(document).ready(function() {
+            // Add file change listeners to all file inputs on page load
+            $(document).on('change', 'input[type="file"].career-form-input', function() {
+                // File change handler - no logging needed
+            });
             // Track if form is in readonly mode
             let isReadonly = {{ isset($submission) && $submission ? 'true' : 'false' }};
 
@@ -604,6 +608,36 @@
                 $('#careerCornerForm textarea[readonly]').removeAttr('readonly').removeAttr('style');
                 $('#careerCornerForm select[disabled]').prop('disabled', false).removeAttr('style');
                 $('#careerCornerForm input[disabled]').prop('disabled', false);
+
+                // Handle file fields - hide readonly display and show file input
+                $('.career-form-file-display').each(function() {
+                    const $fileDisplay = $(this);
+                    const $question = $fileDisplay.closest('.career-form-question');
+                    const questionId = $question.data('question-id');
+                    const fieldName = 'career_q_' + questionId;
+
+                    // Find file input (should exist but hidden)
+                    let $fileInput = $question.find('input[type="file"][name="' + fieldName + '"]');
+
+                    if ($fileInput.length === 0) {
+                        // Create file input if it doesn't exist
+                        const isRequired = $question.data('question-required') === '1' || $question.data('question-required') === 1;
+                        $fileInput = $('<input>', {
+                            type: 'file',
+                            class: 'career-form-input',
+                            name: fieldName,
+                            accept: '*/*'
+                        });
+                        if (isRequired) {
+                            $fileInput.attr('required', 'required');
+                        }
+                        $fileDisplay.after($fileInput);
+                    }
+
+                    // Hide readonly display and show file input
+                    $fileDisplay.hide();
+                    $fileInput.css('display', 'block').removeAttr('style').show();
+                });
 
                 // STEP 1: Remove required from ALL hidden nested questions
                 $('.career-form-nested-questions').each(function() {
@@ -880,8 +914,8 @@
 
                     // Helper function to show error message
                     function showFieldError($field, message) {
-                        const $question = $field.closest('.career-form-question');
-                        if ($question.length) {
+                            const $question = $field.closest('.career-form-question');
+                            if ($question.length) {
                             // Remove existing error message
                             $question.find('.career-form-error-message').remove();
 
@@ -929,8 +963,8 @@
                     $('.career-form-question').each(function() {
                         const $question = $(this);
                         const questionType = $question.data('question-type');
-                        const questionRequired = $question.data('question-required');
-                        const isRequired = questionRequired === '1' || questionRequired === 1 || questionRequired === true;
+                                const questionRequired = $question.data('question-required');
+                                const isRequired = questionRequired === '1' || questionRequired === 1 || questionRequired === true;
 
                         // Skip hidden questions
                         const $nestedContainer = $question.closest('.career-form-nested-questions');
@@ -987,8 +1021,8 @@
                                 });
                             } else {
                                 // Clear any previous error
-                                if ($field[0] && $field[0].setCustomValidity) {
-                                    $field[0].setCustomValidity('');
+                                    if ($field[0] && $field[0].setCustomValidity) {
+                                        $field[0].setCustomValidity('');
                                 }
                                 clearFieldError($field);
                             }
@@ -1028,9 +1062,9 @@
                                     field: $field,
                                     message: '{{ __('This field is required') }}'
                                 };
+                                }
                             }
-                        }
-                    });
+                        });
 
                     if (hasRequiredErrors && firstRequiredError) {
                         showFieldError(firstRequiredError.field, firstRequiredError.message);
@@ -1047,8 +1081,8 @@
                         if (typeof toastr !== 'undefined') {
                             toastr.error(firstRequiredError.message);
                         }
-                        return;
-                    }
+                            return;
+                        }
 
                     // Check if there are any email validation errors
                     if (validationErrors.length > 0) {
@@ -1142,7 +1176,28 @@
                         return selectedValue === containerValue;
                     }
 
-                    // Collect all form fields, excluding hidden nested questions
+                    // First, collect all file inputs separately (including hidden ones)
+                    // This ensures all files are captured regardless of visibility
+                    $(this).find('input[type="file"]').each(function() {
+                        const $fileField = $(this);
+                        const fileName = $fileField.attr('name');
+
+                        if (!fileName || fileName === '_token') {
+                            return;
+                        }
+
+                        const fileInput = $fileField[0];
+                        const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+
+                        // Check if file input has a file selected (even if hidden)
+                        if (hasFile) {
+                            const file = fileInput.files[0];
+                            // Append actual file to FormData with the correct field name
+                            formData.append(fileName, file, file.name);
+                        }
+                    });
+
+                    // Collect all other form fields, excluding hidden nested questions
                     $(this).find('input, select, textarea').each(function() {
                         const $field = $(this);
                         const name = $field.attr('name');
@@ -1151,17 +1206,21 @@
                             return;
                         }
 
+                        // Skip file inputs (already handled above)
+                        if ($field.attr('type') === 'file') {
+                            return;
+                        }
+
                         // Skip disabled/readonly fields that are not in readonly mode (they're hidden)
                         if ($field.is(':disabled') && !isReadonly) {
                             return;
                         }
 
-                        // Skip fields in hidden nested containers
+                        // Skip fields in hidden nested containers (but not file inputs)
                         if (!isFieldVisible($field)) {
                             return;
                         }
 
-                        // Collect the value
                         if ($field.is(':checkbox')) {
                             if ($field.is(':checked')) {
                                 if (!formDataObj[name]) {
@@ -1181,7 +1240,7 @@
                         }
                     });
 
-                    // Convert object to FormData
+                    // Convert object to FormData (excluding files which are already added)
                     Object.keys(formDataObj).forEach(key => {
                         const value = formDataObj[key];
                         if (Array.isArray(value)) {
@@ -1233,7 +1292,7 @@
 
                             if (xhr.responseJSON) {
                                 if (xhr.responseJSON.message) {
-                                    errorMessage = xhr.responseJSON.message;
+                                errorMessage = xhr.responseJSON.message;
                                 }
 
                                 // Handle validation errors (422 status)
@@ -1271,8 +1330,8 @@
                                     if (errorMessages.length > 0) {
                                         errorMessage = errorMessages[0];
                                     }
-                                } else if (xhr.status === 422) {
-                                    errorMessage = '{{ __('Validation error. Please check your inputs.') }}';
+                            } else if (xhr.status === 422) {
+                                errorMessage = '{{ __('Validation error. Please check your inputs.') }}';
                                 }
                             } else if (xhr.status === 401) {
                                 errorMessage = '{{ __('Please login to submit the form') }}';

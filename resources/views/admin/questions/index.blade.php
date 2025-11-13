@@ -121,10 +121,10 @@
                         <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
                             @foreach($criteriaFields as $criteriaField)
                             <div class="zForm-wrap-checkbox-2 mb-2">
-                                <input type="checkbox"
-                                       name="criteria_fields[]"
-                                       id="criteria_field_{{ $criteriaField->id }}"
-                                       class="form-check-input criteria-field-checkbox"
+                                <input type="checkbox" 
+                                       name="criteria_fields[]" 
+                                       id="criteria_field_{{ $criteriaField->id }}" 
+                                       class="form-check-input criteria-field-checkbox" 
                                        value="{{ $criteriaField->id }}">
                                 <label for="criteria_field_{{ $criteriaField->id }}" class="form-check-label">
                                     {{ $criteriaField->name }}

@@ -12,6 +12,8 @@ use App\Models\StudyLevel;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class CareerCornerController extends Controller
@@ -247,8 +249,17 @@ class CareerCornerController extends Controller
                 ], 401);
             }
 
-            // Collect all form data (excluding CSRF token)
-            $formData = $request->except(['_token']);
+            // Generate snapshot of current form structure and questions
+            $snapshot = $this->generateFormStructureSnapshot($structure);
+
+            // Check if user already has a submission for this form
+            $existingSubmission = CareerCornerSubmission::where('user_id', $user->id)
+                ->where('form_structure_id', $structure->id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            // Process file uploads (pass existing submission for file replacement)
+            $formData = $this->processFileUploads($request, $structure, $existingSubmission);
 
             // Validate that we have some data
             if (empty($formData)) {
@@ -267,15 +278,6 @@ class CareerCornerController extends Controller
                     'errors' => $validationErrors
                 ], 422);
             }
-
-            // Generate snapshot of current form structure and questions
-            $snapshot = $this->generateFormStructureSnapshot($structure);
-
-            // Check if user already has a submission for this form
-            $existingSubmission = CareerCornerSubmission::where('user_id', $user->id)
-                ->where('form_structure_id', $structure->id)
-                ->orderBy('created_at', 'desc')
-                ->first();
 
             if ($existingSubmission) {
                 // Update existing submission (also update snapshot in case structure changed)
@@ -568,5 +570,162 @@ class CareerCornerController extends Controller
             }
         }
 
+    }
+
+    /**
+     * Process file uploads for career corner form
+     */
+    private function processFileUploads(Request $request, FormStructure $structure, $existingSubmission = null)
+    {
+        // Get all form data (excluding files - files are handled separately)
+        $formData = $request->except(['_token']);
+        
+        // Get all questions used in this structure to identify file type questions
+        $questionIds = $this->extractQuestionIdsFromStructure($structure->loadNestedStructure());
+        
+        // Also check for file uploads in the request that might not be in the structure
+        // (e.g., from nested questions or previous form versions)
+        $allFileFields = [];
+        foreach ($request->allFiles() as $fieldName => $file) {
+            if (strpos($fieldName, 'career_q_') === 0) {
+                $allFileFields[] = $fieldName;
+            }
+        }
+        
+        $questions = Question::whereIn('id', $questionIds)
+            ->where('type', 'file')
+            ->get()
+            ->keyBy('id');
+        
+        // Also get file questions that are in the request but might not be in the structure
+        // Extract question IDs from file field names in the request
+        $requestFileQuestionIds = [];
+        foreach ($allFileFields as $fieldName) {
+            $questionId = str_replace('career_q_', '', $fieldName);
+            if (is_numeric($questionId)) {
+                $requestFileQuestionIds[] = (int)$questionId;
+            }
+        }
+        
+        // Get all file questions (from structure + from request)
+        $allFileQuestionIds = array_unique(array_merge($questionIds, $requestFileQuestionIds));
+        $allFileQuestions = Question::whereIn('id', $allFileQuestionIds)
+            ->where('type', 'file')
+            ->get()
+            ->keyBy('id');
+        
+        // Use all file questions for processing
+        $questions = $allFileQuestions;
+        
+        // Remove file inputs from formData (they're UploadedFile objects, we'll process them separately)
+        foreach ($questions as $questionId => $question) {
+            $fieldName = 'career_q_' . $questionId;
+            if (isset($formData[$fieldName]) && $formData[$fieldName] instanceof \Illuminate\Http\UploadedFile) {
+                unset($formData[$fieldName]);
+            }
+        }
+
+        // Get old file paths from existing submission if updating
+        $oldFiles = [];
+        if ($existingSubmission && $existingSubmission->form_data) {
+            $oldFormData = $existingSubmission->form_data;
+            foreach ($questions as $questionId => $question) {
+                $fieldName = 'career_q_' . $questionId;
+                if (isset($oldFormData[$fieldName]) && !empty($oldFormData[$fieldName])) {
+                    $oldFiles[$fieldName] = $oldFormData[$fieldName];
+                }
+            }
+        }
+
+        // Ensure directory exists (do this once, not in loop)
+        $directory = 'uploads/career-corner';
+        $fullDirectoryPath = storage_path('app/public/' . $directory);
+        if (!File::isDirectory($fullDirectoryPath)) {
+            File::makeDirectory($fullDirectoryPath, 0755, true, true);
+        }
+
+        // Process each file upload
+        // First, process files that are in the questions collection (from structure)
+        // Also process any files in the request that might not be in the questions collection
+        $processedFields = [];
+        foreach ($questions as $questionId => $question) {
+            $fieldName = 'career_q_' . $questionId;
+            $processedFields[] = $fieldName;
+            
+            if ($request->hasFile($fieldName)) {
+                $file = $request->file($fieldName);
+                
+                // Validate file
+                if ($file && $file->isValid()) {
+                    // Generate unique filename
+                    $originalName = $file->getClientOriginalName();
+                    $extension = $file->getClientOriginalExtension();
+                    $fileName = time() . '_' . $questionId . '_' . uniqid() . '.' . $extension;
+                    
+                    // Store file in public storage
+                    $path = $file->storeAs($directory, $fileName, 'public');
+                    
+                    if ($path) {
+                        // Save file path in form data
+                        $formData[$fieldName] = $path;
+                        
+                        // Delete old file if exists
+                        if (isset($oldFiles[$fieldName]) && Storage::disk('public')->exists($oldFiles[$fieldName])) {
+                            Storage::disk('public')->delete($oldFiles[$fieldName]);
+                        }
+                    } else {
+                        // If file upload failed, keep old file or set to null
+                        if (isset($oldFiles[$fieldName])) {
+                            $formData[$fieldName] = $oldFiles[$fieldName];
+                        }
+                    }
+                } else {
+                    // If file is invalid, keep old file or set to null
+                    if (isset($oldFiles[$fieldName])) {
+                        $formData[$fieldName] = $oldFiles[$fieldName];
+                    }
+                }
+            } else {
+                // No new file uploaded - keep existing file if updating
+                if ($existingSubmission && isset($oldFiles[$fieldName])) {
+                    $formData[$fieldName] = $oldFiles[$fieldName];
+                }
+                // Don't unset - keep the field even if empty to preserve form structure
+            }
+        }
+        
+        // Process any file uploads that weren't in the questions collection
+        // (e.g., from nested questions or questions not in current structure)
+        foreach ($allFileFields as $fieldName) {
+            if (!in_array($fieldName, $processedFields) && $request->hasFile($fieldName)) {
+                $file = $request->file($fieldName);
+                
+                if ($file && $file->isValid()) {
+                    // Extract question ID from field name
+                    $questionId = str_replace('career_q_', '', $fieldName);
+                    
+                    // Generate unique filename
+                    $extension = $file->getClientOriginalExtension();
+                    $fileName = time() . '_' . $questionId . '_' . uniqid() . '.' . $extension;
+                    
+                    // Store file in public storage
+                    $path = $file->storeAs($directory, $fileName, 'public');
+                    
+                    if ($path) {
+                        $formData[$fieldName] = $path;
+                        
+                        // Delete old file if exists (for updates)
+                        if ($existingSubmission && $existingSubmission->form_data) {
+                            $oldFormData = $existingSubmission->form_data;
+                            if (isset($oldFormData[$fieldName]) && Storage::disk('public')->exists($oldFormData[$fieldName])) {
+                                Storage::disk('public')->delete($oldFormData[$fieldName]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $formData;
     }
 }

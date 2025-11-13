@@ -9,7 +9,6 @@ use App\Models\University;
 use App\Models\UniversityCriteriaField;
 use App\Models\UniversityCriteriaValue;
 use App\Models\Country;
-use Illuminate\Support\Facades\Log;
 
 class UniversityFilterService
 {
@@ -174,11 +173,6 @@ class UniversityFilterService
 
                 if (!$parentConditionMet) {
                     // Parent condition not met, skip this filter
-                    Log::info('University Filter: Skipping dependent criteria - parent condition not met', [
-                        'criteria_field' => $criteriaField->name,
-                        'depends_on' => $criteriaField->depends_on_criteria_field_id,
-                        'depends_value' => $criteriaField->depends_on_value
-                    ]);
                     continue;
                 }
             }
@@ -206,13 +200,6 @@ class UniversityFilterService
                     $query = $this->applyCriteriaFilter($query, $criteriaField, $allValues);
                     $afterCount = $query->count();
                     $filtersApplied++;
-
-                    Log::info('University Filter: JSON criteria applied', [
-                        'criteria_field' => $criteriaField->name,
-                        'student_values' => $allValues,
-                        'universities_before' => $beforeCount,
-                        'universities_after' => $afterCount
-                    ]);
                 }
             } else {
                 // For non-JSON types, use the first answer
@@ -225,15 +212,6 @@ class UniversityFilterService
                     $query = $this->applyCriteriaFilter($query, $criteriaField, $studentValue);
                     $afterCount = $query->count();
                     $filtersApplied++;
-
-                    Log::info('University Filter: Criteria applied', [
-                        'criteria_field' => $criteriaField->name,
-                        'criteria_type' => $criteriaField->type,
-                        'student_value' => $studentValue,
-                        'is_maximum_constraint' => $criteriaField->type === 'number' || $criteriaField->type === 'decimal' ? $this->isMaximumConstraint($criteriaField) : null,
-                        'universities_before' => $beforeCount,
-                        'universities_after' => $afterCount
-                    ]);
                 }
             }
         }
@@ -533,10 +511,6 @@ class UniversityFilterService
         // Load parent field with relationship
         $parentField = $criteriaField->dependsOn;
         if (!$parentField) {
-            Log::warning('University Filter: Parent criteria field not found', [
-                'parent_field_id' => $parentFieldId,
-                'child_field' => $criteriaField->name
-            ]);
             return false;
         }
 
@@ -602,13 +576,6 @@ class UniversityFilterService
                 }
             }
 
-            Log::info('University Filter: Parent condition check (JSON checkbox)', [
-                'parent_field' => $parentField->name,
-                'required_value' => $requiredParentValue,
-                'selected_options' => $selectedOptions,
-                'condition_met' => $conditionMet
-            ]);
-
             return $conditionMet;
         } else {
             // Parent is single value field (boolean, text, number, select)
@@ -629,16 +596,6 @@ class UniversityFilterService
             }
 
             $conditionMet = (strcasecmp($normalizedParentValue, $normalizedRequiredValue) === 0);
-
-            Log::info('University Filter: Parent condition check (single value)', [
-                'parent_field' => $parentField->name,
-                'parent_type' => $parentField->type,
-                'parent_value' => $parentValue,
-                'normalized_parent_value' => $normalizedParentValue,
-                'required_value' => $requiredParentValue,
-                'normalized_required_value' => $normalizedRequiredValue,
-                'condition_met' => $conditionMet
-            ]);
 
             return $conditionMet;
         }
