@@ -49,15 +49,6 @@ class CareerCornerController extends Controller
                     $formData = $submission->form_data;
                     $data['submittedData'] = is_array($formData) && !empty($formData) ? $formData : [];
 
-                    // Debug: Log the submitted data (remove in production)
-                    \Log::info('Career Corner Submission Data', [
-                        'user_id' => $user->id,
-                        'submission_id' => $submission->id,
-                        'form_data' => $formData,
-                        'form_data_type' => gettype($formData),
-                        'form_data_count' => is_array($formData) ? count($formData) : 0,
-                        'submitted_data_keys' => is_array($formData) ? array_keys($formData) : []
-                    ]);
 
                     // Check if structure has changed FIRST
                     $structureChanged = $submission->hasStructureChanged();
@@ -75,10 +66,6 @@ class CareerCornerController extends Controller
                         }
                         $data['questions'] = $questionsArray;
 
-                        \Log::info('Career Corner: Structure changed - using current structure', [
-                            'current_question_ids' => array_keys($questionsArray),
-                            'current_question_count' => count($questionsArray)
-                        ]);
                     } else {
                         // Structure unchanged - use snapshot to preserve original view
                         $snapshotData = $submission->getFormStructureData();
@@ -181,11 +168,6 @@ class CareerCornerController extends Controller
                             }
                             $data['questions'] = $questionsArray; // Pass as array, not collection
 
-                            \Log::info('Career Corner: Merged missing questions', [
-                                'missing_question_ids' => array_values($missingQuestionIds),
-                                'total_questions' => count($data['questions']),
-                                'merged_question_ids' => array_keys($data['questions'])
-                            ]);
                         } else {
                             // Ensure snapshot questions are properly keyed (as array, not collection)
                             $questionsArray = [];
@@ -198,15 +180,6 @@ class CareerCornerController extends Controller
                             $data['questions'] = $questionsArray; // Pass as array, not collection
                         }
 
-                        // Debug: Log questions in snapshot
-                        \Log::info('Career Corner: Using snapshot data', [
-                            'snapshot_question_ids' => $snapshotQuestions->keys()->toArray(),
-                            'snapshot_question_count' => $snapshotQuestions->count(),
-                            'structure_question_ids' => $structureQuestionIds,
-                            'final_question_ids' => array_keys($data['questions']),
-                            'final_question_count' => count($data['questions']),
-                            'final_questions_sample' => array_slice($data['questions'], 0, 3, true)
-                        ]);
                         } else {
                             // Fallback to current structure
                             $data['formData'] = $structure->loadNestedStructure();
@@ -218,11 +191,6 @@ class CareerCornerController extends Controller
                             }
                             $data['questions'] = $questionsArray;
 
-                            // Debug: Log questions in current structure
-                            \Log::info('Career Corner: Using current structure', [
-                                'current_question_ids' => array_keys($data['questions']),
-                                'current_question_count' => count($data['questions'])
-                            ]);
                         }
                     }
 
@@ -286,6 +254,16 @@ class CareerCornerController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => __('No form data received')
+                ], 422);
+            }
+
+            // Validate form data against question rules
+            $validationErrors = $this->validateFormData($formData, $structure);
+            if (!empty($validationErrors)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => __('Validation failed'),
+                    'errors' => $validationErrors
                 ], 422);
             }
 
@@ -432,6 +410,8 @@ class CareerCornerController extends Controller
                     'options' => $question->options,
                     'required' => $question->required,
                     'help_text' => $question->help_text,
+                    'placeholder' => $question->placeholder,
+                    'step' => $question->step,
                 ];
             })
             ->keyBy('id') // Key by question ID AFTER mapping to ensure proper keys
@@ -499,5 +479,71 @@ class CareerCornerController extends Controller
 
         // Return unique question IDs as a simple array (not keyed)
         return array_values(array_unique($ids));
+    }
+
+    /**
+     * Validate form data against question validation rules
+     */
+    private function validateFormData(array $formData, FormStructure $structure)
+    {
+        $errors = [];
+
+        // Get all questions used in this structure
+        $questionIds = $this->extractQuestionIdsFromStructure($structure->loadNestedStructure());
+        $questions = Question::whereIn('id', $questionIds)->get()->keyBy('id');
+
+        // Validate each form field
+        foreach ($formData as $fieldName => $fieldValue) {
+            // Extract question ID from field name (format: career_q_{id} or career_q_{id}[])
+            if (strpos($fieldName, 'career_q_') !== 0) {
+                continue; // Skip non-question fields
+            }
+
+            // Extract question ID
+            $questionId = str_replace('career_q_', '', $fieldName);
+            $questionId = preg_replace('/\[\]$/', '', $questionId); // Remove [] for arrays
+
+            if (!is_numeric($questionId)) {
+                continue;
+            }
+
+            $questionId = (int)$questionId;
+            $question = $questions->get($questionId);
+
+            if (!$question) {
+                continue; // Question not found, skip
+            }
+
+            // Handle array values (checkboxes)
+            if (is_array($fieldValue)) {
+                foreach ($fieldValue as $value) {
+                    $this->validateFieldValue($question, $value, $fieldName, $errors);
+                }
+            } else {
+                $this->validateFieldValue($question, $fieldValue, $fieldName, $errors);
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Validate a single field value against question rules
+     */
+    private function validateFieldValue($question, $fieldValue, $fieldName, &$errors)
+    {
+        // Skip validation for empty optional fields
+        if (empty($fieldValue) && !$question->required) {
+            return;
+        }
+
+        // Validate email type
+        if ($question->type === 'email' && !empty($fieldValue)) {
+            if (!filter_var($fieldValue, FILTER_VALIDATE_EMAIL)) {
+                $errors[$fieldName] = __('Please enter a valid email address');
+                return;
+            }
+        }
+
     }
 }

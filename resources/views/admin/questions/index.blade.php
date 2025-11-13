@@ -68,11 +68,22 @@
                             <option value="text">{{ __('Text') }}</option>
                             <option value="textarea">{{ __('Textarea') }}</option>
                             <option value="number">{{ __('Number') }}</option>
+                            <option value="email">{{ __('Email') }}</option>
                             <option value="file">{{ __('File Upload') }}</option>
                             <option value="select">{{ __('Select') }}</option>
                             <option value="radio">{{ __('Radio') }}</option>
                             <option value="checkbox">{{ __('Checkbox') }}</option>
                         </select>
+                    </div>
+                    <div class="col-12">
+                        <label for="placeholder" class="zForm-label">{{ __('Placeholder') }}</label>
+                        <input type="text" name="placeholder" id="placeholder" class="form-control zForm-control" placeholder="{{ __('Enter placeholder text') }}">
+                        <small class="form-text text-muted">{{ __('This text will appear as a placeholder in the input field') }}</small>
+                    </div>
+                    <div class="col-12 step-wrapper d-none">
+                        <label for="step" class="zForm-label">{{ __('Step Value') }}</label>
+                        <input type="text" name="step" id="step" class="form-control zForm-control" placeholder="{{ __('e.g., 0.1, 0.01, any') }}">
+                        <small class="form-text text-muted">{{ __('For number inputs, specify step value (e.g., 0.1 for decimals, "any" for any decimal). Leave empty for integers only.') }}</small>
                     </div>
                     <div class="col-12 options-wrapper d-none">
                         <div class="mb-3">
@@ -110,10 +121,10 @@
                         <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
                             @foreach($criteriaFields as $criteriaField)
                             <div class="zForm-wrap-checkbox-2 mb-2">
-                                <input type="checkbox" 
-                                       name="criteria_fields[]" 
-                                       id="criteria_field_{{ $criteriaField->id }}" 
-                                       class="form-check-input criteria-field-checkbox" 
+                                <input type="checkbox"
+                                       name="criteria_fields[]"
+                                       id="criteria_field_{{ $criteriaField->id }}"
+                                       class="form-check-input criteria-field-checkbox"
                                        value="{{ $criteriaField->id }}">
                                 <label for="criteria_field_{{ $criteriaField->id }}" class="form-check-label">
                                     {{ $criteriaField->name }}

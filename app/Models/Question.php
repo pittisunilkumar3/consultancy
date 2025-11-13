@@ -18,6 +18,8 @@ class Question extends Model
         'order',
         'required',
         'is_country_question',
+        'placeholder',
+        'step',
     ];
 
     protected $casts = [

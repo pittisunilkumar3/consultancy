@@ -303,6 +303,29 @@
             background-color: #f3f4f6;
         }
 
+        /* Validation error styles */
+        .career-form-input.is-invalid,
+        .career-form-textarea.is-invalid,
+        .career-form-select.is-invalid {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+        }
+
+        .career-form-error-message {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            padding-left: 0.25rem;
+            font-weight: 500;
+        }
+
+        .career-form-error-message:empty {
+            display: none !important;
+        }
+
         .career-form-radio-option input[type="radio"]:disabled + label,
         .career-form-checkbox-option input[type="checkbox"]:disabled + label,
         input[type="radio"]:disabled + label,
@@ -513,7 +536,7 @@
                 @endif
             @endif
 
-            <form id="careerCornerForm" method="POST" action="{{ route('student.career-corner.submit') }}">
+            <form id="careerCornerForm" method="POST" action="{{ route('student.career-corner.submit') }}" novalidate>
                 @csrf
 
                 @foreach($formData as $element)
@@ -566,6 +589,15 @@
             // Function to make form editable
             function makeFormEditable() {
                 isReadonly = false;
+
+                // Clear any existing error messages and validation states
+                $('.career-form-error-message').remove();
+                $('.career-form-input, .career-form-textarea, .career-form-select').removeClass('is-invalid');
+                $('#careerCornerForm input, #careerCornerForm textarea, #careerCornerForm select').each(function() {
+                    if (this.setCustomValidity) {
+                        this.setCustomValidity('');
+                    }
+                });
 
                 // Remove readonly/disabled attributes from all fields
                 $('#careerCornerForm input[readonly]').removeAttr('readonly').removeAttr('style');
@@ -693,6 +725,19 @@
 
                 // Ensure form submission handler is attached
                 attachFormSubmitHandler();
+
+                // Re-attach error clearing handlers for editable fields
+                $(document).off('input change', '.career-form-input, .career-form-textarea, .career-form-select');
+                $(document).on('input change', '.career-form-input, .career-form-textarea, .career-form-select', function() {
+                    const $field = $(this);
+                    if ($field.hasClass('is-invalid')) {
+                        $field.removeClass('is-invalid');
+                        $field.closest('.career-form-question').find('.career-form-error-message').remove();
+                        if ($field[0] && $field[0].setCustomValidity) {
+                            $field[0].setCustomValidity('');
+                        }
+                    }
+                });
 
                 // Trigger change on all checked radio buttons to show/hide nested questions correctly
                 $('input[type="radio"][data-question-id]:checked').trigger('change');
@@ -833,43 +878,226 @@
                         });
                     });
 
-                    // STEP 3: Validate form
-                    if (!this.checkValidity()) {
-                        // If validation fails, check if any optional questions are invalid
-                        $(this).find(':invalid').each(function() {
-                            const $field = $(this);
-                            const $question = $field.closest('.career-form-question');
-                            if ($question.length) {
-                                const questionRequired = $question.data('question-required');
-                                const isRequired = questionRequired === '1' || questionRequired === 1 || questionRequired === true;
+                    // Helper function to show error message
+                    function showFieldError($field, message) {
+                        const $question = $field.closest('.career-form-question');
+                        if ($question.length) {
+                            // Remove existing error message
+                            $question.find('.career-form-error-message').remove();
 
-                                if (!isRequired) {
-                                    // Optional question is invalid - force it valid
-                                    if ($field[0] && $field[0].setCustomValidity) {
-                                        $field[0].setCustomValidity('');
-                                        // For radio buttons, mark all in group as valid
-                                        if ($field[0].type === 'radio') {
-                                            const fieldName = $field.attr('name');
-                                            $(`input[type="radio"][name="${fieldName}"]`).each(function() {
-                                                if (this.setCustomValidity) this.setCustomValidity('');
-                                            });
-                                        }
-                                    }
+                            // Add error class to field - this makes it red
+                            $field.addClass('is-invalid');
+
+                            // Determine where to place error message
+                            let $targetElement = $field;
+                            const $checkboxGroup = $field.closest('.career-form-checkbox-group');
+                            const $radioGroup = $field.closest('.career-form-radio-group');
+
+                            if ($checkboxGroup.length) {
+                                $targetElement = $checkboxGroup;
+                            } else if ($radioGroup.length) {
+                                $targetElement = $radioGroup;
+                            }
+
+                            // Create error message div with explicit styling
+                            const $errorMsg = $('<div class="career-form-error-message">' + message + '</div>');
+                            $targetElement.after($errorMsg);
+
+                            // Force visibility
+                            setTimeout(function() {
+                                $errorMsg.css({
+                                    'display': 'block',
+                                    'visibility': 'visible',
+                                    'opacity': '1'
+                                });
+                            }, 10);
+                        }
+                    }
+
+                    // Helper function to clear error message
+                    function clearFieldError($field) {
+                        $field.removeClass('is-invalid');
+                        $field.closest('.career-form-question').find('.career-form-error-message').remove();
+                    }
+
+                    // Clear all previous errors
+                    $('.career-form-question').find('.career-form-error-message').remove();
+                    $('.career-form-input, .career-form-textarea, .career-form-select').removeClass('is-invalid');
+
+                    // STEP 3: Validate email type fields
+                    let validationErrors = [];
+                    $('.career-form-question').each(function() {
+                        const $question = $(this);
+                        const questionType = $question.data('question-type');
+                        const questionRequired = $question.data('question-required');
+                        const isRequired = questionRequired === '1' || questionRequired === 1 || questionRequired === true;
+
+                        // Skip hidden questions
+                        const $nestedContainer = $question.closest('.career-form-nested-questions');
+                        let isQuestionVisible = true;
+                        if ($nestedContainer.length > 0) {
+                            const parentQuestionId = $nestedContainer.data('parent-question');
+                            const containerOptionValue = $nestedContainer.data('option-value');
+                            if (parentQuestionId && containerOptionValue) {
+                                const $checkedRadio = $(`input[type="radio"][data-question-id="${parentQuestionId}"]:checked`);
+                                if ($checkedRadio.length === 0) {
+                                    isQuestionVisible = false;
+                                } else {
+                                    const selectedValue = String($checkedRadio.val()).trim().toLowerCase();
+                                    const containerValue = String(containerOptionValue).trim().toLowerCase();
+                                    isQuestionVisible = (selectedValue === containerValue);
                                 }
                             }
-                        });
-
-                        // Re-check validity
-                        if (!this.checkValidity()) {
-                            // Still invalid - show error for required fields only
-                            const firstInvalid = this.querySelector(':invalid');
-                            if (firstInvalid) {
-                                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                firstInvalid.focus();
+                            if (!$nestedContainer.hasClass('show') || $nestedContainer.css('display') === 'none') {
+                                isQuestionVisible = false;
                             }
-                            this.reportValidity();
+                        }
+
+                        if (!isQuestionVisible) {
+                            return; // Skip hidden questions
+                        }
+
+                        // Get the input field
+                        const $field = $question.find('input, select, textarea').first();
+                        if ($field.length === 0 || $field.is(':hidden') || $field.css('display') === 'none') {
                             return;
                         }
+
+                        const fieldValue = $field.val();
+                        const fieldName = $field.attr('name');
+
+                        // Skip if field is disabled/readonly (not in editable mode)
+                        if ($field.is(':disabled') || $field.is('[readonly]')) {
+                            return;
+                        }
+
+                        // Validate email type
+                        if (questionType === 'email' && fieldValue) {
+                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                            if (!emailRegex.test(fieldValue.trim())) {
+                                const errorMsg = '{{ __('Please enter a valid email address') }}';
+                                if ($field[0] && $field[0].setCustomValidity) {
+                                    $field[0].setCustomValidity(errorMsg);
+                                }
+                                showFieldError($field, errorMsg);
+                                validationErrors.push({
+                                    field: $field[0],
+                                    message: errorMsg,
+                                    $field: $field
+                                });
+                            } else {
+                                // Clear any previous error
+                                if ($field[0] && $field[0].setCustomValidity) {
+                                    $field[0].setCustomValidity('');
+                                }
+                                clearFieldError($field);
+                            }
+                        }
+
+                    });
+
+                    // STEP 4: Validate form with HTML5 validation (but don't show browser tooltips due to novalidate)
+                    // Check required fields manually
+                    let hasRequiredErrors = false;
+                    let firstRequiredError = null;
+
+                    $(this).find('input[required], select[required], textarea[required]').each(function() {
+                        const $field = $(this);
+                        const $question = $field.closest('.career-form-question');
+
+                        // Skip hidden fields
+                        if ($field.is(':hidden') || $field.css('display') === 'none') {
+                            return;
+                        }
+
+                        // Check if field is in hidden nested container
+                        const $nestedContainer = $question.closest('.career-form-nested-questions');
+                        if ($nestedContainer.length > 0) {
+                            if (!$nestedContainer.hasClass('show') || $nestedContainer.css('display') === 'none') {
+                                return;
+                            }
+                        }
+
+                        const value = $field.val();
+                        const isEmpty = !value || (typeof value === 'string' && value.trim() === '');
+
+                        if (isEmpty) {
+                            hasRequiredErrors = true;
+                            if (!firstRequiredError) {
+                                firstRequiredError = {
+                                    field: $field,
+                                    message: '{{ __('This field is required') }}'
+                                };
+                            }
+                        }
+                    });
+
+                    if (hasRequiredErrors && firstRequiredError) {
+                        showFieldError(firstRequiredError.field, firstRequiredError.message);
+
+                        const offset = firstRequiredError.field.offset();
+                        if (offset) {
+                            $('html, body').animate({
+                                scrollTop: offset.top - 100
+                            }, 500);
+                        }
+
+                        firstRequiredError.field[0].focus();
+
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(firstRequiredError.message);
+                        }
+                        return;
+                    }
+
+                    // Check if there are any email validation errors
+                    if (validationErrors.length > 0) {
+                        const firstError = validationErrors[0];
+                        if (firstError.$field && firstError.$field.length > 0) {
+                            // Scroll to the error field first
+                            const $errorField = firstError.$field;
+                            const offset = $errorField.offset();
+                            if (offset) {
+                                $('html, body').animate({
+                                    scrollTop: offset.top - 100
+                                }, 500);
+                            }
+
+                            // Focus the field
+                            $errorField[0].focus();
+
+                            // Ensure error message is visible (it should already be shown by showFieldError)
+                            // But show it again to make sure
+                            if (firstError.message) {
+                                showFieldError($errorField, firstError.message);
+                            }
+
+                            // Show toastr message if available
+                            if (typeof toastr !== 'undefined' && firstError.message) {
+                                toastr.error(firstError.message);
+                            }
+                        } else if (firstError.field) {
+                            // Fallback if $field is not available
+                            const $fallbackField = $(firstError.field);
+                            const offset = $fallbackField.offset();
+                            if (offset) {
+                                $('html, body').animate({
+                                    scrollTop: offset.top - 100
+                                }, 500);
+                            }
+                            firstError.field.focus();
+
+                            // Show error message if not already shown
+                            if (firstError.message && !$fallbackField.closest('.career-form-question').find('.career-form-error-message').length) {
+                                showFieldError($fallbackField, firstError.message);
+                            }
+
+                            // Show toastr message if available
+                            if (typeof toastr !== 'undefined' && firstError.message) {
+                                toastr.error(firstError.message);
+                            }
+                        }
+                        return;
                     }
 
                     // Show loading state
@@ -1002,10 +1230,50 @@
                         },
                         error: function(xhr) {
                             let errorMessage = '{{ __('Error submitting form. Please try again.') }}';
-                            if (xhr.responseJSON && xhr.responseJSON.message) {
-                                errorMessage = xhr.responseJSON.message;
-                            } else if (xhr.status === 422) {
-                                errorMessage = '{{ __('Validation error. Please check your inputs.') }}';
+
+                            if (xhr.responseJSON) {
+                                if (xhr.responseJSON.message) {
+                                    errorMessage = xhr.responseJSON.message;
+                                }
+
+                                // Handle validation errors (422 status)
+                                if (xhr.status === 422 && xhr.responseJSON.errors && typeof xhr.responseJSON.errors === 'object') {
+                                    const errors = xhr.responseJSON.errors;
+                                    let errorMessages = [];
+
+                                    // Show first error and set custom validity on fields
+                                    Object.keys(errors).forEach(function(fieldName) {
+                                        const $field = $(`[name="${fieldName}"]`);
+                                        if ($field.length > 0) {
+                                            const errorMsg = errors[fieldName];
+                                            if ($field[0] && $field[0].setCustomValidity) {
+                                                $field[0].setCustomValidity(errorMsg);
+                                            }
+
+                                            // Show error message below field
+                                            showFieldError($field, errorMsg);
+
+                                            errorMessages.push(errorMsg);
+
+                                            // Scroll to first error field
+                                            if (errorMessages.length === 1) {
+                                                const offset = $field.offset();
+                                                if (offset) {
+                                                    $('html, body').animate({
+                                                        scrollTop: offset.top - 100
+                                                    }, 500);
+                                                }
+                                                $field[0].focus();
+                                            }
+                                        }
+                                    });
+
+                                    if (errorMessages.length > 0) {
+                                        errorMessage = errorMessages[0];
+                                    }
+                                } else if (xhr.status === 422) {
+                                    errorMessage = '{{ __('Validation error. Please check your inputs.') }}';
+                                }
                             } else if (xhr.status === 401) {
                                 errorMessage = '{{ __('Please login to submit the form') }}';
                             } else if (xhr.status === 405) {
@@ -1278,6 +1546,20 @@
 
             // Attach form submission handler
             attachFormSubmitHandler();
+
+            // Clear error messages when user starts typing/selecting
+            // This works for both first-time and editable modes
+            $(document).off('input change', '.career-form-input, .career-form-textarea, .career-form-select');
+            $(document).on('input change', '.career-form-input, .career-form-textarea, .career-form-select', function() {
+                const $field = $(this);
+                if ($field.hasClass('is-invalid')) {
+                    $field.removeClass('is-invalid');
+                    $field.closest('.career-form-question').find('.career-form-error-message').remove();
+                    if ($field[0] && $field[0].setCustomValidity) {
+                        $field[0].setCustomValidity('');
+                    }
+                }
+            });
 
             // Also handle on page load - check if any radio is already selected
             $('input[type="radio"][data-question-id]:checked').trigger('change');

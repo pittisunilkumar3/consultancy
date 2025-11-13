@@ -50,9 +50,11 @@ class QuestionController extends Controller
     {
         $rules = [
             'question' => 'required|string|max:255',
-            'type' => 'required|string|in:text,textarea,number,file,select,radio,checkbox',
+            'type' => 'required|string|in:text,textarea,number,email,file,select,radio,checkbox',
             'order' => 'nullable|integer|min:0',
-            'required' => 'nullable|boolean'
+            'required' => 'nullable|boolean',
+            'placeholder' => 'nullable|string|max:255',
+            'step' => 'nullable|string|max:50'
         ];
 
         // Require options for select/radio/checkbox types
@@ -83,7 +85,9 @@ class QuestionController extends Controller
             'order' => $request->order ?? 0,
             'required' => $request->required ? true : false,
             'options' => $options,
-            'is_country_question' => $isCountryQuestion
+            'is_country_question' => $isCountryQuestion,
+            'placeholder' => $request->placeholder,
+            'step' => $request->step
         ]);
 
         // Save criteria field mappings
@@ -133,9 +137,11 @@ class QuestionController extends Controller
     {
         $rules = [
             'question' => 'required|string|max:255',
-            'type' => 'required|string|in:text,textarea,number,file,select,radio,checkbox',
+            'type' => 'required|string|in:text,textarea,number,email,file,select,radio,checkbox',
             'order' => 'nullable|integer|min:0',
-            'required' => 'nullable|boolean'
+            'required' => 'nullable|boolean',
+            'placeholder' => 'nullable|string|max:255',
+            'step' => 'nullable|string|max:50'
         ];
 
         // Require options for select/radio/checkbox types
@@ -167,7 +173,9 @@ class QuestionController extends Controller
             'order' => $request->order ?? 0,
             'required' => $request->required ? true : false,
             'options' => $options,
-            'is_country_question' => $isCountryQuestion
+            'is_country_question' => $isCountryQuestion,
+            'placeholder' => $request->placeholder,
+            'step' => $request->step
         ]);
 
         // Update criteria field mappings

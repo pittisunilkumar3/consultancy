@@ -23,7 +23,17 @@
         $('#type').on('change', function() {
             var type = $(this).val();
             var $options = $('.options-wrapper');
+            var $stepWrapper = $('.step-wrapper');
+            var $validationWrapper = $('.validation-wrapper');
             var useCountries = $('#use_countries').is(':checked');
+
+            // Show/hide step field for number type
+            if (type === 'number') {
+                $stepWrapper.removeClass('d-none');
+            } else {
+                $stepWrapper.addClass('d-none');
+            }
+
 
             if (['select', 'radio', 'checkbox'].includes(type)) {
                 $options.removeClass('d-none');
@@ -378,6 +388,10 @@
                 $('#optionList .option-label, #optionList .option-value').prop('readonly', false).removeClass('bg-light');
                 $('#optionList .remove-option').prop('disabled', false).removeClass('opacity-50');
                 updateOptionInputsForType('text');
+                // Clear new fields
+                $form.find('[name="placeholder"]').val('');
+                $form.find('[name="step"]').val('');
+                $('.step-wrapper').addClass('d-none');
                 // Clear criteria field checkboxes ONLY in create mode
                 $form.find('.criteria-field-checkbox').prop('checked', false);
                 $title.text('Add New Question');
@@ -414,6 +428,14 @@
                     try { $form.find('.sf-select-without-search').niceSelect('update'); } catch(e) {}
                     $form.find('[name="order"]').val(data.order);
                     $form.find('[name="required"]').prop('checked', data.required ? true : false);
+                    $form.find('[name="placeholder"]').val(data.placeholder || '');
+                    $form.find('[name="step"]').val(data.step || '');
+                    // Show/hide step wrapper based on type
+                    if (data.type === 'number') {
+                        $('.step-wrapper').removeClass('d-none');
+                    } else {
+                        $('.step-wrapper').addClass('d-none');
+                    }
 
                     // Handle options for select/radio/checkbox - populate optionList UI
                     $('#optionList').empty();
@@ -577,6 +599,10 @@
             $('#addOptionBtn').prop('disabled', false).removeClass('opacity-50');
             $('#optionList .option-label, #optionList .option-value').prop('readonly', false).removeClass('bg-light');
             $('#optionList .remove-option').prop('disabled', false).removeClass('opacity-50');
+            // Clear new fields
+            $form.find('[name="placeholder"]').val('');
+            $form.find('[name="step"]').val('');
+            $('.step-wrapper').addClass('d-none');
             $form.find('.is-invalid').removeClass('is-invalid');
             $form.find('.error-message').remove();
         });

@@ -2,15 +2,6 @@
     // Handle both snapshot questions (arrays) and current questions (objects)
     $questionData = $questions[$item['question_id']] ?? null;
 
-    // Debug: Log if question is missing
-    if (!$questionData && isset($item['question_id'])) {
-        \Log::warning('Career Corner: Question not found in questions array', [
-            'question_id' => $item['question_id'],
-            'available_question_ids' => array_keys(is_array($questions) ? $questions : $questions->toArray()),
-            'item' => $item
-        ]);
-    }
-
     if (!$questionData) {
         return;
     }
@@ -23,6 +14,8 @@
         $questionOptions = $questionData['options'] ?? [];
         $questionRequired = $questionData['required'] ?? false;
         $questionHelpText = $questionData['help_text'] ?? null;
+        $questionPlaceholder = $questionData['placeholder'] ?? null;
+        $questionStep = $questionData['step'] ?? null;
     } else {
         $questionId = 'career_q_' . $questionData->id;
         $questionText = $questionData->question ?? '';
@@ -30,6 +23,8 @@
         $questionOptions = $questionData->options ?? [];
         $questionRequired = $questionData->required ?? false;
         $questionHelpText = $questionData->help_text ?? null;
+        $questionPlaceholder = $questionData->placeholder ?? null;
+        $questionStep = $questionData->step ?? null;
     }
 
     $required = $questionRequired ? '<span class="required">*</span>' : '';
@@ -51,15 +46,6 @@
         }
     }
 
-    // Debug data attributes
-    $debugInfo = [
-        'questionId' => $questionId,
-        'questionText' => $questionText,
-        'fieldValue' => $fieldValue,
-        'isReadonly' => $isReadonly,
-        'hasSubmittedData' => isset($submittedData) && is_array($submittedData) && !empty($submittedData),
-        'submittedDataKeys' => isset($submittedData) && is_array($submittedData) ? array_keys($submittedData) : []
-    ];
 @endphp
 
 <div class="career-form-question"
@@ -69,7 +55,7 @@
      data-field-value="{{ is_array($fieldValue) ? json_encode($fieldValue) : ($fieldValue ?? '') }}"
      data-is-readonly="{{ $isReadonly ? '1' : '0' }}"
      data-question-required="{{ $questionRequired ? '1' : '0' }}"
-     data-debug-info="{{ json_encode($debugInfo) }}">
+     data-question-type="{{ $questionType }}">
     <label class="career-form-question-label">
         {{ e($questionText) }}{!! $required !!}
     </label>
@@ -119,31 +105,19 @@
                         // Check if this nested question should be visible (if readonly and option was selected)
                         // Use case-insensitive comparison to handle "No" vs "no" etc.
                         $shouldShow = false;
-                        $debugMatch = [
-                            'parentQuestionId' => $questionId,
-                            'optionValue' => $optionValueStr,
-                            'hasSubmittedData' => isset($submittedData),
-                            'submittedValue' => null,
-                            'matchResult' => false
-                        ];
 
                         if ($isReadonly && isset($submittedData[$questionId])) {
                             $submittedValue = trim((string)$submittedData[$questionId]);
-                            $debugMatch['submittedValue'] = $submittedValue;
 
                             // Case-insensitive comparison
                             $exactMatch = ($submittedValue === $optionValueStr);
                             $caseInsensitiveMatch = (strtolower($submittedValue) === strtolower($optionValueStr));
                             $shouldShow = $exactMatch || $caseInsensitiveMatch;
-                            $debugMatch['matchResult'] = $shouldShow;
-                            $debugMatch['exactMatch'] = $exactMatch;
-                            $debugMatch['caseInsensitiveMatch'] = $caseInsensitiveMatch;
                         }
                     @endphp
                     <div class="career-form-nested-questions"
                          data-parent-question="{{ is_array($questionData) ? $questionData['id'] : $questionData->id }}"
                          data-option-value="{{ e($optionValueStr) }}"
-                         data-debug-match="{{ json_encode($debugMatch) }}"
                          style="display: {{ $shouldShow ? 'block' : 'none' }} !important;"
                          {{ $shouldShow ? 'class="show"' : '' }}>
                         @foreach($childData['items'] as $childItem)
@@ -180,7 +154,7 @@
                   rows="4"
                   {{ $isReadonly ? 'readonly style="cursor: not-allowed !important;"' : '' }}
                   {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}
-                  placeholder="{{ __('Enter your answer') }}">{{ $isReadonly ? e($fieldValue) : '' }}</textarea>
+                  placeholder="{{ $questionPlaceholder ? e($questionPlaceholder) : __('Enter your answer') }}">{{ $isReadonly ? e($fieldValue) : '' }}</textarea>
 
     @elseif($questionType === 'number')
         <input type="number"
@@ -189,7 +163,17 @@
                value="{{ $isReadonly ? e($fieldValue) : '' }}"
                {{ $isReadonly ? 'readonly style="cursor: not-allowed !important;"' : '' }}
                {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}
-               placeholder="{{ __('Enter a number') }}">
+               @if($questionStep) step="{{ e($questionStep) }}" @endif
+               placeholder="{{ $questionPlaceholder ? e($questionPlaceholder) : __('Enter a number') }}">
+
+    @elseif($questionType === 'email')
+        <input type="email"
+               class="career-form-input"
+               name="{{ $questionId }}"
+               value="{{ $isReadonly ? e($fieldValue) : '' }}"
+               {{ $isReadonly ? 'readonly style="cursor: not-allowed !important;"' : '' }}
+               {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}
+               placeholder="{{ $questionPlaceholder ? e($questionPlaceholder) : __('Enter your email address') }}">
 
     @elseif($questionType === 'file')
         @if($isReadonly && $fieldValue)
@@ -233,7 +217,7 @@
                value="{{ $isReadonly ? e($fieldValue) : '' }}"
                {{ $isReadonly ? 'readonly style="cursor: not-allowed !important;"' : '' }}
                {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}
-               placeholder="{{ __('Enter your answer') }}">
+               placeholder="{{ $questionPlaceholder ? e($questionPlaceholder) : __('Enter your answer') }}">
     @endif
 </div>
 
