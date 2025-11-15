@@ -18,7 +18,7 @@
             font-size: 1.5rem;
             font-weight: 700;
             color: #1f2937;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.75rem !important;
             padding-bottom: 1rem;
             border-bottom: 3px solid #14b8a6;
             background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
@@ -395,6 +395,203 @@
             transform: translateY(-1px);
             box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
         }
+
+        /* Step-by-step navigation styles */
+        .career-form-step-mode .career-form-question {
+            display: none;
+        }
+
+        .career-form-step-mode .career-form-question.step-active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Ensure nested questions inside active nested containers are visible */
+        .career-form-step-mode .career-form-nested-questions.step-active .career-form-question.step-active {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Hide all sections by default in step mode */
+        .career-form-step-mode .career-form-section {
+            display: none;
+            margin-bottom: 0;
+        }
+
+        /* Show section only when it contains active question */
+        .career-form-step-mode .career-form-section.step-active {
+            display: block;
+        }
+
+        .career-form-step-mode .career-form-section-title,
+        .career-form-step-mode .career-form-section-description {
+            display: none;
+        }
+
+        /* Show section title and description when section is active */
+        .career-form-step-mode .career-form-section.step-active .career-form-section-title,
+        .career-form-step-mode .career-form-section.step-active .career-form-section-description {
+            display: block;
+        }
+
+        .career-form-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #f9fafb;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .career-form-navigation-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .career-form-nav-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .career-form-nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .career-form-nav-btn-prev {
+            background: #ffffff;
+            color: #374151;
+            border: 2px solid #e5e7eb;
+        }
+
+        .career-form-nav-btn-prev:hover:not(:disabled) {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .career-form-nav-btn-next {
+            background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+            color: white;
+            box-shadow: 0 2px 4px rgba(20, 184, 166, 0.2);
+        }
+
+        .career-form-nav-btn-next:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+        }
+
+        .career-form-progress {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .career-form-progress-text {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .career-form-progress-bar-container {
+            flex: 1;
+            max-width: 300px;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .career-form-progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .career-form-step-mode .career-form-nested-questions {
+            display: none !important;
+        }
+
+        /* Show nested container when it has step-active or show class */
+        .career-form-step-mode .career-form-nested-questions.step-active,
+        .career-form-step-mode .career-form-nested-questions.show {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Show nested questions inside active nested container */
+        .career-form-step-mode .career-form-nested-questions.step-active .career-form-question,
+        .career-form-step-mode .career-form-nested-questions.show .career-form-question {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Ensure nested questions with step-active class are visible */
+        .career-form-step-mode .career-form-nested-questions.step-active .career-form-question.step-active {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* Also support show class for compatibility */
+        .career-form-step-mode .career-form-nested-questions.step-active.show {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        .career-form-step-mode .career-form-nested-questions.step-active.show .career-form-question {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        .career-form-step-mode .career-form-nested-questions.step-active.show .career-form-question.step-active {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        @media (max-width: 768px) {
+            .career-form-navigation {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .career-form-progress {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .career-form-progress-bar-container {
+                max-width: 100%;
+            }
+
+            .career-form-navigation-buttons {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .career-form-nav-btn {
+                flex: 1;
+                justify-content: center;
+            }
+        }
     </style>
 @endpush
 
@@ -536,12 +733,12 @@
                 @endif
             @endif
 
-            <form id="careerCornerForm" method="POST" action="{{ route('student.career-corner.submit') }}" novalidate>
+            <form id="careerCornerForm" method="POST" action="{{ route('student.career-corner.submit') }}" novalidate class="{{ !isset($submission) || !$submission ? 'career-form-step-mode' : '' }}">
                 @csrf
 
                 @foreach($formData as $element)
                     @if($element['type'] === 'section')
-                        <div class="career-form-section">
+                        <div class="career-form-section" data-section-name="{{ !empty($element['name']) ? e($element['name']) : '' }}">
                             @if(!empty($element['name']))
                                 <h3 class="career-form-section-title">{{ $element['name'] }}</h3>
                             @endif
@@ -557,16 +754,36 @@
                             @endif
                         </div>
                     @elseif($element['type'] === 'item' && isset($element['item']))
-                        <div class="career-form-section">
+                        <div class="career-form-section" data-section-name="">
                             @include('student.career-corner.partials.question', ['item' => $element['item'], 'questions' => $questions ?? [], 'depth' => 0, 'submittedData' => $submittedData ?? null, 'isReadonly' => isset($submission) && $submission ? true : false])
                         </div>
                     @endif
                 @endforeach
 
-                <div class="text-center mt-4" id="submitButtonContainer" style="{{ (isset($submission) && $submission) ? 'display: none;' : '' }}">
-                    <button type="submit" class="career-form-submit-btn">
-                        <i class="fa-solid fa-paper-plane me-2"></i>{{ __('Submit Form') }}
-                    </button>
+                {{-- Navigation buttons (only shown in step mode) --}}
+                <div class="career-form-navigation" id="careerFormNavigation" style="{{ (isset($submission) && $submission) ? 'display: none;' : '' }}">
+                    <div class="career-form-navigation-buttons">
+                        <button type="button" class="career-form-nav-btn career-form-nav-btn-prev" id="careerFormPrevBtn" disabled>
+                            <i class="fa-solid fa-arrow-left"></i>
+                            <span>{{ __('Previous') }}</span>
+                        </button>
+                    </div>
+                    <div class="career-form-progress">
+                        <span class="career-form-progress-text" id="careerFormProgressText">Question 1 of 1</span>
+                        <div class="career-form-progress-bar-container">
+                            <div class="career-form-progress-bar" id="careerFormProgressBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="career-form-navigation-buttons">
+                        <button type="button" class="career-form-nav-btn career-form-nav-btn-next" id="careerFormNextBtn">
+                            <span>{{ __('Next') }}</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                        <button type="submit" class="career-form-nav-btn career-form-nav-btn-next" id="careerFormSubmitBtn" style="display: none;">
+                            <i class="fa-solid fa-paper-plane me-2"></i>
+                            <span>{{ __('Submit Form') }}</span>
+                        </button>
+                    </div>
                 </div>
             </form>
         @else
@@ -590,9 +807,555 @@
             // Track if form is in readonly mode
             let isReadonly = {{ isset($submission) && $submission ? 'true' : 'false' }};
 
+            // Step-by-step navigation variables
+            let stepNavigation = {
+                questions: [],
+                currentIndex: 0,
+                initialized: false
+            };
+
+            // Helper function to find nested containers for a question
+            function findNestedContainers($question, questionId) {
+                let $nestedContainers = $('#careerCornerForm').find('.career-form-nested-questions[data-parent-question="' + questionId + '"]');
+
+                if ($nestedContainers.length === 0) {
+                    const $section = $question.closest('.career-form-section');
+                    $nestedContainers = $section.find('.career-form-nested-questions[data-parent-question="' + questionId + '"]');
+                }
+
+                if ($nestedContainers.length === 0) {
+                    $nestedContainers = $question.siblings('.career-form-nested-questions[data-parent-question="' + questionId + '"]');
+                }
+
+                if ($nestedContainers.length === 0) {
+                    $nestedContainers = $question.parent().find('.career-form-nested-questions[data-parent-question="' + questionId + '"]');
+                }
+
+                return $nestedContainers;
+            }
+
+            // Initialize step-by-step navigation (only for editable forms)
+            function initializeStepNavigation() {
+                if (isReadonly || $('#careerCornerForm').hasClass('career-form-step-mode') === false) {
+                    return;
+                }
+
+                stepNavigation.questions = [];
+
+                // Build flat list of all questions in order
+                function collectQuestions($container) {
+                    $container.find('.career-form-question').each(function() {
+                        const $question = $(this);
+                        const questionId = $question.data('question-id');
+                        const depth = parseInt($question.data('depth') || 0);
+                        const $nestedContainer = $question.closest('.career-form-nested-questions');
+
+                        // Skip nested questions for now - they'll be added when parent is answered
+                        if ($nestedContainer.length > 0) {
+                            return;
+                        }
+
+                        // Only process top-level questions (depth 0)
+                        if (depth === 0) {
+                            stepNavigation.questions.push({
+                                $element: $question,
+                                questionId: questionId,
+                                depth: depth
+                            });
+                        }
+                    });
+                }
+
+                // Collect all top-level questions from all sections
+                $('#careerCornerForm .career-form-section').each(function() {
+                    collectQuestions($(this));
+                });
+
+                // Now, build a new array with nested questions inserted
+                const finalQuestions = [];
+
+                stepNavigation.questions.forEach(function(q) {
+                    const $question = q.$element;
+                    const questionId = q.questionId;
+                    const questionType = $question.data('question-type');
+
+                    // Add the parent question
+                    finalQuestions.push(q);
+
+                    // If it's a radio question, check for nested questions
+                    // NOTE: We don't add nested questions to the navigation list
+                    // They will be shown/hidden with the parent question
+                    // User answers all nested questions at once, then clicks Next to go to next parent question
+                    if (questionType === 'radio') {
+                        const $checkedRadio = $question.find('input[type="radio"]:checked');
+                        if ($checkedRadio.length > 0) {
+                            // Nested questions will be shown/hidden dynamically when parent is displayed
+                            // No need to add them to navigation list
+                        }
+                    }
+                });
+
+                stepNavigation.questions = finalQuestions;
+
+                // Reset current index if needed
+                if (stepNavigation.currentIndex >= stepNavigation.questions.length) {
+                    stepNavigation.currentIndex = 0;
+                }
+
+                // Initialize first question
+                if (stepNavigation.questions.length > 0) {
+                    showQuestion(stepNavigation.currentIndex);
+                    updateNavigationButtons();
+                    updateProgress();
+                }
+
+                stepNavigation.initialized = true;
+            }
+
+            // Show specific question by index
+            function showQuestion(index) {
+                if (index < 0 || index >= stepNavigation.questions.length) {
+                    return;
+                }
+
+                // Hide all questions, sections, and nested containers
+                const currentQuestion = stepNavigation.questions[index];
+
+                $('.career-form-question').removeClass('step-active').each(function() {
+                    // Don't remove styles from the question we're about to show
+                    if (currentQuestion && currentQuestion.$element && !$(this).is(currentQuestion.$element)) {
+                        if (this.style) {
+                            this.style.removeProperty('display');
+                            this.style.removeProperty('visibility');
+                            this.style.removeProperty('opacity');
+                        }
+                    }
+                });
+
+                // Hide all nested containers (they will be shown if parent radio is selected)
+                $('.career-form-nested-questions').removeClass('step-active show').each(function() {
+                    if (this.style) {
+                        this.style.setProperty('display', 'none', 'important');
+                    }
+                });
+
+                // Hide all sections explicitly
+                $('.career-form-section').removeClass('step-active').each(function() {
+                    if (this.style) {
+                        this.style.setProperty('display', 'none', 'important');
+                    }
+                });
+
+                $('.career-form-section-title').removeClass('step-active');
+                $('.career-form-section-description').removeClass('step-active');
+
+                // currentQuestion is already declared above
+                const $question = currentQuestion.$element;
+                const questionType = $question.data('question-type');
+
+                // Get the section containing this question
+                const $section = $question.closest('.career-form-section');
+
+                // Show the section that contains the active question
+                if ($section.length > 0) {
+                    $section.addClass('step-active');
+                    // Explicitly show the section with inline style
+                    if ($section[0]) {
+                        $section[0].style.setProperty('display', 'block', 'important');
+                    }
+
+                    // Hide all other sections
+                    $('.career-form-section').not($section).each(function() {
+                        if (this.style) {
+                            this.style.setProperty('display', 'none', 'important');
+                        }
+                    });
+                }
+
+                // If this is a radio question, check if it has nested questions to show
+                if (questionType === 'radio') {
+                    const $checkedRadio = $question.find('input[type="radio"]:checked');
+                    if ($checkedRadio.length > 0) {
+                        const selectedValue = String($checkedRadio.val()).trim().toLowerCase();
+                        const questionId = $question.data('question-id');
+
+                        // Find and show nested question containers for selected option
+                        const $nestedContainers = findNestedContainers($question, questionId);
+
+                        // Show nested container for selected option
+                        $nestedContainers.each(function() {
+                            const $nestedContainer = $(this);
+                            let containerOptionValue = $nestedContainer.data('option-value');
+                            if (!containerOptionValue) {
+                                containerOptionValue = $nestedContainer.attr('data-option-value');
+                            }
+                            containerOptionValue = String(containerOptionValue || '').trim().toLowerCase();
+                            const selectedValueLower = selectedValue.toLowerCase();
+
+                            if (containerOptionValue === selectedValueLower) {
+                                // Show this nested container and all its questions
+                                $nestedContainer.addClass('show step-active');
+                                if ($nestedContainer[0]) {
+                                    $nestedContainer[0].style.setProperty('display', 'block', 'important');
+                                    $nestedContainer[0].style.setProperty('visibility', 'visible', 'important');
+                                    $nestedContainer[0].style.setProperty('opacity', '1', 'important');
+                                }
+
+                                // Show all nested questions inside
+                                $nestedContainer.find('.career-form-question').each(function() {
+                                    const $nestedQ = $(this);
+                                    $nestedQ.addClass('step-active');
+                                    if ($nestedQ[0]) {
+                                        $nestedQ[0].style.setProperty('display', 'block', 'important');
+                                        $nestedQ[0].style.setProperty('visibility', 'visible', 'important');
+                                        $nestedQ[0].style.setProperty('opacity', '1', 'important');
+                                    }
+                                });
+                            } else {
+                                // Hide nested containers that don't match
+                                $nestedContainer.removeClass('show step-active');
+                                if ($nestedContainer[0]) {
+                                    $nestedContainer[0].style.setProperty('display', 'none', 'important');
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // Show current question
+                $question.addClass('step-active');
+
+                // Show section title and description for all questions in the active section
+                if ($section.length > 0) {
+                    $section.find('.career-form-section-title').addClass('step-active');
+                    $section.find('.career-form-section-description').addClass('step-active');
+                }
+
+                // Scroll to question
+                setTimeout(function() {
+                    const offset = $question.offset();
+                    if (offset) {
+                        $('html, body').animate({
+                            scrollTop: offset.top - 100
+                        }, 300);
+                    }
+                }, 100);
+
+                stepNavigation.currentIndex = index;
+            }
+
+            // Update navigation buttons state
+            function updateNavigationButtons() {
+                const $prevBtn = $('#careerFormPrevBtn');
+                const $nextBtn = $('#careerFormNextBtn');
+                const $submitBtn = $('#careerFormSubmitBtn');
+
+                // Previous button
+                if (stepNavigation.currentIndex === 0) {
+                    $prevBtn.prop('disabled', true);
+                } else {
+                    $prevBtn.prop('disabled', false);
+                }
+
+                // Next button / Submit button
+                if (stepNavigation.currentIndex === stepNavigation.questions.length - 1) {
+                    $nextBtn.hide();
+                    $submitBtn.show();
+                } else {
+                    $nextBtn.show();
+                    $submitBtn.hide();
+                }
+            }
+
+            // Update progress indicator
+            function updateProgress() {
+                const total = stepNavigation.questions.length;
+                const current = stepNavigation.currentIndex + 1;
+                const percentage = total > 0 ? (current / total) * 100 : 0;
+
+                $('#careerFormProgressText').text('Question ' + current + ' of ' + total);
+                $('#careerFormProgressBar').css('width', percentage + '%');
+            }
+
+            // Handle nested questions visibility based on radio selections
+            function updateNestedQuestionsVisibility() {
+                // This will be called when radio buttons change
+                // We need to rebuild the question list to include/exclude nested questions
+                const oldIndex = stepNavigation.currentIndex;
+                initializeStepNavigation();
+
+                // Try to maintain position, but adjust if needed
+                if (oldIndex < stepNavigation.questions.length) {
+                    showQuestion(oldIndex);
+                } else if (stepNavigation.questions.length > 0) {
+                    showQuestion(stepNavigation.questions.length - 1);
+                }
+                updateNavigationButtons();
+                updateProgress();
+            }
+
+            // Previous button handler
+            $(document).on('click', '#careerFormPrevBtn', function() {
+                if (stepNavigation.currentIndex > 0) {
+                    showQuestion(stepNavigation.currentIndex - 1);
+                    updateNavigationButtons();
+                    updateProgress();
+                }
+            });
+
+            // Next button handler
+            $(document).on('click', '#careerFormNextBtn', function() {
+                // Validate current question if required
+                const currentQuestion = stepNavigation.questions[stepNavigation.currentIndex];
+                if (currentQuestion) {
+                    const $question = currentQuestion.$element;
+                    const isRequired = $question.data('question-required') === '1' || $question.data('question-required') === 1 || $question.data('question-required') === true;
+                    const questionType = $question.data('question-type');
+
+                    if (isRequired) {
+                        let isValid = false;
+                        let $fieldToValidate = null;
+                        let errorMessage = '{{ __('Please answer this question before proceeding') }}';
+
+                        // Validate based on question type
+                        if (questionType === 'radio') {
+                            // Check if any radio option is selected
+                            const $radioInputs = $question.find('input[type="radio"]');
+                            if ($radioInputs.length > 0) {
+                                const fieldName = $radioInputs.first().attr('name');
+                                isValid = $question.find('input[type="radio"][name="' + fieldName + '"]:checked').length > 0;
+                                if (!isValid) {
+                                    $fieldToValidate = $radioInputs.first();
+                                }
+                            }
+                        } else if (questionType === 'checkbox') {
+                            // Check if at least one checkbox is selected
+                            const $checkboxInputs = $question.find('input[type="checkbox"]');
+                            if ($checkboxInputs.length > 0) {
+                                const fieldName = $checkboxInputs.first().attr('name');
+                                isValid = $question.find('input[type="checkbox"][name^="' + fieldName.replace('[]', '') + '"]:checked').length > 0;
+                                if (!isValid) {
+                                    $fieldToValidate = $checkboxInputs.first();
+                                }
+                            }
+                        } else if (questionType === 'select') {
+                            // Check if a select option is chosen (not the default empty option)
+                            const $select = $question.find('select');
+                            if ($select.length > 0) {
+                                const value = $select.val();
+                                isValid = value !== null && value !== '' && value !== undefined;
+                                if (!isValid) {
+                                    $fieldToValidate = $select;
+                                }
+                            }
+                        } else if (questionType === 'file') {
+                            // Check if a file is selected
+                            const $fileInput = $question.find('input[type="file"]');
+                            if ($fileInput.length > 0) {
+                                const files = $fileInput[0].files;
+                                isValid = files && files.length > 0;
+                                if (!isValid) {
+                                    $fieldToValidate = $fileInput;
+                                }
+                            }
+                        } else {
+                            // For text, textarea, number, email, etc.
+                            const $input = $question.find('input, textarea').first();
+                            if ($input.length > 0) {
+                                const value = $input.val();
+                                isValid = value !== null && value !== '' && value !== undefined && (typeof value !== 'string' || value.trim() !== '');
+                                if (!isValid) {
+                                    $fieldToValidate = $input;
+                                }
+                            }
+                        }
+
+                        if (!isValid) {
+                            // Show error
+                            if ($fieldToValidate) {
+                                $fieldToValidate.addClass('is-invalid');
+                                $fieldToValidate.focus();
+
+                                // Remove existing error message
+                                $question.find('.career-form-error-message').remove();
+
+                                // Add error message
+                                const $errorMsg = $('<div class="career-form-error-message">' + errorMessage + '</div>');
+                                $fieldToValidate.after($errorMsg);
+                            }
+
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(errorMessage);
+                            }
+
+                            // Scroll to question
+                            setTimeout(function() {
+                                const offset = $question.offset();
+                                if (offset) {
+                                    $('html, body').animate({
+                                        scrollTop: offset.top - 100
+                                    }, 300);
+                                }
+                            }, 100);
+
+                            return;
+                        } else {
+                            // Clear any existing errors
+                            $question.find('.is-invalid').removeClass('is-invalid');
+                            $question.find('.career-form-error-message').remove();
+                        }
+                    }
+
+                    // If this is a radio question, show/hide nested questions (but don't add them to navigation)
+                    if (questionType === 'radio') {
+                        const $checkedRadio = $question.find('input[type="radio"]:checked');
+                        if ($checkedRadio.length > 0) {
+                            const selectedValue = String($checkedRadio.val()).trim().toLowerCase();
+                            const questionId = $question.data('question-id');
+
+                            // Find and show nested question containers for selected option
+                            let $nestedContainers = $('#careerCornerForm').find('.career-form-nested-questions[data-parent-question="' + questionId + '"]');
+
+                            if ($nestedContainers.length === 0) {
+                                const $sectionForNested = $question.closest('.career-form-section');
+                                $nestedContainers = $sectionForNested.find('.career-form-nested-questions[data-parent-question="' + questionId + '"]');
+                            }
+
+                            if ($nestedContainers.length === 0) {
+                                $nestedContainers = $question.siblings('.career-form-nested-questions[data-parent-question="' + questionId + '"]');
+                            }
+
+                            if ($nestedContainers.length === 0) {
+                                $nestedContainers = $question.parent().find('.career-form-nested-questions[data-parent-question="' + questionId + '"]');
+                            }
+
+                            // Hide all nested containers first
+                            $nestedContainers.removeClass('show step-active').each(function() {
+                                if (this.style) {
+                                    this.style.setProperty('display', 'none', 'important');
+                                }
+                            });
+
+                            // Show nested container for selected option
+                            $nestedContainers.each(function() {
+                                const $nestedContainer = $(this);
+                                let containerOptionValue = $nestedContainer.data('option-value');
+                                if (!containerOptionValue) {
+                                    containerOptionValue = $nestedContainer.attr('data-option-value');
+                                }
+                                containerOptionValue = String(containerOptionValue || '').trim().toLowerCase();
+                                const selectedValueLower = selectedValue.toLowerCase();
+
+                                if (containerOptionValue === selectedValueLower) {
+                                    // Show this nested container and all its questions
+                                    $nestedContainer.addClass('show step-active');
+                                    if ($nestedContainer[0]) {
+                                        $nestedContainer[0].style.setProperty('display', 'block', 'important');
+                                        $nestedContainer[0].style.setProperty('visibility', 'visible', 'important');
+                                        $nestedContainer[0].style.setProperty('opacity', '1', 'important');
+                                    }
+
+                                    // Show all nested questions inside
+                                    $nestedContainer.find('.career-form-question').each(function() {
+                                        const $nestedQ = $(this);
+                                        $nestedQ.addClass('step-active');
+                                        if ($nestedQ[0]) {
+                                            $nestedQ[0].style.setProperty('display', 'block', 'important');
+                                            $nestedQ[0].style.setProperty('visibility', 'visible', 'important');
+                                            $nestedQ[0].style.setProperty('opacity', '1', 'important');
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    }
+
+                    // Validate nested questions if they are visible
+                    const $visibleNestedContainer = $question.siblings('.career-form-nested-questions.show, .career-form-nested-questions.step-active').first();
+                    if ($visibleNestedContainer.length > 0) {
+                        let nestedHasErrors = false;
+                        $visibleNestedContainer.find('.career-form-question').each(function() {
+                            const $nestedQ = $(this);
+                            const nestedIsRequired = $nestedQ.data('question-required') === '1' || $nestedQ.data('question-required') === 1;
+                            const nestedType = $nestedQ.data('question-type');
+
+                            if (nestedIsRequired) {
+                                let nestedIsValid = false;
+
+                                if (nestedType === 'radio') {
+                                    const $radioInputs = $nestedQ.find('input[type="radio"]');
+                                    if ($radioInputs.length > 0) {
+                                        const fieldName = $radioInputs.first().attr('name');
+                                        nestedIsValid = $nestedQ.find('input[type="radio"][name="' + fieldName + '"]:checked').length > 0;
+                                    }
+                                } else if (nestedType === 'checkbox') {
+                                    const $checkboxInputs = $nestedQ.find('input[type="checkbox"]');
+                                    if ($checkboxInputs.length > 0) {
+                                        const fieldName = $checkboxInputs.first().attr('name');
+                                        nestedIsValid = $nestedQ.find('input[type="checkbox"][name^="' + fieldName.replace('[]', '') + '"]:checked').length > 0;
+                                    }
+                                } else if (nestedType === 'select') {
+                                    const $select = $nestedQ.find('select');
+                                    if ($select.length > 0) {
+                                        const value = $select.val();
+                                        nestedIsValid = value !== null && value !== '' && value !== undefined;
+                                    }
+                                } else if (nestedType === 'file') {
+                                    const $fileInput = $nestedQ.find('input[type="file"]');
+                                    if ($fileInput.length > 0) {
+                                        const files = $fileInput[0].files;
+                                        nestedIsValid = files && files.length > 0;
+                                    }
+                                } else {
+                                    const $input = $nestedQ.find('input, textarea').first();
+                                    if ($input.length > 0) {
+                                        const value = $input.val();
+                                        nestedIsValid = value !== null && value !== '' && value !== undefined && (typeof value !== 'string' || value.trim() !== '');
+                                    }
+                                }
+
+                                if (!nestedIsValid) {
+                                    nestedHasErrors = true;
+                                    const $nestedField = $nestedQ.find('input, select, textarea').first();
+                                    if ($nestedField.length > 0) {
+                                        $nestedField.addClass('is-invalid');
+                                        $nestedQ.find('.career-form-error-message').remove();
+                                        const $errorMsg = $('<div class="career-form-error-message">' + errorMessage + '</div>');
+                                        $nestedField.after($errorMsg);
+                                    }
+                                }
+                            }
+                        });
+
+                        if (nestedHasErrors) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error('{{ __('Please answer all required nested questions before proceeding') }}');
+                            }
+                            return;
+                        }
+                    }
+                }
+
+                // Move to next question if no nested questions to handle
+                if (stepNavigation.currentIndex < stepNavigation.questions.length - 1) {
+                    showQuestion(stepNavigation.currentIndex + 1);
+                    updateNavigationButtons();
+                    updateProgress();
+                }
+            });
+
+            // Initialize step navigation if form is editable
+            if (!isReadonly) {
+                initializeStepNavigation();
+            }
+
             // Function to make form editable
             function makeFormEditable() {
                 isReadonly = false;
+
+                // Enable step mode
+                $('#careerCornerForm').addClass('career-form-step-mode');
+                $('#careerFormNavigation').show();
 
                 // Clear any existing error messages and validation states
                 $('.career-form-error-message').remove();
@@ -735,27 +1498,17 @@
                 $('#changePreferencesBtn').hide();
                 $('#cancelEditBtn').show();
 
-                // Remove inline style and force show - use multiple methods to ensure it works
-                const $submitContainer = $('#submitButtonContainer');
-                if ($submitContainer.length) {
-                    // Remove any inline styles that might hide it
-                    $submitContainer.removeAttr('style');
-                    // Force display with multiple methods
-                    $submitContainer.css('display', 'block');
-                    $submitContainer.show();
-                    $submitContainer.removeClass('d-none'); // Remove Bootstrap hide class if present
-
-                    // Double-check after a small delay
-                    setTimeout(function() {
-                        if ($submitContainer.is(':hidden') || $submitContainer.css('display') === 'none') {
-                            $submitContainer.css('display', 'block !important');
-                            $submitContainer[0].style.setProperty('display', 'block', 'important');
-                        }
-                    }, 50);
+                // Show submit button if we're on the last question
+                const $submitBtn = $('#careerFormSubmitBtn');
+                if (stepNavigation.questions.length > 0 && stepNavigation.currentIndex === stepNavigation.questions.length - 1) {
+                    $submitBtn.show();
                 }
 
                 // Initialize interactive features
                 initializeFormInteractivity();
+
+                // Initialize step navigation
+                initializeStepNavigation();
 
                 // Ensure form submission handler is attached
                 attachFormSubmitHandler();
@@ -1143,39 +1896,6 @@
                     const formData = new FormData();
                     const formDataObj = {};
 
-                    // Helper function to check if a field is in a visible nested container
-                    function isFieldVisible($field) {
-                        const $nestedContainer = $field.closest('.career-form-nested-questions');
-                        if ($nestedContainer.length === 0) {
-                            // Not in a nested container, so it's visible
-                            return true;
-                        }
-
-                        // Check if the nested container is visible
-                        if (!$nestedContainer.hasClass('show') && $nestedContainer.css('display') === 'none') {
-                            return false;
-                        }
-
-                        // Check if parent radio is selected
-                        const parentQuestionId = $nestedContainer.data('parent-question');
-                        const containerOptionValue = $nestedContainer.data('option-value');
-
-                        if (!parentQuestionId || !containerOptionValue) {
-                            return false;
-                        }
-
-                        // Find the checked radio for this parent question
-                        const $checkedRadio = $(`input[type="radio"][data-question-id="${parentQuestionId}"]:checked`);
-                        if ($checkedRadio.length === 0) {
-                            return false;
-                        }
-
-                        const selectedValue = String($checkedRadio.val()).trim().toLowerCase();
-                        const containerValue = String(containerOptionValue).trim().toLowerCase();
-
-                        return selectedValue === containerValue;
-                    }
-
                     // First, collect all file inputs separately (including hidden ones)
                     // This ensures all files are captured regardless of visibility
                     $(this).find('input[type="file"]').each(function() {
@@ -1216,11 +1936,40 @@
                             return;
                         }
 
-                        // Skip fields in hidden nested containers (but not file inputs)
-                        if (!isFieldVisible($field)) {
-                            return;
+                        // For nested questions, check if parent option is selected
+                        // If parent option matches, include the field even if container appears hidden in step mode
+                        const $nestedContainer = $field.closest('.career-form-nested-questions');
+                        if ($nestedContainer.length > 0) {
+                            const parentQuestionId = $nestedContainer.data('parent-question');
+                            let containerOptionValue = $nestedContainer.data('option-value');
+
+                            // Try attribute if data doesn't work
+                            if (!containerOptionValue) {
+                                containerOptionValue = $nestedContainer.attr('data-option-value');
+                            }
+
+                            if (parentQuestionId && containerOptionValue) {
+                                // Find the checked radio for this parent question
+                                const $checkedRadio = $(`input[type="radio"][data-question-id="${parentQuestionId}"]:checked`);
+                                if ($checkedRadio.length > 0) {
+                                    const selectedValue = String($checkedRadio.val()).trim().toLowerCase();
+                                    const containerValue = String(containerOptionValue || '').trim().toLowerCase();
+
+                                    // If parent option doesn't match, skip this nested field
+                                    if (selectedValue !== containerValue) {
+                                        return;
+                                    }
+                                } else {
+                                    // Parent not selected, skip nested field
+                                    return;
+                                }
+                            } else {
+                                // Can't determine parent, skip to be safe
+                                return;
+                            }
                         }
 
+                        // Collect field value
                         if ($field.is(':checkbox')) {
                             if ($field.is(':checked')) {
                                 if (!formDataObj[name]) {
@@ -1234,7 +1983,8 @@
                             }
                         } else {
                             const value = $field.val();
-                            if (value !== null && value !== '') {
+                            // Include value if it's not empty (empty strings mean not answered)
+                            if (value !== null && value !== '' && value !== undefined) {
                                 formDataObj[name] = value;
                             }
                         }
@@ -1479,6 +2229,35 @@
 
                     // Update required attributes after showing/hiding nested questions
                     updateRequiredAttributes();
+
+                    // If step navigation is active, rebuild question list to include/exclude nested questions
+                    if (stepNavigation.initialized && !isReadonly && $('#careerCornerForm').hasClass('career-form-step-mode')) {
+                        const currentQuestionId = questionId;
+                        const currentIndex = stepNavigation.currentIndex;
+
+                        // Rebuild question list
+                        setTimeout(function() {
+                            updateNestedQuestionsVisibility();
+
+                            // Try to find the current question in the new list and maintain position
+                            let newIndex = currentIndex;
+                            for (let i = 0; i < stepNavigation.questions.length; i++) {
+                                if (stepNavigation.questions[i].questionId == currentQuestionId) {
+                                    newIndex = i;
+                                    break;
+                                }
+                            }
+
+                            // If we're past the end, go to the last question
+                            if (newIndex >= stepNavigation.questions.length) {
+                                newIndex = Math.max(0, stepNavigation.questions.length - 1);
+                            }
+
+                            showQuestion(newIndex);
+                            updateNavigationButtons();
+                            updateProgress();
+                        }, 100);
+                    }
                 });
             }
 
@@ -1608,16 +2387,33 @@
 
             // Clear error messages when user starts typing/selecting
             // This works for both first-time and editable modes
-            $(document).off('input change', '.career-form-input, .career-form-textarea, .career-form-select');
-            $(document).on('input change', '.career-form-input, .career-form-textarea, .career-form-select', function() {
+            $(document).off('input change', '.career-form-input, .career-form-textarea, .career-form-select, input[type="radio"], input[type="checkbox"], input[type="file"]');
+            $(document).on('input change', '.career-form-input, .career-form-textarea, .career-form-select, input[type="radio"], input[type="checkbox"], input[type="file"]', function() {
                 const $field = $(this);
+                const $question = $field.closest('.career-form-question');
+
+                // Clear error for this field
                 if ($field.hasClass('is-invalid')) {
                     $field.removeClass('is-invalid');
-                    $field.closest('.career-form-question').find('.career-form-error-message').remove();
                     if ($field[0] && $field[0].setCustomValidity) {
                         $field[0].setCustomValidity('');
                     }
                 }
+
+                // For radio buttons, clear error for all radios in the group
+                if ($field.is(':radio')) {
+                    const fieldName = $field.attr('name');
+                    $question.find('input[type="radio"][name="' + fieldName + '"]').removeClass('is-invalid');
+                }
+
+                // For checkboxes, clear error for all checkboxes in the group
+                if ($field.is(':checkbox')) {
+                    const fieldName = $field.attr('name');
+                    $question.find('input[type="checkbox"][name^="' + fieldName.replace('[]', '') + '"]').removeClass('is-invalid');
+                }
+
+                // Remove error message from question
+                $question.find('.career-form-error-message').remove();
             });
 
             // Also handle on page load - check if any radio is already selected
