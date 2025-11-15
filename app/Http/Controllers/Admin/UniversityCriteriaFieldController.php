@@ -48,7 +48,6 @@ class UniversityCriteriaFieldController extends Controller
         $data['pageTitle'] = __('University Criteria Fields');
         $data['activeCriteriaFields'] = 'active';
         $data['showQuestions'] = 'show';
-        $data['activeQuestion'] = 'active';
         
         // Get all criteria fields for dependency dropdown (exclude current field when editing)
         $data['allCriteriaFields'] = UniversityCriteriaField::where('status', STATUS_ACTIVE)
