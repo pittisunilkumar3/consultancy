@@ -250,58 +250,6 @@
             transform: translateY(0);
         }
 
-        .career-form-input:readonly,
-        .career-form-textarea:readonly,
-        .career-form-select:disabled,
-        .career-form-input:disabled,
-        input[type="text"]:readonly,
-        input[type="number"]:readonly,
-        input[type="email"]:readonly,
-        input[type="tel"]:readonly,
-        input[type="date"]:readonly,
-        input[type="file"]:disabled,
-        textarea:readonly,
-        select:disabled,
-        input.career-form-input[readonly],
-        textarea.career-form-textarea[readonly],
-        select.career-form-select[disabled] {
-            background-color: #f3f4f6;
-            cursor: not-allowed !important;
-            opacity: 0.8;
-            transition: none;
-        }
-
-        /* Force cursor not-allowed for all text, textarea, and select fields when readonly/disabled */
-        .career-form-question input[readonly],
-        .career-form-question textarea[readonly],
-        .career-form-question select[disabled],
-        .career-form-question input:readonly,
-        .career-form-question textarea:readonly,
-        .career-form-question select:disabled {
-            cursor: not-allowed !important;
-        }
-
-        .career-form-input:readonly:hover,
-        .career-form-textarea:readonly:hover,
-        .career-form-select:disabled:hover,
-        .career-form-input:disabled:hover {
-            background-color: #f3f4f6;
-            border-color: #e5e7eb;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .career-form-input:readonly:focus,
-        .career-form-textarea:readonly:focus,
-        .career-form-select:disabled:focus,
-        .career-form-input:readonly:active,
-        .career-form-textarea:readonly:active,
-        .career-form-select:disabled:active {
-            outline: none;
-            border-color: #e5e7eb;
-            box-shadow: none;
-            background-color: #f3f4f6;
-        }
 
         /* Validation error styles */
         .career-form-input.is-invalid,
@@ -326,18 +274,15 @@
             display: none !important;
         }
 
+        /* Disabled radio/checkbox styles (for edge cases in editable mode) */
         .career-form-radio-option input[type="radio"]:disabled + label,
-        .career-form-checkbox-option input[type="checkbox"]:disabled + label,
-        input[type="radio"]:disabled + label,
-        input[type="checkbox"]:disabled + label {
+        .career-form-checkbox-option input[type="checkbox"]:disabled + label {
             color: #6b7280;
             cursor: not-allowed !important;
         }
 
         .career-form-radio-option:has(input[type="radio"]:disabled),
-        .career-form-checkbox-option:has(input[type="checkbox"]:disabled),
-        .career-form-radio-group:has(input[type="radio"]:disabled),
-        .career-form-checkbox-group:has(input[type="checkbox"]:disabled) {
+        .career-form-checkbox-option:has(input[type="checkbox"]:disabled) {
             cursor: not-allowed !important;
             transition: none;
         }
@@ -347,44 +292,161 @@
             cursor: not-allowed !important;
         }
 
-        /* All labels for disabled/readonly fields */
-        label:has(+ input:readonly),
-        label:has(+ input:disabled),
-        label:has(+ textarea:readonly),
-        label:has(+ select:disabled),
-        .career-form-question:has(input:readonly) label,
-        .career-form-question:has(input:disabled) label,
-        .career-form-question:has(textarea:readonly) label,
-        .career-form-question:has(select:disabled) label {
-            cursor: not-allowed !important;
+        /* Readonly Summary View - Clean display without form fields */
+        .career-form-readonly-mode .career-form-question {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 2rem;
+            padding: 1.25rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: #9be4e32b;
+            margin-bottom: 2px;
         }
 
-        /* Parent containers for all disabled/readonly fields */
-        .career-form-question:has(input:readonly),
-        .career-form-question:has(input:disabled),
-        .career-form-question:has(textarea:readonly),
-        .career-form-question:has(select:disabled) {
-            cursor: not-allowed !important;
+        .career-form-readonly-mode .career-form-question:last-child {
+            border-bottom: none;
         }
 
-        .career-form-radio-option:has(input[type="radio"]:disabled):hover,
-        .career-form-checkbox-option:has(input[type="checkbox"]:disabled):hover,
-        .career-form-radio-option:has(input[type="radio"]:disabled):active,
-        .career-form-checkbox-option:has(input[type="checkbox"]:disabled):active {
-            background: #ffffff;
-            border-color: #e5e7eb;
-            transform: none;
-            box-shadow: none;
-            cursor: not-allowed !important;
+        .career-form-readonly-mode .career-form-question-label {
+            flex: 0 0 40%;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0;
+            padding-right: 1rem;
         }
 
-        .career-form-file-display {
-            padding: 0.875rem 1rem;
-            background: #f3f4f6;
+        .career-form-readonly-mode .career-form-question-answer {
+            flex: 1;
+            color: #1f2937;
+            font-size: 1rem;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        /* Hide answer divs when not in readonly mode */
+        .career-form-question-answer {
+            display: none;
+        }
+
+        .career-form-readonly-mode .career-form-question-answer {
+            display: block;
+        }
+
+        .career-form-readonly-mode .career-form-question-answer:empty::before {
+            content: '—';
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .career-form-readonly-mode .career-form-question-help {
+            display: none;
+        }
+
+        /* Hide all form inputs in readonly mode */
+        .career-form-readonly-mode .career-form-input,
+        .career-form-readonly-mode .career-form-textarea,
+        .career-form-readonly-mode .career-form-select,
+        .career-form-readonly-mode .career-form-radio-group,
+        .career-form-readonly-mode .career-form-checkbox-group,
+        .career-form-readonly-mode input[type="radio"],
+        .career-form-readonly-mode input[type="checkbox"],
+        .career-form-readonly-mode input[type="file"] {
+            display: none !important;
+        }
+
+        /* Show file display in readonly mode - only in answer section */
+        .career-form-readonly-mode .career-form-question-answer .career-form-file-display {
+            display: inline-flex !important;
+            cursor: pointer;
+            background: #f9fafb;
             border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
-            color: #6b7280;
-            cursor: not-allowed !important;
+        }
+
+        .career-form-readonly-mode .career-form-question-answer .career-form-file-display a {
+            color: #14b8a6;
+            text-decoration: none;
+        }
+
+        .career-form-readonly-mode .career-form-question-answer .career-form-file-display a:hover {
+            text-decoration: underline;
+        }
+
+        /* Hide file displays that are direct children of question (old location) in readonly mode */
+        .career-form-readonly-mode .career-form-question > .career-form-file-display {
+            display: none !important;
+        }
+
+        /* Nested questions in readonly mode - break out of flex layout */
+        .career-form-readonly-mode .career-form-nested-questions {
+            flex-basis: 100%;
+            width: 100%;
+            min-width: 100%;
+            margin-top: 1.5rem;
+            padding-left: 0;
+            padding-right: 0;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 1.25rem;
+            margin-left: 0;
+            margin-right: 0;
+            order: 10;
+        }
+
+        .career-form-readonly-mode .career-form-nested-questions .career-form-question {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 2rem;
+            padding-left: 2rem;
+            border-left: 3px solid #14b8a6;
+            margin-top: 0.75rem;
+            margin-bottom: 0.75rem;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            background: #f9fafb;
+            border-radius: 0.375rem;
+        }
+
+        .career-form-readonly-mode .career-form-nested-questions .career-form-question:first-child {
+            margin-top: 0;
+        }
+
+        .career-form-readonly-mode .career-form-nested-questions .career-form-question:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+        }
+
+        .career-form-readonly-mode .career-form-nested-questions .career-form-question-label {
+            flex: 0 0 40%;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0;
+            padding-right: 1rem;
+        }
+
+        .career-form-readonly-mode .career-form-nested-questions .career-form-question-answer {
+            flex: 1;
+            color: #1f2937;
+            font-size: 1rem;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        /* Section styling in readonly mode */
+        .career-form-readonly-mode .career-form-section {
+            background: #ffffff;
+            border: none;
+            box-shadow: none;
+            padding: 5px;
+            margin-bottom: 2.5rem;
+        }
+
+        .career-form-readonly-mode .career-form-section-title {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #14b8a6;
         }
 
         #cancelEditBtn {
@@ -733,7 +795,7 @@
                 @endif
             @endif
 
-            <form id="careerCornerForm" method="POST" action="{{ route('student.career-corner.submit') }}" novalidate class="{{ !isset($submission) || !$submission ? 'career-form-step-mode' : '' }}">
+            <form id="careerCornerForm" method="POST" action="{{ route('student.career-corner.submit') }}" novalidate class="{{ !isset($submission) || !$submission ? 'career-form-step-mode' : 'career-form-readonly-mode' }}">
                 @csrf
 
                 @foreach($formData as $element)
@@ -1353,9 +1415,21 @@
             function makeFormEditable() {
                 isReadonly = false;
 
-                // Enable step mode
-                $('#careerCornerForm').addClass('career-form-step-mode');
+                // Remove readonly mode and enable step mode
+                $('#careerCornerForm').removeClass('career-form-readonly-mode').addClass('career-form-step-mode');
                 $('#careerFormNavigation').show();
+
+                // Explicitly show all form fields that might be hidden
+                $('#careerCornerForm .career-form-input, #careerCornerForm .career-form-textarea, #careerCornerForm .career-form-select, #careerCornerForm .career-form-radio-group, #careerCornerForm .career-form-checkbox-group').each(function() {
+                    const $field = $(this);
+                    // Remove any inline display:none styles
+                    if ($field.css('display') === 'none' || $field.attr('style') && $field.attr('style').includes('display: none')) {
+                        $field.css('display', '').removeAttr('style');
+                    }
+                });
+
+                // Hide answer divs
+                $('.career-form-question-answer').hide();
 
                 // Clear any existing error messages and validation states
                 $('.career-form-error-message').remove();
@@ -1379,8 +1453,16 @@
                     const questionId = $question.data('question-id');
                     const fieldName = 'career_q_' + questionId;
 
-                    // Find file input (should exist but hidden)
+                    // Find file input (should exist but might be hidden in a div)
                     let $fileInput = $question.find('input[type="file"][name="' + fieldName + '"]');
+
+                    // If file input is inside a hidden div, show the div first
+                    if ($fileInput.length > 0) {
+                        const $parentDiv = $fileInput.closest('div[style*="display: none"]');
+                        if ($parentDiv.length > 0) {
+                            $parentDiv.css('display', 'block').removeAttr('style');
+                        }
+                    }
 
                     if ($fileInput.length === 0) {
                         // Create file input if it doesn't exist
@@ -1400,6 +1482,22 @@
                     // Hide readonly display and show file input
                     $fileDisplay.hide();
                     $fileInput.css('display', 'block').removeAttr('style').show();
+                });
+
+                // Also find and show any file inputs that might be hidden in divs (including those not found above)
+                $('#careerCornerForm').find('input[type="file"]').each(function() {
+                    const $fileInput = $(this);
+                    const $hiddenParent = $fileInput.closest('div[style*="display: none"], div[style*="display:none"]');
+
+                    // Show parent div if it's hidden (but not if it's the answer div)
+                    if ($hiddenParent.length > 0 && !$hiddenParent.hasClass('career-form-question-answer') && !$hiddenParent.closest('.career-form-question-answer').length) {
+                        $hiddenParent.css('display', 'block').removeAttr('style');
+                    }
+
+                    // Show the file input itself
+                    if ($fileInput.css('display') === 'none' || $fileInput.is(':hidden')) {
+                        $fileInput.css('display', 'block').removeAttr('style').show();
+                    }
                 });
 
                 // STEP 1: Remove required from ALL hidden nested questions

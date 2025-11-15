@@ -61,6 +61,90 @@
     </label>
     {!! $helpText !!}
 
+    @if($isReadonly)
+        <div class="career-form-question-answer">
+            @if($questionType === 'radio' && !empty($questionOptions))
+                @php
+                    $selectedLabel = '—';
+                    if ($fieldValue !== null) {
+                        foreach ($questionOptions as $option) {
+                            $optionValue = is_array($option) ? ($option['value'] ?? $option['label'] ?? '') : $option;
+                            $optionLabel = is_array($option) ? ($option['label'] ?? $option['value'] ?? '') : $option;
+                            $fieldValueTrimmed = trim((string)$fieldValue);
+                            $optionValueTrimmed = trim((string)$optionValue);
+                            if (($fieldValueTrimmed === $optionValueTrimmed) || (strtolower($fieldValueTrimmed) === strtolower($optionValueTrimmed))) {
+                                $selectedLabel = $optionLabel;
+                                break;
+                            }
+                        }
+                    }
+                @endphp
+                {{ e($selectedLabel) }}
+            @elseif($questionType === 'select' && !empty($questionOptions))
+                @php
+                    $selectedLabel = '—';
+                    if ($fieldValue !== null) {
+                        foreach ($questionOptions as $option) {
+                            $optionValue = is_array($option) ? ($option['value'] ?? $option['label'] ?? '') : $option;
+                            $optionLabel = is_array($option) ? ($option['label'] ?? $option['value'] ?? '') : $option;
+                            $fieldValueTrimmed = trim((string)$fieldValue);
+                            $optionValueTrimmed = trim((string)$optionValue);
+                            if (($fieldValueTrimmed === $optionValueTrimmed) || (strtolower($fieldValueTrimmed) === strtolower($optionValueTrimmed))) {
+                                $selectedLabel = $optionLabel;
+                                break;
+                            }
+                        }
+                    }
+                @endphp
+                {{ e($selectedLabel) }}
+            @elseif($questionType === 'checkbox' && !empty($questionOptions))
+                @php
+                    $selectedLabels = [];
+                    if ($fieldValue !== null && is_array($fieldValue)) {
+                        foreach ($questionOptions as $option) {
+                            $optionValue = is_array($option) ? ($option['value'] ?? $option['label'] ?? '') : $option;
+                            $optionLabel = is_array($option) ? ($option['label'] ?? $option['value'] ?? '') : $option;
+                            if (in_array($optionValue, $fieldValue)) {
+                                $selectedLabels[] = $optionLabel;
+                            }
+                        }
+                    }
+                @endphp
+                {{ !empty($selectedLabels) ? implode(', ', array_map('e', $selectedLabels)) : '—' }}
+            @elseif($questionType === 'file')
+                @if($fieldValue)
+                    @php
+                        $fileUrl = asset('storage/' . $fieldValue);
+                        $fileName = basename($fieldValue);
+                    @endphp
+                    <div class="career-form-file-display">
+                        <div class="d-inline-flex align-items-center cg-2">
+                            <i class="fa-solid fa-file me-2"></i>
+                            <span>{{ e($fileName) }}</span>
+                            <a href="{{ $fileUrl }}" target="_blank" class="ms-2 text-primary text-decoration-none" title="{{ __('Download file') }}">
+                                <i class="fa-solid fa-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                @else
+                    <span class="text-muted">—</span>
+                @endif
+            @elseif($questionType === 'textarea')
+                @if($fieldValue)
+                    <div style="white-space: pre-wrap;">{{ e($fieldValue) }}</div>
+                @else
+                    <span class="text-muted">—</span>
+                @endif
+            @else
+                @if($fieldValue !== null && $fieldValue !== '')
+                    {{ e($fieldValue) }}
+                @else
+                    <span class="text-muted">—</span>
+                @endif
+            @endif
+        </div>
+    @endif
+
     @if($questionType === 'radio' && !empty($questionOptions))
         <div class="career-form-radio-group" data-question-id="{{ is_array($questionData) ? $questionData['id'] : $questionData->id }}">
             @foreach($questionOptions as $index => $option)
@@ -215,24 +299,9 @@
 
     @elseif($questionType === 'file')
         @if($isReadonly)
-            @if($fieldValue)
-                <div class="career-form-file-display">
-                    @php
-                        // Get file URL from storage path
-                        // Use asset() for better localhost compatibility
-                        // The file path stored in DB is like: uploads/career-corner/filename.pdf
-                        // So we need: storage/uploads/career-corner/filename.pdf
-                        $fileUrl = asset('storage/' . $fieldValue);
-                        $fileName = basename($fieldValue);
-                    @endphp
-                    <div class="d-inline-flex align-items-center cg-2">
-                        <i class="fa-solid fa-file me-2"></i>
-                        <span>{{ __('File uploaded: ') }}{{ $fileName }}</span>
-                        <a href="{{ $fileUrl }}" target="_blank" class="ms-2 text-primary text-decoration-none" title="{{ __('Download file') }}">
-                            <i class="fa-solid fa-download"></i>
-                        </a>
-                    </div>
-                </div>
+            {{-- In readonly mode, file display is shown in the answer section above --}}
+            {{-- Hide this section to avoid duplicates --}}
+            <div style="display: none;">
                 {{-- Always include file input for editing, but hide it in readonly mode --}}
                 <input type="file"
                        class="career-form-input"
@@ -240,20 +309,7 @@
                        style="display: none;"
                        {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}
                        accept="*/*">
-            @else
-                {{-- No file uploaded - show message in readonly mode --}}
-                <div class="career-form-file-display text-muted">
-                    <i class="fa-solid fa-file me-2"></i>
-                    <span>{{ __('No file uploaded') }}</span>
-                </div>
-                {{-- Always include file input for editing, but hide it in readonly mode --}}
-                <input type="file"
-                       class="career-form-input"
-                       name="{{ $questionId }}"
-                       style="display: none;"
-                       {{ (!$isReadonly && $questionRequired) ? 'required' : '' }}
-                       accept="*/*">
-            @endif
+            </div>
         @else
             <input type="file"
                    class="career-form-input"
