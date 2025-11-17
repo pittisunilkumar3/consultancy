@@ -44,6 +44,18 @@ class QuestionController extends Controller
     }
 
     /**
+     * Show RAG Training file upload page.
+     */
+    public function ragTraining()
+    {
+        $showQuestions = 'show';
+        $activeQuestion = 'active';
+        $pageTitle = __('RAG Training');
+
+        return view('admin.questions.rag-training', compact('showQuestions', 'activeQuestion', 'pageTitle'));
+    }
+
+    /**
      * Store a newly created question.
      */
     public function store(Request $request)

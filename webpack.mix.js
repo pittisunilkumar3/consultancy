@@ -1,4 +1,5 @@
 const mix = require('laravel-mix');
+const path = require('path');
 
 /*
  |--------------------------------------------------------------------------
@@ -11,6 +12,22 @@ const mix = require('laravel-mix');
  |
  */
 
-mix.js('resources/js/app.js', 'public/js')
-    .sass('resources/sass/app.scss', 'public/css')
-    .sourceMaps();
+mix.alias({
+    '@': path.resolve('resources/js'),
+});
+
+// Base app JS (existing behaviour)
+mix.js('resources/js/app.js', 'public/js');
+
+// RAG Training React/TypeScript entry
+mix.ts('resources/js/rag-training.tsx', 'public/js').react();
+
+// Tailwind CSS (for React components)
+mix.postCss('resources/css/app.css', 'public/css', [
+    require('tailwindcss'),
+    require('autoprefixer'),
+]);
+
+// Existing Sass pipeline
+mix.sass('resources/sass/app.scss', 'public/css')
+   .sourceMaps();

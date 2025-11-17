@@ -404,6 +404,7 @@ Route::group(['prefix' => 'service', 'as' => 'services.'], function () {
 // Questions (admin)
 Route::group(['prefix' => 'questions', 'as' => 'questions.', 'middleware' => 'can:Manage Questions'], function () {
     Route::get('', [QuestionController::class, 'index'])->name('index');
+    Route::get('rag-training', [QuestionController::class, 'ragTraining'])->name('rag-training');
     Route::post('store', [QuestionController::class, 'store'])->name('store');
     Route::get('show/{id}', [QuestionController::class, 'show'])->name('show');
     Route::post('update/{id}', [QuestionController::class, 'update'])->name('update');
