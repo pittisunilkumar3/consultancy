@@ -80,7 +80,7 @@
                 width: toRem(12);
                 height: toRem(12);
                 border-radius: 50%;
-                background-color: $tertiary;
+                background-color: #ff3a3a;
                 @include fontFamily(13, $fw_semiBold, 16, $title-text);
                 display: flex;
                 justify-content: center;

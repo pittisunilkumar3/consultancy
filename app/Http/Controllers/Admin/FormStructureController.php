@@ -24,7 +24,9 @@ class FormStructureController extends Controller
         return view('admin.form-structure.index', [
             'structure' => $structure,
             'questions' => $questions,
-            'pageTitle' => __('Questions Structure')
+            'pageTitle' => __('Questions Structure'),
+            'activeQuestionStructure' => 'active',
+            'showQuestions' => 'show'
         ]);
     }
 

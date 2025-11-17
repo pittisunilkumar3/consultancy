@@ -574,6 +574,10 @@
         /* Remove item button */
         .remove-item {
             transition: all 0.2s ease;
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            z-index: 10;
+            position: relative;
         }
         
         .remove-item:hover {

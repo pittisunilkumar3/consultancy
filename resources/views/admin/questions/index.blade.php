@@ -68,13 +68,31 @@
                             <option value="text">{{ __('Text') }}</option>
                             <option value="textarea">{{ __('Textarea') }}</option>
                             <option value="number">{{ __('Number') }}</option>
+                            <option value="email">{{ __('Email') }}</option>
                             <option value="file">{{ __('File Upload') }}</option>
                             <option value="select">{{ __('Select') }}</option>
                             <option value="radio">{{ __('Radio') }}</option>
                             <option value="checkbox">{{ __('Checkbox') }}</option>
                         </select>
                     </div>
+                    <div class="col-12">
+                        <label for="placeholder" class="zForm-label">{{ __('Placeholder') }}</label>
+                        <input type="text" name="placeholder" id="placeholder" class="form-control zForm-control" placeholder="{{ __('Enter placeholder text') }}">
+                        <small class="form-text text-muted">{{ __('This text will appear as a placeholder in the input field') }}</small>
+                    </div>
+                    <div class="col-12 step-wrapper d-none">
+                        <label for="step" class="zForm-label">{{ __('Step Value') }}</label>
+                        <input type="text" name="step" id="step" class="form-control zForm-control" placeholder="{{ __('e.g., 0.1, 0.01, any') }}">
+                        <small class="form-text text-muted">{{ __('For number inputs, specify step value (e.g., 0.1 for decimals, "any" for any decimal). Leave empty for integers only.') }}</small>
+                    </div>
                     <div class="col-12 options-wrapper d-none">
+                        <div class="mb-3">
+                            <div class="zForm-wrap-checkbox-2 mb-2">
+                                <input type="checkbox" name="use_countries" id="use_countries" class="form-check-input" value="1">
+                                <label for="use_countries" class="form-check-label">{{ __('Use Countries from Database') }}</label>
+                            </div>
+                            <small class="form-text text-muted d-block">{{ __('Check this to automatically populate options with countries from the database.') }}</small>
+                        </div>
                         <label class="zForm-label">{{ __('Options') }} <span class="text-danger">*</span></label>
                         <div class="option-list border rounded p-2 mb-2" id="optionList" data-draggable="true">
                             <!-- Option rows inserted here -->
@@ -136,6 +154,7 @@
     <input type="hidden" id="questionsShowBase" value="{{ url('admin/questions/show') }}">
     <input type="hidden" id="questionsUpdateBase" value="{{ url('admin/questions/update') }}">
     <input type="hidden" id="questionsDeleteBase" value="{{ url('admin/questions/delete') }}">
+    <input type="hidden" id="questionsCountriesRoute" value="{{ route('admin.questions.countries') }}">
 
 @endsection
 

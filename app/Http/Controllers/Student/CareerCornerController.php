@@ -9,8 +9,11 @@ use App\Models\Country;
 use App\Models\FormStructure;
 use App\Models\Question;
 use App\Models\StudyLevel;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class CareerCornerController extends Controller
@@ -49,22 +52,30 @@ class CareerCornerController extends Controller
                     $formData = $submission->form_data;
                     $data['submittedData'] = is_array($formData) && !empty($formData) ? $formData : [];
 
-                    // Debug: Log the submitted data (remove in production)
-                    \Log::info('Career Corner Submission Data', [
-                        'user_id' => $user->id,
-                        'submission_id' => $submission->id,
-                        'form_data' => $formData,
-                        'form_data_type' => gettype($formData),
-                        'form_data_count' => is_array($formData) ? count($formData) : 0,
-                        'submitted_data_keys' => is_array($formData) ? array_keys($formData) : []
-                    ]);
 
-                    // Use snapshot if available, otherwise use current structure
-                    $snapshotData = $submission->getFormStructureData();
+                    // Check if structure has changed FIRST
+                    $structureChanged = $submission->hasStructureChanged();
+                    $data['structureChanged'] = $structureChanged;
 
-                    if ($snapshotData && isset($snapshotData['structure']) && isset($snapshotData['questions'])) {
-                        // Use snapshot data for displaying submitted form
-                        $data['formData'] = $snapshotData['structure'];
+                    // If structure has changed, use CURRENT structure so student can see new questions
+                    // Otherwise, use snapshot to preserve original submission view
+                    if ($structureChanged) {
+                        // Structure changed - use current structure with all new questions
+                        $data['formData'] = $structure->loadNestedStructure();
+                        $questionsCollection = Question::orderBy('order')->get()->keyBy('id');
+                        $questionsArray = [];
+                        foreach ($questionsCollection as $id => $question) {
+                            $questionsArray[$id] = $question->toArray();
+                        }
+                        $data['questions'] = $questionsArray;
+
+                    } else {
+                        // Structure unchanged - use snapshot to preserve original view
+                        $snapshotData = $submission->getFormStructureData();
+
+                        if ($snapshotData && isset($snapshotData['structure']) && isset($snapshotData['questions'])) {
+                            // Use snapshot data for displaying submitted form
+                            $data['formData'] = $snapshotData['structure'];
 
                         // Convert snapshot questions to collection, ensuring they're keyed by question ID
                         // Handle both array format (from JSON) and collection format
@@ -160,11 +171,6 @@ class CareerCornerController extends Controller
                             }
                             $data['questions'] = $questionsArray; // Pass as array, not collection
 
-                            \Log::info('Career Corner: Merged missing questions', [
-                                'missing_question_ids' => array_values($missingQuestionIds),
-                                'total_questions' => count($data['questions']),
-                                'merged_question_ids' => array_keys($data['questions'])
-                            ]);
                         } else {
                             // Ensure snapshot questions are properly keyed (as array, not collection)
                             $questionsArray = [];
@@ -177,39 +183,25 @@ class CareerCornerController extends Controller
                             $data['questions'] = $questionsArray; // Pass as array, not collection
                         }
 
-                        // Debug: Log questions in snapshot
-                        \Log::info('Career Corner: Using snapshot data', [
-                            'snapshot_question_ids' => $snapshotQuestions->keys()->toArray(),
-                            'snapshot_question_count' => $snapshotQuestions->count(),
-                            'structure_question_ids' => $structureQuestionIds,
-                            'final_question_ids' => array_keys($data['questions']),
-                            'final_question_count' => count($data['questions']),
-                            'final_questions_sample' => array_slice($data['questions'], 0, 3, true)
-                        ]);
+                        } else {
+                            // Fallback to current structure
+                            $data['formData'] = $structure->loadNestedStructure();
+                            $questionsCollection = Question::orderBy('order')->get()->keyBy('id');
+                            // Convert to array with question IDs as keys
+                            $questionsArray = [];
+                            foreach ($questionsCollection as $id => $question) {
+                                $questionsArray[$id] = $question->toArray();
+                            }
+                            $data['questions'] = $questionsArray;
 
-                        // Check if structure has changed
-                        $data['structureChanged'] = $submission->hasStructureChanged();
-                    } else {
-                        // Fallback to current structure
-                        $data['formData'] = $structure->loadNestedStructure();
-                        $questionsCollection = Question::orderBy('order')->get()->keyBy('id');
-                        // Convert to array with question IDs as keys
-                        $questionsArray = [];
-                        foreach ($questionsCollection as $id => $question) {
-                            $questionsArray[$id] = $question->toArray();
                         }
-                        $data['questions'] = $questionsArray;
-
-                        // Debug: Log questions in current structure
-                        \Log::info('Career Corner: Using current structure', [
-                            'current_question_ids' => array_keys($data['questions']),
-                            'current_question_count' => count($data['questions'])
-                        ]);
                     }
 
                     // Get matching universities based on submission
                     $filterService = new UniversityFilterService();
-                    $data['matchingUniversities'] = $filterService->filterBySubmission($submission);
+                    $filterResult = $filterService->filterBySubmission($submission);
+                    $data['matchingUniversities'] = $filterResult['universities'];
+                    $data['helperMessages'] = $filterResult['helperMessages'];
                 } else {
                     // No submission yet - use current structure
                     $data['formData'] = $structure->loadNestedStructure();
@@ -257,8 +249,17 @@ class CareerCornerController extends Controller
                 ], 401);
             }
 
-            // Collect all form data (excluding CSRF token)
-            $formData = $request->except(['_token']);
+            // Generate snapshot of current form structure and questions
+            $snapshot = $this->generateFormStructureSnapshot($structure);
+
+            // Check if user already has a submission for this form
+            $existingSubmission = CareerCornerSubmission::where('user_id', $user->id)
+                ->where('form_structure_id', $structure->id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            // Process file uploads (pass existing submission for file replacement)
+            $formData = $this->processFileUploads($request, $structure, $existingSubmission);
 
             // Validate that we have some data
             if (empty($formData)) {
@@ -268,14 +269,15 @@ class CareerCornerController extends Controller
                 ], 422);
             }
 
-            // Generate snapshot of current form structure and questions
-            $snapshot = $this->generateFormStructureSnapshot($structure);
-
-            // Check if user already has a submission for this form
-            $existingSubmission = CareerCornerSubmission::where('user_id', $user->id)
-                ->where('form_structure_id', $structure->id)
-                ->orderBy('created_at', 'desc')
-                ->first();
+            // Validate form data against question rules
+            $validationErrors = $this->validateFormData($formData, $structure);
+            if (!empty($validationErrors)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => __('Validation failed'),
+                    'errors' => $validationErrors
+                ], 422);
+            }
 
             if ($existingSubmission) {
                 // Update existing submission (also update snapshot in case structure changed)
@@ -290,6 +292,17 @@ class CareerCornerController extends Controller
 
                 $submission = $existingSubmission;
                 $message = __('Form updated successfully!');
+
+                // Notify all active admin users about form update
+                $admins = User::where(['role' => USER_ROLE_ADMIN, 'status' => STATUS_ACTIVE])->get();
+                foreach ($admins as $admin) {
+                    setCommonNotification(
+                        $admin->id,
+                        __('Career Corner Form Updated'),
+                        __('Career corner form has been updated by ') . $user->first_name . ' ' . $user->last_name,
+                        route('admin.career-corner-submissions.show', $submission->id)
+                    );
+                }
             } else {
                 // Create new submission
                 $submission = CareerCornerSubmission::create([
@@ -301,6 +314,17 @@ class CareerCornerController extends Controller
                 ]);
 
                 $message = __('Form submitted successfully!');
+
+                // Notify all active admin users about new submission
+                $admins = User::where(['role' => USER_ROLE_ADMIN, 'status' => STATUS_ACTIVE])->get();
+                foreach ($admins as $admin) {
+                    setCommonNotification(
+                        $admin->id,
+                        __('New Career Corner Form Submission'),
+                        __('A new career corner form has been submitted by ') . $user->first_name . ' ' . $user->last_name,
+                        route('admin.career-corner-submissions.show', $submission->id)
+                    );
+                }
             }
 
             return response()->json([
@@ -357,12 +381,15 @@ class CareerCornerController extends Controller
 
             // Filter universities
             $filterService = new UniversityFilterService();
-            $universities = $filterService->filterBySubmission($submission);
+            $filterResult = $filterService->filterBySubmission($submission);
 
             return response()->json([
                 'status' => true,
                 'message' => __('Matching universities retrieved successfully'),
-                'data' => $universities->load('country')
+                'data' => [
+                    'universities' => $filterResult['universities']->load('country'),
+                    'helperMessages' => $filterResult['helperMessages']
+                ]
             ]);
 
         } catch (\Exception $e) {
@@ -408,6 +435,8 @@ class CareerCornerController extends Controller
                     'options' => $question->options,
                     'required' => $question->required,
                     'help_text' => $question->help_text,
+                    'placeholder' => $question->placeholder,
+                    'step' => $question->step,
                 ];
             })
             ->keyBy('id') // Key by question ID AFTER mapping to ensure proper keys
@@ -475,5 +504,228 @@ class CareerCornerController extends Controller
 
         // Return unique question IDs as a simple array (not keyed)
         return array_values(array_unique($ids));
+    }
+
+    /**
+     * Validate form data against question validation rules
+     */
+    private function validateFormData(array $formData, FormStructure $structure)
+    {
+        $errors = [];
+
+        // Get all questions used in this structure
+        $questionIds = $this->extractQuestionIdsFromStructure($structure->loadNestedStructure());
+        $questions = Question::whereIn('id', $questionIds)->get()->keyBy('id');
+
+        // Validate each form field
+        foreach ($formData as $fieldName => $fieldValue) {
+            // Extract question ID from field name (format: career_q_{id} or career_q_{id}[])
+            if (strpos($fieldName, 'career_q_') !== 0) {
+                continue; // Skip non-question fields
+            }
+
+            // Extract question ID
+            $questionId = str_replace('career_q_', '', $fieldName);
+            $questionId = preg_replace('/\[\]$/', '', $questionId); // Remove [] for arrays
+
+            if (!is_numeric($questionId)) {
+                continue;
+            }
+
+            $questionId = (int)$questionId;
+            $question = $questions->get($questionId);
+
+            if (!$question) {
+                continue; // Question not found, skip
+            }
+
+            // Handle array values (checkboxes)
+            if (is_array($fieldValue)) {
+                foreach ($fieldValue as $value) {
+                    $this->validateFieldValue($question, $value, $fieldName, $errors);
+                }
+            } else {
+                $this->validateFieldValue($question, $fieldValue, $fieldName, $errors);
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Validate a single field value against question rules
+     */
+    private function validateFieldValue($question, $fieldValue, $fieldName, &$errors)
+    {
+        // Skip validation for empty optional fields
+        if (empty($fieldValue) && !$question->required) {
+            return;
+        }
+
+        // Validate email type
+        if ($question->type === 'email' && !empty($fieldValue)) {
+            if (!filter_var($fieldValue, FILTER_VALIDATE_EMAIL)) {
+                $errors[$fieldName] = __('Please enter a valid email address');
+                return;
+            }
+        }
+
+    }
+
+    /**
+     * Process file uploads for career corner form
+     */
+    private function processFileUploads(Request $request, FormStructure $structure, $existingSubmission = null)
+    {
+        // Get all form data (excluding files - files are handled separately)
+        $formData = $request->except(['_token']);
+        
+        // Get all questions used in this structure to identify file type questions
+        $questionIds = $this->extractQuestionIdsFromStructure($structure->loadNestedStructure());
+        
+        // Also check for file uploads in the request that might not be in the structure
+        // (e.g., from nested questions or previous form versions)
+        $allFileFields = [];
+        foreach ($request->allFiles() as $fieldName => $file) {
+            if (strpos($fieldName, 'career_q_') === 0) {
+                $allFileFields[] = $fieldName;
+            }
+        }
+        
+        $questions = Question::whereIn('id', $questionIds)
+            ->where('type', 'file')
+            ->get()
+            ->keyBy('id');
+        
+        // Also get file questions that are in the request but might not be in the structure
+        // Extract question IDs from file field names in the request
+        $requestFileQuestionIds = [];
+        foreach ($allFileFields as $fieldName) {
+            $questionId = str_replace('career_q_', '', $fieldName);
+            if (is_numeric($questionId)) {
+                $requestFileQuestionIds[] = (int)$questionId;
+            }
+        }
+        
+        // Get all file questions (from structure + from request)
+        $allFileQuestionIds = array_unique(array_merge($questionIds, $requestFileQuestionIds));
+        $allFileQuestions = Question::whereIn('id', $allFileQuestionIds)
+            ->where('type', 'file')
+            ->get()
+            ->keyBy('id');
+        
+        // Use all file questions for processing
+        $questions = $allFileQuestions;
+        
+        // Remove file inputs from formData (they're UploadedFile objects, we'll process them separately)
+        foreach ($questions as $questionId => $question) {
+            $fieldName = 'career_q_' . $questionId;
+            if (isset($formData[$fieldName]) && $formData[$fieldName] instanceof \Illuminate\Http\UploadedFile) {
+                unset($formData[$fieldName]);
+            }
+        }
+
+        // Get old file paths from existing submission if updating
+        $oldFiles = [];
+        if ($existingSubmission && $existingSubmission->form_data) {
+            $oldFormData = $existingSubmission->form_data;
+            foreach ($questions as $questionId => $question) {
+                $fieldName = 'career_q_' . $questionId;
+                if (isset($oldFormData[$fieldName]) && !empty($oldFormData[$fieldName])) {
+                    $oldFiles[$fieldName] = $oldFormData[$fieldName];
+                }
+            }
+        }
+
+        // Ensure directory exists (do this once, not in loop)
+        $directory = 'uploads/career-corner';
+        $fullDirectoryPath = storage_path('app/public/' . $directory);
+        if (!File::isDirectory($fullDirectoryPath)) {
+            File::makeDirectory($fullDirectoryPath, 0755, true, true);
+        }
+
+        // Process each file upload
+        // First, process files that are in the questions collection (from structure)
+        // Also process any files in the request that might not be in the questions collection
+        $processedFields = [];
+        foreach ($questions as $questionId => $question) {
+            $fieldName = 'career_q_' . $questionId;
+            $processedFields[] = $fieldName;
+            
+            if ($request->hasFile($fieldName)) {
+                $file = $request->file($fieldName);
+                
+                // Validate file
+                if ($file && $file->isValid()) {
+                    // Generate unique filename
+                    $originalName = $file->getClientOriginalName();
+                    $extension = $file->getClientOriginalExtension();
+                    $fileName = time() . '_' . $questionId . '_' . uniqid() . '.' . $extension;
+                    
+                    // Store file in public storage
+                    $path = $file->storeAs($directory, $fileName, 'public');
+                    
+                    if ($path) {
+                        // Save file path in form data
+                        $formData[$fieldName] = $path;
+                        
+                        // Delete old file if exists
+                        if (isset($oldFiles[$fieldName]) && Storage::disk('public')->exists($oldFiles[$fieldName])) {
+                            Storage::disk('public')->delete($oldFiles[$fieldName]);
+                        }
+                    } else {
+                        // If file upload failed, keep old file or set to null
+                        if (isset($oldFiles[$fieldName])) {
+                            $formData[$fieldName] = $oldFiles[$fieldName];
+                        }
+                    }
+                } else {
+                    // If file is invalid, keep old file or set to null
+                    if (isset($oldFiles[$fieldName])) {
+                        $formData[$fieldName] = $oldFiles[$fieldName];
+                    }
+                }
+            } else {
+                // No new file uploaded - keep existing file if updating
+                if ($existingSubmission && isset($oldFiles[$fieldName])) {
+                    $formData[$fieldName] = $oldFiles[$fieldName];
+                }
+                // Don't unset - keep the field even if empty to preserve form structure
+            }
+        }
+        
+        // Process any file uploads that weren't in the questions collection
+        // (e.g., from nested questions or questions not in current structure)
+        foreach ($allFileFields as $fieldName) {
+            if (!in_array($fieldName, $processedFields) && $request->hasFile($fieldName)) {
+                $file = $request->file($fieldName);
+                
+                if ($file && $file->isValid()) {
+                    // Extract question ID from field name
+                    $questionId = str_replace('career_q_', '', $fieldName);
+                    
+                    // Generate unique filename
+                    $extension = $file->getClientOriginalExtension();
+                    $fileName = time() . '_' . $questionId . '_' . uniqid() . '.' . $extension;
+                    
+                    // Store file in public storage
+                    $path = $file->storeAs($directory, $fileName, 'public');
+                    
+                    if ($path) {
+                        $formData[$fieldName] = $path;
+                        
+                        // Delete old file if exists (for updates)
+                        if ($existingSubmission && $existingSubmission->form_data) {
+                            $oldFormData = $existingSubmission->form_data;
+                            if (isset($oldFormData[$fieldName]) && Storage::disk('public')->exists($oldFormData[$fieldName])) {
+                                Storage::disk('public')->delete($oldFormData[$fieldName]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $formData;
     }
 }

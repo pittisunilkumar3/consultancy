@@ -89,5 +89,106 @@
         ]
     });
 
+    // Handle conditional criteria fields (show/hide based on parent field value)
+    function updateConditionalFields() {
+        $('.conditional-criteria-field').each(function() {
+            const $field = $(this);
+            const dependsOn = $field.data('depends-on');
+            const dependsValue = $field.data('depends-value');
+
+            if (!dependsOn) return;
+
+            let shouldShow = false;
+
+            // Check if parent is a JSON checkbox field (multiple checkboxes with same name pattern)
+            const $jsonCheckboxes = $('input[type="checkbox"][name="criteria_values[' + dependsOn + '][]"]');
+
+            if ($jsonCheckboxes.length > 0) {
+                // Parent is a JSON checkbox field - check if dependsValue is in checked options
+                const checkedValues = [];
+                $jsonCheckboxes.each(function() {
+                    if ($(this).is(':checked')) {
+                        checkedValues.push($(this).val().trim());
+                    }
+                });
+
+                // Check if dependsValue is in the checked values array
+                const normalizedDependsValue = String(dependsValue).trim();
+                shouldShow = checkedValues.some(function(val) {
+                    return String(val).trim() === normalizedDependsValue;
+                });
+            } else {
+                // Parent is a single value field (boolean, select, text, number)
+                let $parentField = $('#criteria_' + dependsOn);
+                let parentValue = '';
+
+                // If not found, try finding by name attribute
+                if (!$parentField.length) {
+                    $parentField = $('input[name="criteria_values[' + dependsOn + ']"], select[name="criteria_values[' + dependsOn + ']"]');
+                }
+
+                if ($parentField.length) {
+                    if ($parentField.is(':checkbox')) {
+                        parentValue = $parentField.is(':checked') ? '1' : '0';
+                    } else if ($parentField.is('select')) {
+                        parentValue = $parentField.val() || '';
+                    } else {
+                        parentValue = $parentField.val() || '';
+                    }
+                }
+
+                // Show/hide based on parent value
+                // Normalize both values to strings for comparison
+                const normalizedParentValue = String(parentValue).trim();
+                const normalizedDependsValue = String(dependsValue).trim();
+                shouldShow = normalizedParentValue === normalizedDependsValue;
+            }
+
+            if (shouldShow) {
+                $field.slideDown(200).show().css('display', ''); // Remove inline display:none
+                // Enable all inputs in the field
+                $field.find('input, select, textarea').not('[type="hidden"]').prop('disabled', false);
+                // Enable required fields
+                $field.find('input[required], select[required], textarea[required]').prop('required', true);
+            } else {
+                $field.slideUp(200).hide();
+                // Clear and disable all inputs
+                $field.find('input, select, textarea').not('[type="hidden"]').val('').prop('disabled', true).prop('required', false);
+            }
+        });
+    }
+
+    // Listen for changes on criteria fields that might have dependents
+    // Handle all input changes (including JSON checkbox arrays)
+    $(document).on('change', 'input[name^="criteria_values["]', function() {
+        updateConditionalFields();
+    });
+
+    // Handle select fields
+    $(document).on('change', 'select[name^="criteria_values["]', function() {
+        updateConditionalFields();
+    });
+
+    // Handle text inputs
+    $(document).on('input change', 'input[type="text"][name^="criteria_values["], input[type="number"][name^="criteria_values["]', function() {
+        updateConditionalFields();
+    });
+
+    // Initialize conditional fields on page load
+    $(document).ready(function() {
+        // Small delay to ensure DOM is ready
+        setTimeout(function() {
+            updateConditionalFields();
+        }, 100);
+    });
+
+    // Also update when form is loaded dynamically (for AJAX forms)
+    $(document).on('DOMNodeInserted', function(e) {
+        if ($(e.target).find('.conditional-criteria-field').length || $(e.target).hasClass('conditional-criteria-field')) {
+            setTimeout(function() {
+                updateConditionalFields();
+            }, 50);
+        }
+    });
 
 })(jQuery)

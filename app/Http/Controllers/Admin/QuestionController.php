@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Question;
 use App\Models\UniversityCriteriaField;
 use App\Models\QuestionCriteriaMapping;
+use App\Models\Country;
 use Illuminate\Http\Request;
 
 class QuestionController extends Controller
@@ -17,7 +18,7 @@ class QuestionController extends Controller
     {
         // server-side datatable response
         if ($request->ajax()) {
-            $data = Question::orderBy('order');
+            $data = Question::orderBy('id', 'DESC');
             return datatables()->of($data)
                 ->addIndexColumn()
                 ->editColumn('required', function ($row) {
@@ -33,7 +34,7 @@ class QuestionController extends Controller
         }
 
         // set sidebar active variables and page title for normal view
-        $questions = Question::orderBy('order')->get();
+        $questions = Question::orderBy('id', 'DESC')->get();
         $criteriaFields = UniversityCriteriaField::where('status', STATUS_ACTIVE)->orderBy('order')->get();
         $showQuestions = 'show';
         $activeQuestion = 'active';
@@ -49,9 +50,11 @@ class QuestionController extends Controller
     {
         $rules = [
             'question' => 'required|string|max:255',
-            'type' => 'required|string|in:text,textarea,number,file,select,radio,checkbox',
+            'type' => 'required|string|in:text,textarea,number,email,file,select,radio,checkbox',
             'order' => 'nullable|integer|min:0',
-            'required' => 'nullable|boolean'
+            'required' => 'nullable|boolean',
+            'placeholder' => 'nullable|string|max:255',
+            'step' => 'nullable|string|max:50'
         ];
 
         // Require options for select/radio/checkbox types
@@ -73,12 +76,18 @@ class QuestionController extends Controller
             }
         }
 
+        // Check if "Use Countries from Database" checkbox was checked
+        $isCountryQuestion = $request->has('use_countries') && $request->input('use_countries') == '1';
+
         $question = Question::create([
             'question' => $request->question,
             'type' => $request->type,
             'order' => $request->order ?? 0,
             'required' => $request->required ? true : false,
-            'options' => $options
+            'options' => $options,
+            'is_country_question' => $isCountryQuestion,
+            'placeholder' => $request->placeholder,
+            'step' => $request->step
         ]);
 
         // Save criteria field mappings
@@ -128,9 +137,11 @@ class QuestionController extends Controller
     {
         $rules = [
             'question' => 'required|string|max:255',
-            'type' => 'required|string|in:text,textarea,number,file,select,radio,checkbox',
+            'type' => 'required|string|in:text,textarea,number,email,file,select,radio,checkbox',
             'order' => 'nullable|integer|min:0',
-            'required' => 'nullable|boolean'
+            'required' => 'nullable|boolean',
+            'placeholder' => 'nullable|string|max:255',
+            'step' => 'nullable|string|max:50'
         ];
 
         // Require options for select/radio/checkbox types
@@ -152,13 +163,19 @@ class QuestionController extends Controller
             }
         }
 
+        // Check if "Use Countries from Database" checkbox was checked
+        $isCountryQuestion = $request->has('use_countries') && $request->input('use_countries') == '1';
+
         $question = Question::findOrFail($id);
         $question->update([
             'question' => $request->question,
             'type' => $request->type,
             'order' => $request->order ?? 0,
             'required' => $request->required ? true : false,
-            'options' => $options
+            'options' => $options,
+            'is_country_question' => $isCountryQuestion,
+            'placeholder' => $request->placeholder,
+            'step' => $request->step
         ]);
 
         // Update criteria field mappings
@@ -199,6 +216,21 @@ class QuestionController extends Controller
         return response()->json([
             'status' => true,
             'message' => __('Question deleted successfully')
+        ]);
+    }
+
+    /**
+     * Fetch countries for use in question options.
+     */
+    public function getCountries()
+    {
+        $countries = Country::where('status', STATUS_ACTIVE)
+            ->orderBy('name', 'asc')
+            ->get(['id', 'name']);
+
+        return response()->json([
+            'status' => true,
+            'data' => $countries
         ]);
     }
 }

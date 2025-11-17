@@ -48,7 +48,11 @@ class UniversityCriteriaFieldController extends Controller
         $data['pageTitle'] = __('University Criteria Fields');
         $data['activeCriteriaFields'] = 'active';
         $data['showQuestions'] = 'show';
-        $data['activeQuestion'] = 'active';
+        
+        // Get all criteria fields for dependency dropdown (exclude current field when editing)
+        $data['allCriteriaFields'] = UniversityCriteriaField::where('status', STATUS_ACTIVE)
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         return view('admin.university-criteria-fields.index', $data);
     }
@@ -64,9 +68,26 @@ class UniversityCriteriaFieldController extends Controller
                 'description' => 'nullable|string',
                 'status' => 'required|integer|in:' . STATUS_ACTIVE . ',' . STATUS_DEACTIVATE,
                 'order' => 'nullable|integer|min:0',
+                'options' => 'nullable|string',
+                'depends_on_criteria_field_id' => 'nullable|exists:university_criteria_fields,id',
+                'depends_on_value' => 'nullable|string|max:255',
+                'is_structured' => 'nullable|boolean',
             ];
 
             $request->validate($rules);
+
+            // Parse options if provided (for JSON type)
+            $options = null;
+            if ($request->filled('options') && $request->type === 'json') {
+                $decoded = json_decode($request->options, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $options = $decoded;
+                } else {
+                    // Try to parse as comma-separated values
+                    $optionsArray = array_map('trim', explode(',', $request->options));
+                    $options = array_filter($optionsArray);
+                }
+            }
 
             $criteriaField = UniversityCriteriaField::create([
                 'name' => $request->name,
@@ -75,6 +96,10 @@ class UniversityCriteriaFieldController extends Controller
                 'description' => $request->description,
                 'status' => $request->status,
                 'order' => $request->order ?? 0,
+                'options' => $options,
+                'depends_on_criteria_field_id' => $request->depends_on_criteria_field_id ?: null,
+                'depends_on_value' => $request->depends_on_value ?: null,
+                'is_structured' => $request->has('is_structured') && $request->is_structured == '1',
             ]);
 
             DB::commit();
@@ -122,9 +147,37 @@ class UniversityCriteriaFieldController extends Controller
                 'description' => 'nullable|string',
                 'status' => 'required|integer|in:' . STATUS_ACTIVE . ',' . STATUS_DEACTIVATE,
                 'order' => 'nullable|integer|min:0',
+                'options' => 'nullable|string',
+                'depends_on_criteria_field_id' => 'nullable|exists:university_criteria_fields,id',
+                'depends_on_value' => 'nullable|string|max:255',
+                'is_structured' => 'nullable|boolean',
             ];
 
             $request->validate($rules);
+
+            // Prevent circular dependencies
+            if ($request->depends_on_criteria_field_id == $id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => __('A field cannot depend on itself')
+                ], 422);
+            }
+
+            // Parse options if provided (for JSON type)
+            $options = null;
+            if ($request->filled('options') && $request->type === 'json') {
+                $decoded = json_decode($request->options, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $options = $decoded;
+                } else {
+                    // Try to parse as comma-separated values
+                    $optionsArray = array_map('trim', explode(',', $request->options));
+                    $options = array_filter($optionsArray);
+                }
+            } elseif ($request->type !== 'json') {
+                // Clear options if type is not JSON
+                $options = null;
+            }
 
             $criteriaField->update([
                 'name' => $request->name,
@@ -133,6 +186,10 @@ class UniversityCriteriaFieldController extends Controller
                 'description' => $request->description,
                 'status' => $request->status,
                 'order' => $request->order ?? 0,
+                'options' => $options,
+                'depends_on_criteria_field_id' => $request->depends_on_criteria_field_id ?: null,
+                'depends_on_value' => $request->depends_on_value ?: null,
+                'is_structured' => $request->has('is_structured') && $request->is_structured == '1',
             ]);
 
             DB::commit();

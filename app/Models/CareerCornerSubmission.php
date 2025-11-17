@@ -114,7 +114,69 @@ class CareerCornerSubmission extends Model
             return true;
         }
 
-        // More detailed comparison could be added here if needed
+        // More detailed comparison: check if question IDs differ
+        $currentQuestionIds = $this->extractQuestionIdsFromStructure($currentStructure);
+        $snapshotQuestionIds = $this->extractQuestionIdsFromStructure($snapshotStructure);
+
+        // Sort arrays for comparison
+        sort($currentQuestionIds);
+        sort($snapshotQuestionIds);
+
+        // If question IDs differ, structure has changed
+        if ($currentQuestionIds !== $snapshotQuestionIds) {
+            return true;
+        }
+
         return false;
+    }
+
+    /**
+     * Extract all question IDs from a structure array
+     */
+    protected function extractQuestionIdsFromStructure(array $structure): array
+    {
+        $questionIds = [];
+
+        foreach ($structure as $element) {
+            if ($element['type'] === 'section' && isset($element['items'])) {
+                // Convert to array if it's a Collection
+                $items = is_array($element['items']) ? $element['items'] : (is_object($element['items']) ? $element['items']->toArray() : []);
+                $questionIds = array_merge($questionIds, $this->extractQuestionIdsFromItems($items));
+            } elseif ($element['type'] === 'item' && isset($element['item'])) {
+                // Convert to array if it's a Collection
+                $item = is_array($element['item']) ? $element['item'] : (is_object($element['item']) ? $element['item']->toArray() : []);
+                $questionIds = array_merge($questionIds, $this->extractQuestionIdsFromItems([$item]));
+            }
+        }
+
+        return array_unique($questionIds);
+    }
+
+    /**
+     * Extract question IDs from items array
+     */
+    protected function extractQuestionIdsFromItems(array $items): array
+    {
+        $questionIds = [];
+
+        foreach ($items as $item) {
+            // Convert to array if it's a Collection or object
+            $itemArray = is_array($item) ? $item : (is_object($item) ? (method_exists($item, 'toArray') ? $item->toArray() : (array)$item) : []);
+            
+            if (isset($itemArray['question_id']) && is_numeric($itemArray['question_id'])) {
+                $questionIds[] = (int)$itemArray['question_id'];
+            }
+
+            // Recursively check nested items
+            if (isset($itemArray['items'])) {
+                // Convert to array if it's a Collection
+                $nestedItems = is_array($itemArray['items']) ? $itemArray['items'] : (is_object($itemArray['items']) ? (method_exists($itemArray['items'], 'toArray') ? $itemArray['items']->toArray() : []) : []);
+                if (!empty($nestedItems)) {
+                    $questionIds = array_merge($questionIds, $this->extractQuestionIdsFromItems($nestedItems));
+                }
+            }
+        }
+
+        return $questionIds;
     }
 }

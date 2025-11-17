@@ -43,6 +43,19 @@ Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'
 Route::get('/email/verify', [VerificationController::class, 'verifyForm'])->middleware(['auth'])->name('verification.notice');
 Route::post('/email/verification-notification', [VerificationController::class, 'resend'])->middleware(['auth'])->name('verification.resend');
 
+// Route to serve career-corner files from storage (fallback for when symlink doesn't work)
+// On production, symlinks usually work, so web server serves files directly (faster)
+// This route acts as a fallback for Windows/localhost where symlinks may not work
+Route::get('storage/uploads/career-corner/{filename}', function ($filename) {
+    $path = storage_path('app/public/uploads/career-corner/' . $filename);
+
+    if (!file_exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path);
+})->where('filename', '.*')->name('career-corner.file.download');
+
 Route::group(['middleware' => ['auth']], function () {
     Route::get('logout', [LoginController::class, 'logout']);
     Route::get('google2fa/authenticate/verify', [GoogleAuthController::class, 'verifyView'])->name('google2fa.authenticate.verify');
