@@ -406,6 +406,7 @@ Route::group(['prefix' => 'questions', 'as' => 'questions.', 'middleware' => 'ca
     Route::get('', [QuestionController::class, 'index'])->name('index');
     Route::get('rag-training', [QuestionController::class, 'ragTraining'])->name('rag-training');
     Route::post('rag-training/upload', [QuestionController::class, 'ragTrainingUpload'])->name('rag-training.upload');
+    Route::get('rag-training/files', [QuestionController::class, 'ragTrainingFiles'])->name('rag-training.files');
     Route::post('store', [QuestionController::class, 'store'])->name('store');
     Route::get('show/{id}', [QuestionController::class, 'show'])->name('show');
     Route::post('update/{id}', [QuestionController::class, 'update'])->name('update');

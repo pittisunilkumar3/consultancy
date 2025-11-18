@@ -8,6 +8,7 @@ use App\Models\UniversityCriteriaField;
 use App\Models\QuestionCriteriaMapping;
 use App\Models\Country;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class QuestionController extends Controller
 {
@@ -68,6 +69,8 @@ class QuestionController extends Controller
         $uploadedFiles = [];
 
         if ($request->hasFile('files')) {
+            $disk = Storage::disk('public');
+
             foreach ($request->file('files') as $file) {
                 $path = $file->store('uploads/rag-training', 'public');
 
@@ -75,6 +78,8 @@ class QuestionController extends Controller
                     'original_name' => $file->getClientOriginalName(),
                     'path' => $path,
                     'url' => asset('storage/' . $path),
+                    'size' => $disk->size($path),
+                    'mime_type' => $disk->mimeType($path),
                 ];
             }
         }
@@ -83,6 +88,31 @@ class QuestionController extends Controller
             'status' => true,
             'message' => __('Files uploaded successfully'),
             'files' => $uploadedFiles,
+        ]);
+    }
+
+    public function ragTrainingFiles()
+    {
+        $directory = 'uploads/rag-training';
+        $disk = Storage::disk('public');
+
+        $files = [];
+
+        if ($disk->exists($directory)) {
+            foreach ($disk->files($directory) as $path) {
+                $files[] = [
+                    'original_name' => basename($path),
+                    'path' => $path,
+                    'url' => asset('storage/' . $path),
+                    'size' => $disk->size($path),
+                    'mime_type' => $disk->mimeType($path),
+                ];
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'files' => $files,
         ]);
     }
 

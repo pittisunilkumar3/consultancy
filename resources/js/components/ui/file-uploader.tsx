@@ -81,11 +81,52 @@ const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => (
   </div>
 );
 
+type UploadedFile = {
+  original_name: string;
+  path: string;
+  url: string;
+  size: number;
+  mime_type: string | null;
+};
+
+const formatFileSize = (bytes: number | null | undefined): string => {
+  if (bytes === undefined || bytes === null || Number.isNaN(bytes)) {
+    return "-";
+  }
+  if (bytes === 0) return "0 B";
+
+  const units = ["B", "KB", "MB", "GB"];
+  const index = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    units.length - 1
+  );
+  const value = bytes / Math.pow(1024, index);
+  return `${value.toFixed(2)} ${units[index]}`;
+};
+
+const getFileTypeLabel = (mimeType: string | null, name: string): string => {
+  if (mimeType) {
+    if (mimeType === "application/pdf") return "PDF";
+    if (mimeType.startsWith("image/")) {
+      return mimeType.replace("image/", "").toUpperCase();
+    }
+    return mimeType.toUpperCase();
+  }
+
+  const parts = name.split(".");
+  if (parts.length > 1) {
+    return parts[parts.length - 1].toUpperCase();
+  }
+
+  return "FILE";
+};
+
 interface FileUploaderProps {
   uploadUrl: string;
+  filesUrl: string;
 }
 
-export const Component: React.FC<FileUploaderProps> = ({ uploadUrl }) => {
+export const Component: React.FC<FileUploaderProps> = ({ uploadUrl, filesUrl }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -94,7 +135,35 @@ export const Component: React.FC<FileUploaderProps> = ({ uploadUrl }) => {
     message: string;
     type: "success" | "error";
   } | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+  const [filesError, setFilesError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!filesUrl) {
+      return;
+    }
+
+    const fetchFiles = async () => {
+      setLoadingFiles(true);
+      setFilesError(null);
+
+      try {
+        const response = await axios.get(filesUrl);
+        const files = (response.data?.files || []) as UploadedFile[];
+        setUploadedFiles(files);
+      } catch (error) {
+        setFilesError("Failed to load existing files");
+      } finally {
+        setLoadingFiles(false);
+      }
+    };
+
+    fetchFiles();
+  }, [filesUrl]);
 
   const handleFiles = (files: FileList) => {
     const fileArr = Array.from(files);
@@ -141,6 +210,52 @@ export const Component: React.FC<FileUploaderProps> = ({ uploadUrl }) => {
     }
   };
 
+  const toggleSelectFile = (path: string) => {
+    setSelectedPaths((prev) =>
+      prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path]
+    );
+  };
+
+  const handleSelectAllVisible = (checked: boolean, visibleFiles: UploadedFile[]) => {
+    if (checked) {
+      const next = Array.from(
+        new Set([...selectedPaths, ...visibleFiles.map((file) => file.path)])
+      );
+      setSelectedPaths(next);
+    } else {
+      const visiblePaths = new Set(visibleFiles.map((file) => file.path));
+      setSelectedPaths((prev) => prev.filter((p) => !visiblePaths.has(p)));
+    }
+  };
+
+  const handleRemoveSelected = () => {
+    if (!selectedPaths.length) return;
+
+    setUploadedFiles((prev) => prev.filter((file) => !selectedPaths.includes(file.path)));
+    setSelectedPaths([]);
+  };
+
+  const handleRemoveSingleFromList = (path: string) => {
+    setUploadedFiles((prev) => prev.filter((file) => file.path !== path));
+    setSelectedPaths((prev) => prev.filter((p) => p !== path));
+  };
+
+  const handleDownloadFile = (file: UploadedFile) => {
+    window.open(file.url, "_blank");
+  };
+
+  const handleDownloadSelected = () => {
+    if (!selectedPaths.length) return;
+
+    const map = new Map(uploadedFiles.map((file) => [file.path, file]));
+    selectedPaths.forEach((path) => {
+      const file = map.get(path);
+      if (file) {
+        window.open(file.url, "_blank");
+      }
+    });
+  };
+
   const handleUpload = async () => {
     if (!uploadUrl || selectedFiles.length === 0) {
       return;
@@ -171,8 +286,11 @@ export const Component: React.FC<FileUploaderProps> = ({ uploadUrl }) => {
       const message =
         (response.data && (response.data.message as string)) ||
         "Files uploaded successfully!";
+      const newFiles = (response.data?.files || []) as UploadedFile[];
+      setUploadedFiles((prev) => [...newFiles, ...prev]);
       setToast({ message, type: "success" });
       setSelectedFiles([]);
+      setSelectedPaths([]);
     } catch (error: any) {
       setProgress(0);
       let message = "Failed to upload files";
@@ -186,6 +304,22 @@ export const Component: React.FC<FileUploaderProps> = ({ uploadUrl }) => {
       setUploading(false);
     }
   };
+
+  const query = search.trim().toLowerCase();
+  const filteredFiles = uploadedFiles.filter((file) => {
+    if (!query) return true;
+
+    const name = file.original_name.toLowerCase();
+    const type = getFileTypeLabel(file.mime_type, file.original_name).toLowerCase();
+
+    return name.includes(query) || type.includes(query);
+  });
+
+  const totalSize = uploadedFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+  const selectedCount = selectedPaths.length;
+  const allVisibleSelected =
+    filteredFiles.length > 0 &&
+    filteredFiles.every((file) => selectedPaths.includes(file.path));
 
   return (
     <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-bg-gradient-to-br tw-from-gray-50 tw-to-gray-200 tw-px-4 tw-w-full">
@@ -280,6 +414,166 @@ export const Component: React.FC<FileUploaderProps> = ({ uploadUrl }) => {
           {uploading && <Loader2 className="tw-animate-spin tw-h-6 tw-w-6 tw-text-white" />}
           {uploading ? "Uploading..." : "Upload"}
         </button>
+      </div>
+      <div className="tw-w-full tw-max-w-4xl tw-mt-8 tw-bg-white tw-rounded-2xl tw-shadow tw-border tw-border-gray-100 tw-p-6">
+        <div className="tw-flex tw-flex-col tw-gap-4">
+          <div className="tw-flex tw-items-center tw-justify-between">
+            <div>
+              <div className="tw-text-sm tw-font-semibold tw-text-gray-900">
+                Files ({uploadedFiles.length})
+              </div>
+              <div className="tw-text-xs tw-text-gray-500">
+                Total: {formatFileSize(totalSize)}
+              </div>
+            </div>
+            <div className="tw-flex tw-items-center tw-gap-2">
+              <input
+                type="text"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by name or type"
+                className="tw-text-xs tw-px-3 tw-py-2 tw-border tw-border-gray-300 tw-rounded-lg tw-shadow-sm tw-w-48 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-gray-400 focus:tw-ring-opacity-40"
+              />
+              <button
+                type="button"
+                onClick={handleButtonClick}
+                className="tw-text-xs tw-px-3 tw-py-2 tw-rounded-lg tw-bg-gray-800 tw-text-white hover:tw-bg-gray-900 tw-transition tw-shadow-sm"
+              >
+                Add files
+              </button>
+              <button
+                type="button"
+                disabled={!uploadedFiles.length}
+                onClick={() => {
+                  setUploadedFiles([]);
+                  setSelectedPaths([]);
+                }}
+                className={`tw-text-xs tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-transition ${
+                  uploadedFiles.length
+                    ? "tw-border-gray-300 tw-text-gray-700 hover:tw-bg-gray-50"
+                    : "tw-border-gray-200 tw-text-gray-400 tw-cursor-not-allowed"
+                }`}
+              >
+                Remove all
+              </button>
+            </div>
+          </div>
+
+          <div className="tw-flex tw-items-center tw-justify-between tw-text-xs tw-text-gray-600">
+            <div className="tw-flex tw-items-center tw-gap-2">
+              <input
+                type="checkbox"
+                className="tw-rounded tw-border-gray-300 tw-text-gray-800 focus:tw-ring-gray-400"
+                checked={allVisibleSelected && filteredFiles.length > 0}
+                onChange={(event) =>
+                  handleSelectAllVisible(event.target.checked, filteredFiles)
+                }
+              />
+              <span>
+                {selectedCount}/{uploadedFiles.length} selected
+              </span>
+            </div>
+            <div className="tw-flex tw-items-center tw-gap-2">
+              <button
+                type="button"
+                disabled={!selectedCount}
+                onClick={handleDownloadSelected}
+                className={`tw-text-xs tw-px-3 tw-py-1.5 tw-rounded-lg tw-border tw-transition ${
+                  selectedCount
+                    ? "tw-border-gray-300 tw-text-gray-700 hover:tw-bg-gray-50"
+                    : "tw-border-gray-200 tw-text-gray-400 tw-cursor-not-allowed"
+                }`}
+              >
+                Download selected
+              </button>
+              <button
+                type="button"
+                disabled={!selectedCount}
+                onClick={handleRemoveSelected}
+                className={`tw-text-xs tw-px-3 tw-py-1.5 tw-rounded-lg tw-border tw-transition ${
+                  selectedCount
+                    ? "tw-border-red-300 tw-text-red-600 hover:tw-bg-red-50"
+                    : "tw-border-gray-200 tw-text-gray-400 tw-cursor-not-allowed"
+                }`}
+              >
+                Remove selected
+              </button>
+            </div>
+          </div>
+
+          <div className="tw-border tw-border-gray-200 tw-rounded-lg tw-overflow-hidden tw-bg-white">
+            {loadingFiles ? (
+              <div className="tw-py-6 tw-text-center tw-text-xs tw-text-gray-500">
+                Loading files...
+              </div>
+            ) : filesError ? (
+              <div className="tw-py-6 tw-text-center tw-text-xs tw-text-red-600">
+                {filesError}
+              </div>
+            ) : !filteredFiles.length ? (
+              <div className="tw-py-6 tw-text-center tw-text-xs tw-text-gray-500">
+                No files found.
+              </div>
+            ) : (
+              <div className="tw-text-xs">
+                <div className="tw-grid tw-grid-cols-[auto,1fr,auto,auto] tw-gap-3 tw-px-3 tw-py-2 tw-bg-gray-50 tw-text-gray-600 tw-font-semibold">
+                  <div className="tw-flex tw-items-center tw-gap-2">
+                    <span className="tw-w-4" />
+                    <span>Name</span>
+                  </div>
+                  <div>Type</div>
+                  <div className="tw-text-right">Size</div>
+                  <div className="tw-text-right">Actions</div>
+                </div>
+                {filteredFiles.map((file) => (
+                  <div
+                    key={file.path}
+                    className="tw-grid tw-grid-cols-[auto,1fr,auto,auto] tw-gap-3 tw-px-3 tw-py-2 tw-border-t tw-border-gray-100 hover:tw-bg-gray-50"
+                  >
+                    <div className="tw-flex tw-items-center tw-gap-2">
+                      <input
+                        type="checkbox"
+                        className="tw-rounded tw-border-gray-300 tw-text-gray-800 focus:tw-ring-gray-400"
+                        checked={selectedPaths.includes(file.path)}
+                        onChange={() => toggleSelectFile(file.path)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadFile(file)}
+                        className="tw-text-left tw-text-gray-900 tw-font-medium tw-truncate hover:tw-text-blue-600 hover:tw-underline"
+                        title={file.original_name}
+                      >
+                        {file.original_name}
+                      </button>
+                    </div>
+                    <div className="tw-flex tw-items-center tw-text-gray-600 tw-truncate">
+                      {getFileTypeLabel(file.mime_type, file.original_name)}
+                    </div>
+                    <div className="tw-flex tw-items-center tw-justify-end tw-text-gray-700">
+                      {formatFileSize(file.size)}
+                    </div>
+                    <div className="tw-flex tw-items-center tw-justify-end tw-gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadFile(file)}
+                        className="tw-text-xs tw-px-2 tw-py-1 tw-rounded-lg tw-border tw-border-gray-300 tw-text-gray-700 hover:tw-bg-gray-50 tw-transition"
+                      >
+                        Open
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSingleFromList(file.path)}
+                        className="tw-text-xs tw-px-2 tw-py-1 tw-rounded-lg tw-border tw-border-red-300 tw-text-red-600 hover:tw-bg-red-50 tw-transition"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
       {toast && (
         <Toast

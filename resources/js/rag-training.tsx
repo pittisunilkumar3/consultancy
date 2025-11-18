@@ -6,6 +6,8 @@ const container = document.getElementById("rag-training-root");
 
 if (container) {
   const root = ReactDOM.createRoot(container);
-  const uploadUrl = (container as HTMLElement).dataset.uploadUrl || "";
-  root.render(<FileUploader uploadUrl={uploadUrl} />);
+  const element = container as HTMLElement;
+  const uploadUrl = element.dataset.uploadUrl || "";
+  const filesUrl = element.dataset.filesUrl || "";
+  root.render(<FileUploader uploadUrl={uploadUrl} filesUrl={filesUrl} />);
 }
