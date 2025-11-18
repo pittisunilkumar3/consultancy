@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import axios from "axios";
 import { X, Loader2, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface FilePreviewProps {
@@ -22,7 +23,7 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, onRemove }) => {
   }, [file]);
 
   return (
-    <div className="tw-flex tw-items-center tw-gap-3 tw-bg-gray-50 tw-rounded-lg tw-p-2 tw-shadow-sm tw-border tw-border-gray-200 tw-mb-2 animate-fade-in">
+    <div className="tw-flex tw-items-center tw-gap-3 tw-bg-gray-50 tw-rounded-lg tw-p-2 tw-shadow-sm tw-border tw-border-gray-200 tw-mb-2 tw-animate-fade-in">
       {previewUrl ? (
         <img
           src={previewUrl}
@@ -57,7 +58,7 @@ interface ToastProps {
 
 const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => (
   <div
-    className={`tw-fixed tw-top-6 tw-right-6 tw-z-50 tw-px-4 tw-py-3 tw-rounded tw-shadow-lg tw-text-white animate-fade-in ${
+    className={`tw-fixed tw-top-6 tw-right-6 tw-z-50 tw-px-4 tw-py-3 tw-rounded tw-shadow-lg tw-text-white tw-animate-fade-in ${
       type === "success" ? "tw-bg-green-600" : "tw-bg-red-600"
     }`}
     role="alert"
@@ -80,7 +81,11 @@ const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => (
   </div>
 );
 
-export const Component: React.FC = () => {
+interface FileUploaderProps {
+  uploadUrl: string;
+}
+
+export const Component: React.FC<FileUploaderProps> = ({ uploadUrl }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -136,28 +141,55 @@ export const Component: React.FC = () => {
     }
   };
 
-  const handleUpload = () => {
-    if (selectedFiles.length === 0) return;
+  const handleUpload = async () => {
+    if (!uploadUrl || selectedFiles.length === 0) {
+      return;
+    }
+
+    const formData = new FormData();
+    selectedFiles.forEach((file) => {
+      formData.append("files[]", file);
+    });
+
     setUploading(true);
     setProgress(0);
 
-    const interval = window.setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          window.clearInterval(interval);
-          setUploading(false);
-          setToast({ message: "Files uploaded successfully!", type: "success" });
-          setSelectedFiles([]);
-          return 100;
-        }
-        return prev + 10;
+    try {
+      const response = await axios.post(uploadUrl, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (event) => {
+          if (event.total) {
+            const percent = Math.round((event.loaded * 100) / event.total);
+            setProgress(percent);
+          }
+        },
       });
-    }, 120);
+
+      setProgress(100);
+      const message =
+        (response.data && (response.data.message as string)) ||
+        "Files uploaded successfully!";
+      setToast({ message, type: "success" });
+      setSelectedFiles([]);
+    } catch (error: any) {
+      setProgress(0);
+      let message = "Failed to upload files";
+
+      if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
+
+      setToast({ message, type: "error" });
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
     <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-bg-gradient-to-br tw-from-gray-50 tw-to-gray-200 tw-px-4 tw-w-full">
-      <div className="tw-bg-white tw-rounded-2xl tw-shadow-xl tw-p-10 tw-w-full tw-max-w-md tw-border tw-border-gray-100 animate-fade-in">
+      <div className="tw-bg-white tw-rounded-2xl tw-shadow-xl tw-p-10 tw-w-full tw-max-w-md tw-border tw-border-gray-100 tw-animate-fade-in">
         <h1 className="tw-text-3xl tw-font-bold tw-mb-8 tw-text-center tw-text-gray-900 tw-tracking-tight">
           Upload Files
         </h1>
@@ -227,7 +259,7 @@ export const Component: React.FC = () => {
           </div>
         )}
         {uploading && (
-          <div className="tw-w-full tw-bg-gray-200 tw-rounded-full tw-h-3 tw-mb-4 tw-overflow-hidden animate-fade-in">
+          <div className="tw-w-full tw-bg-gray-200 tw-rounded-full tw-h-3 tw-mb-4 tw-overflow-hidden tw-animate-fade-in">
             <div
               className="tw-bg-green-500 tw-h-3 tw-rounded-full tw-transition-all tw-duration-300"
               style={{ width: `${progress}%` }}

@@ -56,6 +56,37 @@ class QuestionController extends Controller
     }
 
     /**
+     * Handle RAG Training file uploads.
+     */
+    public function ragTrainingUpload(Request $request)
+    {
+        $request->validate([
+            'files' => 'required',
+            'files.*' => 'file|max:5120', // 5MB per file
+        ]);
+
+        $uploadedFiles = [];
+
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $path = $file->store('uploads/rag-training', 'public');
+
+                $uploadedFiles[] = [
+                    'original_name' => $file->getClientOriginalName(),
+                    'path' => $path,
+                    'url' => asset('storage/' . $path),
+                ];
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => __('Files uploaded successfully'),
+            'files' => $uploadedFiles,
+        ]);
+    }
+
+    /**
      * Store a newly created question.
      */
     public function store(Request $request)

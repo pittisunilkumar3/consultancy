@@ -15,7 +15,7 @@
 
     <div class="p-sm-30 p-15">
         <div class="p-sm-25 p-15 bd-one bd-c-stroke bd-ra-10 bg-white">
-            <div id="rag-training-root"></div>
+            <div id="rag-training-root" data-upload-url="{{ route('admin.questions.rag-training.upload') }}"></div>
         </div>
     </div>
 @endsection
