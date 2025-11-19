@@ -19,6 +19,8 @@
                 id="rag-training-root"
                 data-upload-url="{{ route('admin.questions.rag-training.upload') }}"
                 data-files-url="{{ route('admin.questions.rag-training.files') }}"
+                data-download-url="{{ route('admin.questions.rag-training.download') }}"
+                data-zip-download-url="{{ route('admin.questions.rag-training.download-multiple') }}"
             ></div>
         </div>
     </div>

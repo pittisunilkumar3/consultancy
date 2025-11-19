@@ -124,9 +124,16 @@ const getFileTypeLabel = (mimeType: string | null, name: string): string => {
 interface FileUploaderProps {
   uploadUrl: string;
   filesUrl: string;
+  downloadUrl: string;
+  zipDownloadUrl: string;
 }
 
-export const Component: React.FC<FileUploaderProps> = ({ uploadUrl, filesUrl }) => {
+export const Component: React.FC<FileUploaderProps> = ({
+  uploadUrl,
+  filesUrl,
+  downloadUrl,
+  zipDownloadUrl,
+}) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -240,20 +247,45 @@ export const Component: React.FC<FileUploaderProps> = ({ uploadUrl, filesUrl }) 
     setSelectedPaths((prev) => prev.filter((p) => p !== path));
   };
 
-  const handleDownloadFile = (file: UploadedFile) => {
-    window.open(file.url, "_blank");
+  const handleDownloadFile = (file: UploadedFile, options?: { download?: boolean }) => {
+    if (!downloadUrl) {
+      return;
+    }
+
+    const params = new URLSearchParams();
+    params.set("path", file.path);
+    if (options?.download) {
+      params.set("download", "1");
+    }
+
+    const url = `${downloadUrl}?${params.toString()}`;
+    window.open(url, "_blank");
   };
 
   const handleDownloadSelected = () => {
     if (!selectedPaths.length) return;
+    if (!zipDownloadUrl) return;
 
-    const map = new Map(uploadedFiles.map((file) => [file.path, file]));
-    selectedPaths.forEach((path) => {
-      const file = map.get(path);
-      if (file) {
-        window.open(file.url, "_blank");
-      }
-    });
+    axios
+      .post(
+        zipDownloadUrl,
+        { paths: selectedPaths },
+        { responseType: "blob" }
+      )
+      .then((response) => {
+        const blob = new Blob([response.data], { type: "application/zip" });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "rag-training-files.zip";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(() => {
+        setToast({ message: "Failed to download selected files", type: "error" });
+      });
   };
 
   const handleUpload = async () => {
@@ -322,9 +354,9 @@ export const Component: React.FC<FileUploaderProps> = ({ uploadUrl, filesUrl }) 
     filteredFiles.every((file) => selectedPaths.includes(file.path));
 
   return (
-    <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-bg-gradient-to-br tw-from-gray-50 tw-to-gray-200 tw-px-4 tw-w-full">
-      <div className="tw-bg-white tw-rounded-2xl tw-shadow-xl tw-p-10 tw-w-full tw-max-w-md tw-border tw-border-gray-100 tw-animate-fade-in">
-        <h1 className="tw-text-3xl tw-font-bold tw-mb-8 tw-text-center tw-text-gray-900 tw-tracking-tight">
+    <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full tw-max-w-4xl tw-mx-auto">
+      <div className="tw-bg-white tw-rounded-2xl tw-shadow tw-p-6 tw-w-full tw-border tw-border-gray-100 tw-animate-fade-in">
+        <h1 className="tw-text-2xl tw-font-bold tw-mb-4 tw-text-center tw-text-gray-900 tw-tracking-tight">
           Upload Files
         </h1>
         <input
@@ -415,7 +447,7 @@ export const Component: React.FC<FileUploaderProps> = ({ uploadUrl, filesUrl }) 
           {uploading ? "Uploading..." : "Upload"}
         </button>
       </div>
-      <div className="tw-w-full tw-max-w-4xl tw-mt-8 tw-bg-white tw-rounded-2xl tw-shadow tw-border tw-border-gray-100 tw-p-6">
+      <div className="tw-w-full tw-bg-white tw-rounded-2xl tw-shadow tw-border tw-border-gray-100 tw-p-6">
         <div className="tw-flex tw-flex-col tw-gap-4">
           <div className="tw-flex tw-items-center tw-justify-between">
             <div>
@@ -516,7 +548,7 @@ export const Component: React.FC<FileUploaderProps> = ({ uploadUrl, filesUrl }) 
               </div>
             ) : (
               <div className="tw-text-xs">
-                <div className="tw-grid tw-grid-cols-[auto,1fr,auto,auto] tw-gap-3 tw-px-3 tw-py-2 tw-bg-gray-50 tw-text-gray-600 tw-font-semibold">
+                <div className="tw-grid tw-grid-cols-[minmax(0,2.5fr),minmax(0,1.2fr),minmax(0,0.9fr),minmax(0,1fr)] tw-gap-4 tw-px-3 tw-py-2 tw-bg-gray-50 tw-text-gray-600 tw-font-semibold">
                   <div className="tw-flex tw-items-center tw-gap-2">
                     <span className="tw-w-4" />
                     <span>Name</span>
@@ -528,7 +560,7 @@ export const Component: React.FC<FileUploaderProps> = ({ uploadUrl, filesUrl }) 
                 {filteredFiles.map((file) => (
                   <div
                     key={file.path}
-                    className="tw-grid tw-grid-cols-[auto,1fr,auto,auto] tw-gap-3 tw-px-3 tw-py-2 tw-border-t tw-border-gray-100 hover:tw-bg-gray-50"
+                    className="tw-grid tw-grid-cols-[minmax(0,2.5fr),minmax(0,1.2fr),minmax(0,0.9fr),minmax(0,1fr)] tw-gap-4 tw-px-3 tw-py-2 tw-border-t tw-border-gray-100 hover:tw-bg-gray-50"
                   >
                     <div className="tw-flex tw-items-center tw-gap-2">
                       <input

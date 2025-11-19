@@ -9,5 +9,14 @@ if (container) {
   const element = container as HTMLElement;
   const uploadUrl = element.dataset.uploadUrl || "";
   const filesUrl = element.dataset.filesUrl || "";
-  root.render(<FileUploader uploadUrl={uploadUrl} filesUrl={filesUrl} />);
+  const downloadUrl = element.dataset.downloadUrl || "";
+  const zipDownloadUrl = element.dataset.zipDownloadUrl || "";
+  root.render(
+    <FileUploader
+      uploadUrl={uploadUrl}
+      filesUrl={filesUrl}
+      downloadUrl={downloadUrl}
+      zipDownloadUrl={zipDownloadUrl}
+    />
+  );
 }

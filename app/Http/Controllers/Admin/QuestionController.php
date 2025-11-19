@@ -9,6 +9,7 @@ use App\Models\QuestionCriteriaMapping;
 use App\Models\Country;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use ZipArchive;
 
 class QuestionController extends Controller
 {
@@ -77,7 +78,7 @@ class QuestionController extends Controller
                 $uploadedFiles[] = [
                     'original_name' => $file->getClientOriginalName(),
                     'path' => $path,
-                    'url' => asset('storage/' . $path),
+                    'url' => $disk->url($path),
                     'size' => $disk->size($path),
                     'mime_type' => $disk->mimeType($path),
                 ];
@@ -103,7 +104,7 @@ class QuestionController extends Controller
                 $files[] = [
                     'original_name' => basename($path),
                     'path' => $path,
-                    'url' => asset('storage/' . $path),
+                    'url' => $disk->url($path),
                     'size' => $disk->size($path),
                     'mime_type' => $disk->mimeType($path),
                 ];
@@ -114,6 +115,78 @@ class QuestionController extends Controller
             'status' => true,
             'files' => $files,
         ]);
+    }
+
+    public function ragTrainingDownload(Request $request)
+    {
+        $path = $request->query('path');
+
+        if (!$path) {
+            abort(404);
+        }
+
+        $disk = Storage::disk('public');
+
+        if (!$disk->exists($path)) {
+            abort(404);
+        }
+
+        $fileName = basename($path);
+
+        if ($request->boolean('download')) {
+            return $disk->download($path, $fileName);
+        }
+
+        $absolutePath = $disk->path($path);
+        $mimeType = $disk->mimeType($path) ?: 'application/octet-stream';
+
+        return response()->file($absolutePath, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . $fileName . '"',
+        ]);
+    }
+
+    public function ragTrainingDownloadMultiple(Request $request)
+    {
+        $paths = $request->input('paths', []);
+
+        if (!is_array($paths) || empty($paths)) {
+            abort(400, 'No files selected');
+        }
+
+        $disk = Storage::disk('public');
+
+        $zipDirectory = storage_path('app/temp');
+        if (!is_dir($zipDirectory)) {
+            mkdir($zipDirectory, 0775, true);
+        }
+
+        $zipFileName = 'rag-training-files-' . date('Ymd-His') . '.zip';
+        $zipPath = $zipDirectory . DIRECTORY_SEPARATOR . $zipFileName;
+
+        $zip = new ZipArchive();
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            abort(500, 'Unable to create ZIP archive');
+        }
+
+        foreach ($paths as $path) {
+            if (!is_string($path) || !$disk->exists($path)) {
+                continue;
+            }
+
+            $absolutePath = $disk->path($path);
+            $zip->addFile($absolutePath, basename($path));
+        }
+
+        $zip->close();
+
+        if (!file_exists($zipPath)) {
+            abort(500, 'ZIP archive not found');
+        }
+
+        return response()->download($zipPath, $zipFileName, [
+            'Content-Type' => 'application/zip',
+        ])->deleteFileAfterSend(true);
     }
 
     /**
