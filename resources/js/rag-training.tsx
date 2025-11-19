@@ -11,12 +11,14 @@ if (container) {
   const filesUrl = element.dataset.filesUrl || "";
   const downloadUrl = element.dataset.downloadUrl || "";
   const zipDownloadUrl = element.dataset.zipDownloadUrl || "";
+  const deleteUrl = element.dataset.deleteUrl || "";
   root.render(
     <FileUploader
       uploadUrl={uploadUrl}
       filesUrl={filesUrl}
       downloadUrl={downloadUrl}
       zipDownloadUrl={zipDownloadUrl}
+      deleteUrl={deleteUrl}
     />
   );
 }

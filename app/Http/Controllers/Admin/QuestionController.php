@@ -71,12 +71,31 @@ class QuestionController extends Controller
 
         if ($request->hasFile('files')) {
             $disk = Storage::disk('public');
+            $directory = 'uploads/rag-training';
 
             foreach ($request->file('files') as $file) {
-                $path = $file->store('uploads/rag-training', 'public');
+                $originalName = $file->getClientOriginalName();
+                $storedName = $originalName;
+
+                // Ensure we don't overwrite an existing file with the same name
+                if ($disk->exists($directory . '/' . $storedName)) {
+                    $name = pathinfo($originalName, PATHINFO_FILENAME);
+                    $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+                    $counter = 1;
+
+                    do {
+                        $suffix = ' (' . $counter . ')';
+                        $storedName = $extension
+                            ? $name . $suffix . '.' . $extension
+                            : $name . $suffix;
+                        $counter++;
+                    } while ($disk->exists($directory . '/' . $storedName));
+                }
+
+                $path = $file->storeAs($directory, $storedName, 'public');
 
                 $uploadedFiles[] = [
-                    'original_name' => $file->getClientOriginalName(),
+                    'original_name' => $storedName,
                     'path' => $path,
                     'url' => $disk->url($path),
                     'size' => $disk->size($path),
@@ -187,6 +206,42 @@ class QuestionController extends Controller
         return response()->download($zipPath, $zipFileName, [
             'Content-Type' => 'application/zip',
         ])->deleteFileAfterSend(true);
+    }
+
+    public function ragTrainingDelete(Request $request)
+    {
+        $paths = $request->input('paths', []);
+
+        if (!is_array($paths) || empty($paths)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No files specified for deletion.',
+            ], 422);
+        }
+
+        $disk = Storage::disk('public');
+        $deleted = [];
+        $notFound = [];
+
+        foreach ($paths as $path) {
+            if (!is_string($path)) {
+                continue;
+            }
+
+            if ($disk->exists($path)) {
+                if ($disk->delete($path)) {
+                    $deleted[] = $path;
+                }
+            } else {
+                $notFound[] = $path;
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'deleted' => $deleted,
+            'not_found' => $notFound,
+        ]);
     }
 
     /**

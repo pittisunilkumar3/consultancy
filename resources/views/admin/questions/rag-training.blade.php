@@ -21,6 +21,7 @@
                 data-files-url="{{ route('admin.questions.rag-training.files') }}"
                 data-download-url="{{ route('admin.questions.rag-training.download') }}"
                 data-zip-download-url="{{ route('admin.questions.rag-training.download-multiple') }}"
+                data-delete-url="{{ route('admin.questions.rag-training.delete') }}"
             ></div>
         </div>
     </div>

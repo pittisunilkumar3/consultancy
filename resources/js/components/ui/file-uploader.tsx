@@ -126,6 +126,7 @@ interface FileUploaderProps {
   filesUrl: string;
   downloadUrl: string;
   zipDownloadUrl: string;
+  deleteUrl: string;
 }
 
 export const Component: React.FC<FileUploaderProps> = ({
@@ -133,6 +134,7 @@ export const Component: React.FC<FileUploaderProps> = ({
   filesUrl,
   downloadUrl,
   zipDownloadUrl,
+  deleteUrl,
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -147,6 +149,12 @@ export const Component: React.FC<FileUploaderProps> = ({
   const [filesError, setFilesError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    title: string;
+    message: string;
+    paths: string[];
+  } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -235,16 +243,60 @@ export const Component: React.FC<FileUploaderProps> = ({
     }
   };
 
-  const handleRemoveSelected = () => {
-    if (!selectedPaths.length) return;
+  const deletePathsOnServer = async (paths: string[]) => {
+    if (!deleteUrl || !paths.length) return;
 
-    setUploadedFiles((prev) => prev.filter((file) => !selectedPaths.includes(file.path)));
-    setSelectedPaths([]);
+    await axios.post(deleteUrl, { paths });
   };
 
-  const handleRemoveSingleFromList = (path: string) => {
-    setUploadedFiles((prev) => prev.filter((file) => file.path !== path));
-    setSelectedPaths((prev) => prev.filter((p) => p !== path));
+  const openDeleteSelectedDialog = () => {
+    if (!selectedPaths.length) return;
+
+    const count = selectedPaths.length;
+    setDeleteDialog({
+      title: "Delete selected files",
+      message: `Are you sure you want to delete ${count} selected file${
+        count > 1 ? "s" : ""
+      }? This cannot be undone.`,
+      paths: [...selectedPaths],
+    });
+  };
+
+  const openDeleteSingleDialog = (file: UploadedFile) => {
+    setDeleteDialog({
+      title: "Delete file",
+      message: `Are you sure you want to delete "${file.original_name}"? This cannot be undone.`,
+      paths: [file.path],
+    });
+  };
+
+  const openDeleteAllDialog = () => {
+    const allPaths = uploadedFiles.map((file) => file.path);
+    if (!allPaths.length) return;
+
+    setDeleteDialog({
+      title: "Delete all files",
+      message: `Are you sure you want to delete all ${allPaths.length} files? This cannot be undone.`,
+      paths: allPaths,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteDialog) return;
+
+    const paths = deleteDialog.paths;
+    setDeleteLoading(true);
+
+    try {
+      await deletePathsOnServer(paths);
+      setUploadedFiles((prev) => prev.filter((file) => !paths.includes(file.path)));
+      setSelectedPaths((prev) => prev.filter((p) => !paths.includes(p)));
+      setDeleteDialog(null);
+    } catch (error) {
+      setToast({ message: "Failed to delete files", type: "error" });
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handleDownloadFile = (file: UploadedFile, options?: { download?: boolean }) => {
@@ -356,7 +408,7 @@ export const Component: React.FC<FileUploaderProps> = ({
   return (
     <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full tw-max-w-4xl tw-mx-auto">
       <div className="tw-bg-white tw-rounded-2xl tw-shadow tw-p-6 tw-w-full tw-border tw-border-gray-100 tw-animate-fade-in">
-        <h1 className="tw-text-2xl tw-font-bold tw-mb-4 tw-text-center tw-text-gray-900 tw-tracking-tight">
+        <h1 className="tw-text-3xl tw-font-bold tw-mb-4 tw-text-center tw-text-gray-900 tw-tracking-tight">
           Upload Files
         </h1>
         <input
@@ -476,10 +528,7 @@ export const Component: React.FC<FileUploaderProps> = ({
               <button
                 type="button"
                 disabled={!uploadedFiles.length}
-                onClick={() => {
-                  setUploadedFiles([]);
-                  setSelectedPaths([]);
-                }}
+                onClick={openDeleteAllDialog}
                 className={`tw-text-xs tw-px-3 tw-py-2 tw-rounded-lg tw-border tw-transition ${
                   uploadedFiles.length
                     ? "tw-border-gray-300 tw-text-gray-700 hover:tw-bg-gray-50"
@@ -521,7 +570,7 @@ export const Component: React.FC<FileUploaderProps> = ({
               <button
                 type="button"
                 disabled={!selectedCount}
-                onClick={handleRemoveSelected}
+                onClick={openDeleteSelectedDialog}
                 className={`tw-text-xs tw-px-3 tw-py-1.5 tw-rounded-lg tw-border tw-transition ${
                   selectedCount
                     ? "tw-border-red-300 tw-text-red-600 hover:tw-bg-red-50"
@@ -594,7 +643,7 @@ export const Component: React.FC<FileUploaderProps> = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleRemoveSingleFromList(file.path)}
+                        onClick={() => openDeleteSingleDialog(file)}
                         className="tw-text-xs tw-px-2 tw-py-1 tw-rounded-lg tw-border tw-border-red-300 tw-text-red-600 hover:tw-bg-red-50 tw-transition"
                       >
                         Remove
@@ -613,6 +662,36 @@ export const Component: React.FC<FileUploaderProps> = ({
           type={toast.type}
           onClose={() => setToast(null)}
         />
+      )}
+      {deleteDialog && (
+        <div className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-black/40 tw-z-40">
+          <div className="tw-bg-white tw-rounded-xl tw-shadow-xl tw-w-full tw-max-w-sm tw-p-5 tw-border tw-border-gray-100">
+            <h2 className="tw-text-sm tw-font-semibold tw-text-gray-900 tw-mb-2">
+              {deleteDialog.title}
+            </h2>
+            <p className="tw-text-xs tw-text-gray-600 tw-mb-4">
+              {deleteDialog.message}
+            </p>
+            <div className="tw-flex tw-justify-end tw-gap-2">
+              <button
+                type="button"
+                onClick={() => !deleteLoading && setDeleteDialog(null)}
+                className="tw-text-xs tw-px-3 tw-py-1.5 tw-rounded-lg tw-border tw-border-gray-300 tw-text-gray-700 hover:tw-bg-gray-50 tw-transition"
+                disabled={deleteLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={deleteLoading}
+                className="tw-text-xs tw-px-3 tw-py-1.5 tw-rounded-lg tw-border tw-border-red-300 tw-text-red-600 hover:tw-bg-red-50 tw-transition"
+              >
+                {deleteLoading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -409,6 +409,7 @@ Route::group(['prefix' => 'questions', 'as' => 'questions.', 'middleware' => 'ca
     Route::get('rag-training/files', [QuestionController::class, 'ragTrainingFiles'])->name('rag-training.files');
     Route::get('rag-training/download', [QuestionController::class, 'ragTrainingDownload'])->name('rag-training.download');
     Route::post('rag-training/download-multiple', [QuestionController::class, 'ragTrainingDownloadMultiple'])->name('rag-training.download-multiple');
+    Route::post('rag-training/delete', [QuestionController::class, 'ragTrainingDelete'])->name('rag-training.delete');
     Route::post('store', [QuestionController::class, 'store'])->name('store');
     Route::get('show/{id}', [QuestionController::class, 'show'])->name('show');
     Route::post('update/{id}', [QuestionController::class, 'update'])->name('update');
