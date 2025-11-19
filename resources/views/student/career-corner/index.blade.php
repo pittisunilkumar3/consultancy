@@ -660,6 +660,9 @@
 @section('content')
     <div class="px-sm-30 p-15 bd-b-one bd-c-stroke-2 d-flex justify-content-between align-items-center">
         <h4 class="fs-24 fw-600 lh-34 text-black-2">{{ __('Career Corner') }}</h4>
+        <button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1" id="careerAiChatBtn">
+            <i class="fa-solid fa-robot me-1"></i>{{ __('Chat with AI') }}
+        </button>
     </div>
     <div class="p-sm-30 p-15">
         @if(isset($formStructure) && $formStructure && isset($formData) && !empty($formData))
