@@ -7,8 +7,12 @@
 @section('content')
     <div class="px-sm-30 p-15 bd-b-one bd-c-stroke-2 d-flex justify-content-between align-items-center">
         <h4 class="fs-18 fw-700 lh-24 text-title-text">{{ $pageTitle }}</h4>
-        <button data-bs-toggle="modal" data-bs-target="#add-modal" class="flipBtn sf-flipBtn-primary flex-shrink-0">
-            + {{ __('Add Question') }}</button>
+        <div class="d-flex align-items-center g-10">
+            <a href="{{ route('admin.questions.rag-training') }}" class="flipBtn sf-flipBtn-primary flex-shrink-0">
+                {{ __('RAG Training') }}</a>
+            <button data-bs-toggle="modal" data-bs-target="#add-modal" class="flipBtn sf-flipBtn-primary flex-shrink-0">
+                + {{ __('Add Question') }}</button>
+        </div>
     </div>
 
     <div class="p-sm-30 p-15">
