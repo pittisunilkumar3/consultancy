@@ -1269,7 +1269,7 @@
                 @endforeach
 
                 {{-- Navigation buttons (only shown in step mode) --}}
-                <div class="career-form-navigation" id="careerFormNavigation" style="{{ (isset($submission) && $submission) ? 'display: none;' : '' }}">
+                <div class="career-form-navigation" id="careerFormNavigation" @if(isset($submission) && $submission) style="display:none;" @endif>
                     <div class="career-form-navigation-buttons">
                         <button type="button" class="career-form-nav-btn career-form-nav-btn-prev" id="careerFormPrevBtn" disabled>
                             <i class="fa-solid fa-arrow-left"></i>
@@ -1350,7 +1350,7 @@
                 // File change handler - no logging needed
             });
             // Track if form is in readonly mode
-            let isReadonly = {{ isset($submission) && $submission ? 'true' : 'false' }};
+            let isReadonly = "{{ isset($submission) && $submission ? 'true' : 'false' }}" === "true";
 
             // Step-by-step navigation variables
             let stepNavigation = {
@@ -1660,7 +1660,8 @@
                     if (isRequired) {
                         let isValid = false;
                         let $fieldToValidate = null;
-                        let errorMessage = '{{ __('Please answer this question before proceeding') }}';
+                        let errorMessage = `{{ __('Please answer this question before proceeding') }}`;
+
 
                         // Validate based on question type
                         if (questionType === 'radio') {
@@ -1874,7 +1875,7 @@
 
                         if (nestedHasErrors) {
                             if (typeof toastr !== 'undefined') {
-                                toastr.error('{{ __('Please answer all required nested questions before proceeding') }}');
+                                toastr.error(`{{ __('Please answer all required nested questions before proceeding') }}`);
                             }
                             return;
                         }
@@ -2343,7 +2344,7 @@
                         if (questionType === 'email' && fieldValue) {
                             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                             if (!emailRegex.test(fieldValue.trim())) {
-                                const errorMsg = '{{ __('Please enter a valid email address') }}';
+                                const errorMsg = `{{ __('Please enter a valid email address') }}`;
                                 if ($field[0] && $field[0].setCustomValidity) {
                                     $field[0].setCustomValidity(errorMsg);
                                 }
@@ -2394,7 +2395,7 @@
                             if (!firstRequiredError) {
                                 firstRequiredError = {
                                     field: $field,
-                                    message: '{{ __('This field is required') }}'
+                                    message: `{{ __('This field is required') }}`
                                 };
                                 }
                             }
@@ -2471,7 +2472,7 @@
                     // Show loading state
                     const $btn = $(this).find('button[type="submit"]');
                     const originalHtml = $btn.html();
-                    $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>{{ __('Submitting...') }}');
+                    $btn.prop('disabled', true).html(`<i class="fa-solid fa-spinner fa-spin me-2"></i>{{ __('Submitting...') }}`);
 
                     // Collect form data, excluding hidden nested questions
                     const formData = new FormData();
@@ -2597,9 +2598,9 @@
                         success: function(response) {
                             if (response.status) {
                                 if (typeof toastr !== 'undefined') {
-                                    toastr.success(response.message || '{{ __('Form submitted successfully!') }}');
+                                    toastr.success(response.message || `{{ __('Form submitted successfully!') }}`);
                                 } else {
-                                    alert(response.message || '{{ __('Form submitted successfully!') }}');
+                                    alert(response.message || `{{ __('Form submitted successfully!') }}`);
                                 }
 
                                 // Refresh matching universities after submission
@@ -2611,15 +2612,15 @@
                                 }, 1500);
                             } else {
                                 if (typeof toastr !== 'undefined') {
-                                    toastr.error(response.message || '{{ __('Error submitting form') }}');
+                                    toastr.error(response.message || `{{ __('Error submitting form') }}`);
                                 } else {
-                                    alert(response.message || '{{ __('Error submitting form') }}');
+                                    alert(response.message || `{{ __('Error submitting form') }}`);
                                 }
                             }
                             $btn.prop('disabled', false).html(originalHtml);
                         },
                         error: function(xhr) {
-                            let errorMessage = '{{ __('Error submitting form. Please try again.') }}';
+                            let errorMessage = `{{ __('Error submitting form. Please try again.') }}`;
 
                             if (xhr.responseJSON) {
                                 if (xhr.responseJSON.message) {
@@ -2662,12 +2663,12 @@
                                         errorMessage = errorMessages[0];
                                     }
                             } else if (xhr.status === 422) {
-                                errorMessage = '{{ __('Validation error. Please check your inputs.') }}';
+                                errorMessage = `{{ __('Validation error. Please check your inputs.') }}`;
                                 }
                             } else if (xhr.status === 401) {
-                                errorMessage = '{{ __('Please login to submit the form') }}';
+                                errorMessage = `{{ __('Please login to submit the form') }}`;
                             } else if (xhr.status === 405) {
-                                errorMessage = '{{ __('Method not allowed. Please refresh the page and try again.') }}';
+                                errorMessage = `{{ __('Method not allowed. Please refresh the page and try again.') }}`;
                             }
 
                             if (typeof toastr !== 'undefined') {
@@ -2684,14 +2685,14 @@
             // Change Preferences button handler
             $('#changePreferencesBtn').on('click', function() {
                 Swal.fire({
-                    title: '{{ __('Edit Form') }}',
-                    text: '{{ __('Are you sure you want to edit your submitted form?') }}',
+                    title: `{{ __('Edit Form') }}`,
+                    text: `{{ __('Are you sure you want to edit your submitted form?') }}`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '{{ __('Yes, Edit It') }}',
-                    cancelButtonText: '{{ __('Cancel') }}'
+                    confirmButtonText: `{{ __('Yes, Edit It') }}`,
+                    cancelButtonText: `{{ __('Cancel') }}`
                 }).then((result) => {
                     if (result.isConfirmed || result.value) {
                         makeFormEditable();
@@ -2702,14 +2703,14 @@
             // Cancel Edit button handler
             $('#cancelEditBtn').on('click', function() {
                 Swal.fire({
-                    title: '{{ __('Cancel Editing') }}',
-                    text: '{{ __('Are you sure you want to cancel editing? Any unsaved changes will be lost.') }}',
+                    title: `{{ __('Cancel Editing') }}`,
+                    text: `{{ __('Are you sure you want to cancel editing? Any unsaved changes will be lost.') }}`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#d33',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '{{ __('Yes, Cancel') }}',
-                    cancelButtonText: '{{ __('No, Continue Editing') }}'
+                    confirmButtonText: `{{ __('Yes, Cancel') }}`,
+                    cancelButtonText: `{{ __('No, Continue Editing') }}`
                 }).then((result) => {
                     if (result.isConfirmed || result.value) {
                         revertToReadonlyMode();
