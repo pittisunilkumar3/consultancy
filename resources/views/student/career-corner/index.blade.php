@@ -1725,9 +1725,19 @@
                                 // Remove existing error message
                                 $question.find('.career-form-error-message').remove();
 
-                                // Add error message
+                                // Add error message after the appropriate container (group for radio/checkbox)
+                                let $targetElement = $fieldToValidate;
+                                const $checkboxGroup = $fieldToValidate.closest('.career-form-checkbox-group');
+                                const $radioGroup = $fieldToValidate.closest('.career-form-radio-group');
+
+                                if ($checkboxGroup.length) {
+                                    $targetElement = $checkboxGroup;
+                                } else if ($radioGroup.length) {
+                                    $targetElement = $radioGroup;
+                                }
+
                                 const $errorMsg = $('<div class="career-form-error-message">' + errorMessage + '</div>');
-                                $fieldToValidate.after($errorMsg);
+                                $targetElement.after($errorMsg);
                             }
 
                             if (typeof toastr !== 'undefined') {
@@ -1817,65 +1827,134 @@
                     }
 
                     // Validate nested questions if they are visible
-                    const $visibleNestedContainer = $question.siblings('.career-form-nested-questions.show, .career-form-nested-questions.step-active').first();
-                    if ($visibleNestedContainer.length > 0) {
-                        let nestedHasErrors = false;
-                        $visibleNestedContainer.find('.career-form-question').each(function() {
-                            const $nestedQ = $(this);
-                            const nestedIsRequired = $nestedQ.data('question-required') === '1' || $nestedQ.data('question-required') === 1;
-                            const nestedType = $nestedQ.data('question-type');
+                    const questionIdForNested = $question.data('question-id');
+                    let $visibleNestedContainers = $();
 
-                            if (nestedIsRequired) {
-                                let nestedIsValid = false;
+                    if (questionIdForNested) {
+                        // Use the same helper used elsewhere to locate nested containers for this parent question
+                        const $allNestedForParent = findNestedContainers($question, questionIdForNested);
 
-                                if (nestedType === 'radio') {
-                                    const $radioInputs = $nestedQ.find('input[type="radio"]');
-                                    if ($radioInputs.length > 0) {
-                                        const fieldName = $radioInputs.first().attr('name');
-                                        nestedIsValid = $nestedQ.find('input[type="radio"][name="' + fieldName + '"]:checked').length > 0;
-                                    }
-                                } else if (nestedType === 'checkbox') {
-                                    const $checkboxInputs = $nestedQ.find('input[type="checkbox"]');
-                                    if ($checkboxInputs.length > 0) {
-                                        const fieldName = $checkboxInputs.first().attr('name');
-                                        nestedIsValid = $nestedQ.find('input[type="checkbox"][name^="' + fieldName.replace('[]', '') + '"]:checked').length > 0;
-                                    }
-                                } else if (nestedType === 'select') {
-                                    const $select = $nestedQ.find('select');
-                                    if ($select.length > 0) {
-                                        const value = $select.val();
-                                        nestedIsValid = value !== null && value !== '' && value !== undefined;
-                                    }
-                                } else if (nestedType === 'file') {
-                                    const $fileInput = $nestedQ.find('input[type="file"]');
-                                    if ($fileInput.length > 0) {
-                                        const files = $fileInput[0].files;
-                                        nestedIsValid = files && files.length > 0;
-                                    }
-                                } else {
-                                    const $input = $nestedQ.find('input, textarea').first();
-                                    if ($input.length > 0) {
-                                        const value = $input.val();
-                                        nestedIsValid = value !== null && value !== '' && value !== undefined && (typeof value !== 'string' || value.trim() !== '');
-                                    }
-                                }
+                        // Only keep containers that are actually visible for the currently selected option
+                        $visibleNestedContainers = $allNestedForParent.filter(function() {
+                            const $container = $(this);
 
-                                if (!nestedIsValid) {
-                                    nestedHasErrors = true;
-                                    const $nestedField = $nestedQ.find('input, select, textarea').first();
-                                    if ($nestedField.length > 0) {
-                                        $nestedField.addClass('is-invalid');
-                                        $nestedQ.find('.career-form-error-message').remove();
-                                        const $errorMsg = $('<div class="career-form-error-message">' + errorMessage + '</div>');
-                                        $nestedField.after($errorMsg);
-                                    }
-                                }
+                            // Must be marked as shown / active and not hidden via CSS
+                            if ((!$container.hasClass('show') && !$container.hasClass('step-active')) || $container.css('display') === 'none') {
+                                return false;
                             }
+
+                            const parentQuestionId = $container.data('parent-question');
+                            let containerOptionValue = $container.data('option-value') || $container.attr('data-option-value');
+
+                            if (parentQuestionId && containerOptionValue) {
+                                const $checkedRadio = $(`input[type="radio"][data-question-id="${parentQuestionId}"]:checked`);
+                                if ($checkedRadio.length === 0) {
+                                    return false;
+                                }
+
+                                const selectedValue = String($checkedRadio.val()).trim().toLowerCase();
+                                const containerValue = String(containerOptionValue).trim().toLowerCase();
+                                return selectedValue === containerValue;
+                            }
+
+                            return true;
+                        });
+                    }
+
+                    if ($visibleNestedContainers.length > 0) {
+                        const nestedErrorMessage = `{{ __('Please answer this question before proceeding') }}`;
+                        let nestedHasErrors = false;
+                        let $firstInvalidNestedField = null;
+
+                        $visibleNestedContainers.each(function() {
+                            const $container = $(this);
+
+                            $container.find('.career-form-question').each(function() {
+                                const $nestedQ = $(this);
+                                const nestedIsRequired = $nestedQ.data('question-required') === '1' || $nestedQ.data('question-required') === 1 || $nestedQ.data('question-required') === true;
+                                const nestedType = $nestedQ.data('question-type');
+
+                                if (nestedIsRequired) {
+                                    let nestedIsValid = false;
+
+                                    if (nestedType === 'radio') {
+                                        const $radioInputs = $nestedQ.find('input[type="radio"]');
+                                        if ($radioInputs.length > 0) {
+                                            const fieldName = $radioInputs.first().attr('name');
+                                            nestedIsValid = $nestedQ.find('input[type="radio"][name="' + fieldName + '"]:checked').length > 0;
+                                        }
+                                    } else if (nestedType === 'checkbox') {
+                                        const $checkboxInputs = $nestedQ.find('input[type="checkbox"]');
+                                        if ($checkboxInputs.length > 0) {
+                                            const fieldName = $checkboxInputs.first().attr('name');
+                                            nestedIsValid = $nestedQ.find('input[type="checkbox"][name^="' + fieldName.replace('[]', '') + '"]:checked').length > 0;
+                                        }
+                                    } else if (nestedType === 'select') {
+                                        const $select = $nestedQ.find('select');
+                                        if ($select.length > 0) {
+                                            const value = $select.val();
+                                            nestedIsValid = value !== null && value !== '' && value !== undefined;
+                                        }
+                                    } else if (nestedType === 'file') {
+                                        const $fileInput = $nestedQ.find('input[type="file"]');
+                                        if ($fileInput.length > 0) {
+                                            const files = $fileInput[0].files;
+                                            nestedIsValid = files && files.length > 0;
+                                        }
+                                    } else {
+                                        const $input = $nestedQ.find('input, textarea').first();
+                                        if ($input.length > 0) {
+                                            const value = $input.val();
+                                            nestedIsValid = value !== null && value !== '' && value !== undefined && (typeof value !== 'string' || value.trim() !== '');
+                                        }
+                                    }
+
+                                    if (!nestedIsValid) {
+                                        nestedHasErrors = true;
+                                        const $nestedField = $nestedQ.find('input, select, textarea').first();
+                                        if ($nestedField.length > 0) {
+                                            $nestedField.addClass('is-invalid');
+                                            $nestedQ.find('.career-form-error-message').remove();
+
+                                            // Place error message after the appropriate container (group for radio/checkbox)
+                                            let $nestedTarget = $nestedField;
+                                            const $nestedCheckboxGroup = $nestedField.closest('.career-form-checkbox-group');
+                                            const $nestedRadioGroup = $nestedField.closest('.career-form-radio-group');
+
+                                            if ($nestedCheckboxGroup.length) {
+                                                $nestedTarget = $nestedCheckboxGroup;
+                                            } else if ($nestedRadioGroup.length) {
+                                                $nestedTarget = $nestedRadioGroup;
+                                            }
+
+                                            const $errorMsg = $('<div class="career-form-error-message">' + nestedErrorMessage + '</div>');
+                                            $nestedTarget.after($errorMsg);
+
+                                            if (!$firstInvalidNestedField) {
+                                                $firstInvalidNestedField = $nestedField;
+                                            }
+                                        }
+                                    }
+                                }
+                            });
                         });
 
                         if (nestedHasErrors) {
+                            if ($firstInvalidNestedField && $firstInvalidNestedField.length > 0) {
+                                const $nestedQuestionContainer = $firstInvalidNestedField.closest('.career-form-question');
+                                const offset = $nestedQuestionContainer.offset();
+                                if (offset) {
+                                    $('html, body').animate({
+                                        scrollTop: offset.top - 100
+                                    }, 300);
+                                }
+                                $firstInvalidNestedField[0].focus();
+                            }
+
                             if (typeof toastr !== 'undefined') {
-                                toastr.error(`{{ __('Please answer all required nested questions before proceeding') }}`);
+                                toastr.error(nestedErrorMessage);
+                            } else {
+                                alert(nestedErrorMessage);
                             }
                             return;
                         }
