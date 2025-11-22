@@ -1695,11 +1695,17 @@
                                 }
                             }
                         } else if (questionType === 'file') {
-                            // Check if a file is selected
+                            // Check if a new file is selected OR an existing file already exists
                             const $fileInput = $question.find('input[type="file"]');
                             if ($fileInput.length > 0) {
                                 const files = $fileInput[0].files;
-                                isValid = files && files.length > 0;
+                                const hasNewFile = files && files.length > 0;
+
+                                // Existing file path is stored in data-field-value on the question container
+                                const existingFileValue = $question.data('field-value');
+                                const hasExistingFile = existingFileValue !== null && existingFileValue !== undefined && String(existingFileValue).trim() !== '';
+
+                                isValid = hasNewFile || hasExistingFile;
                                 if (!isValid) {
                                     $fieldToValidate = $fileInput;
                                 }
@@ -1899,7 +1905,12 @@
                                         const $fileInput = $nestedQ.find('input[type="file"]');
                                         if ($fileInput.length > 0) {
                                             const files = $fileInput[0].files;
-                                            nestedIsValid = files && files.length > 0;
+                                            const hasNewFile = files && files.length > 0;
+
+                                            const existingFileValue = $nestedQ.data('field-value');
+                                            const hasExistingFile = existingFileValue !== null && existingFileValue !== undefined && String(existingFileValue).trim() !== '';
+
+                                            nestedIsValid = hasNewFile || hasExistingFile;
                                         }
                                     } else {
                                         const $input = $nestedQ.find('input, textarea').first();
@@ -2009,7 +2020,7 @@
                 $('#careerCornerForm select[disabled]').prop('disabled', false).removeAttr('style');
                 $('#careerCornerForm input[disabled]').prop('disabled', false);
 
-                // Handle file fields - hide readonly display and show file input
+                // Handle file fields - show file input and indicate currently uploaded file
                 $('.career-form-file-display').each(function() {
                     const $fileDisplay = $(this);
                     const $question = $fileDisplay.closest('.career-form-question');
@@ -2042,9 +2053,45 @@
                         $fileDisplay.after($fileInput);
                     }
 
-                    // Hide readonly display and show file input
+                    // Clone the readonly file display (icon + filename + download) so it is visible in edit mode
+                    const $existingInline = $fileDisplay.clone().addClass('career-form-file-existing-inline');
+                    $existingInline.show();
+
+                    // Remove any previous inline clone and insert the fresh one above the file input
+                    $question.find('.career-form-file-existing-inline').remove();
+                    $fileInput.before($existingInline);
+
+                    // Keep the original display hidden inside the readonly answer block
                     $fileDisplay.hide();
                     $fileInput.css('display', 'block').removeAttr('style').show();
+                });
+
+                // Fallback: ensure ALL file questions (including nested children) show an inline existing-file block
+                $('.career-form-question[data-question-type="file"]').each(function() {
+                    const $question = $(this);
+                    const questionId = $question.data('question-id');
+                    const fieldName = 'career_q_' + questionId;
+
+                    // Find file input for this question
+                    let $fileInput = $question.find('input[type="file"][name="' + fieldName + '"]');
+                    if ($fileInput.length === 0) {
+                        return;
+                    }
+
+                    // If an inline display is already present, do nothing
+                    if ($question.find('.career-form-file-existing-inline').length > 0) {
+                        return;
+                    }
+
+                    // Try to find the readonly display (may be inside a hidden answer div)
+                    const $readonlyDisplay = $question.find('.career-form-file-display').first();
+                    if ($readonlyDisplay.length > 0) {
+                        const $existingInline = $readonlyDisplay.clone().addClass('career-form-file-existing-inline');
+                        $existingInline.show();
+
+                        // Insert cloned display above the file input
+                        $fileInput.before($existingInline);
+                    }
                 });
 
                 // Also find and show any file inputs that might be hidden in divs (including those not found above)

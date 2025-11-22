@@ -721,7 +721,39 @@ class CareerCornerController extends Controller
                                 Storage::disk('public')->delete($oldFormData[$fieldName]);
                             }
                         }
+                    } else {
+                        // If upload failed, preserve old file if present
+                        if ($existingSubmission && $existingSubmission->form_data) {
+                            $oldFormData = $existingSubmission->form_data;
+                            if (isset($oldFormData[$fieldName])) {
+                                $formData[$fieldName] = $oldFormData[$fieldName];
+                            }
+                        }
                     }
+                } elseif ($existingSubmission && $existingSubmission->form_data) {
+                    // Invalid file - keep old file if exists
+                    $oldFormData = $existingSubmission->form_data;
+                    if (isset($oldFormData[$fieldName])) {
+                        $formData[$fieldName] = $oldFormData[$fieldName];
+                    }
+                }
+            }
+        }
+
+        // FINAL STEP: Preserve any existing career-corner file fields that were not
+        // touched in this request at all (including nested child file questions)
+        if ($existingSubmission && $existingSubmission->form_data) {
+            $oldFormData = $existingSubmission->form_data;
+            foreach ($oldFormData as $fieldName => $value) {
+                // Only consider career corner question fields that look like file paths
+                if (
+                    strpos($fieldName, 'career_q_') === 0 &&
+                    !array_key_exists($fieldName, $formData) &&
+                    is_string($value) &&
+                    $value !== '' &&
+                    strpos($value, 'uploads/career-corner/') === 0
+                ) {
+                    $formData[$fieldName] = $value;
                 }
             }
         }
