@@ -2232,6 +2232,12 @@
                             $field[0].setCustomValidity('');
                         }
                     }
+
+                    // If a new file is chosen, hide the existing inline file display
+                    if ($field.is('input[type="file"]')) {
+                        const $question = $field.closest('.career-form-question');
+                        $question.find('.career-form-file-existing-inline').hide();
+                    }
                 });
 
                 // Trigger change on all checked radio buttons to show/hide nested questions correctly
