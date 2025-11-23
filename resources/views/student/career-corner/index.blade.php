@@ -654,12 +654,458 @@
                 justify-content: center;
             }
         }
+
+        /* AI Chat Sidebar Styles */
+        .ai-chat-icon {
+            position: fixed;
+            top: 75px; /* Adjusted to not overlap with header/nav if any, user said top-right */
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(120, 88, 88, 0.61);
+            cursor: pointer;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            border: 2px solid #14b8a6;
+            overflow: hidden;
+        }
+
+        .ai-chat-icon:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(20, 184, 166, 0.3);
+        }
+
+        .ai-chat-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Online status dot on floating icon */
+        .ai-chat-icon::after {
+            content: '';
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            width: 12px;
+            height: 12px;
+            border-radius: 9999px;
+            background: #22c55e; /* green */
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.15);
+        }
+
+        .ai-chat-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9990;
+            transition: opacity 0.35s ease;
+        }
+
+        .ai-chat-overlay.open {
+            opacity: 1;
+            background: rgba(15, 23, 42, 0.35);
+            pointer-events: auto;
+        }
+
+        .ai-chat-icon.ai-icon-exploding {
+            animation: aiIconExplode 0.45s ease-out forwards;
+        }
+
+        .ai-chat-icon.ai-icon-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .ai-chat-icon.ai-icon-rebuild {
+            animation: aiIconRebuild 0.45s ease-out forwards;
+        }
+
+        @keyframes aiIconExplode {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+                filter: blur(0);
+            }
+            60% {
+                transform: scale(1.4);
+                opacity: 0.9;
+            }
+            100% {
+                transform: scale(0.4);
+                opacity: 0;
+                filter: blur(4px);
+                box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+            }
+        }
+
+        @keyframes aiIconRebuild {
+            0% {
+                transform: scale(0.4);
+                opacity: 0;
+                filter: blur(4px);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+                filter: blur(0);
+            }
+        }
+
+        @keyframes aiSidebarDrop {
+            0% {
+                transform: translateY(-115%);
+                opacity: 0;
+            }
+            75% {
+                transform: translateY(8%);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes aiSidebarLift {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-110%);
+                opacity: 0;
+            }
+        }
+
+        body.ai-chat-scroll-locked {
+            overflow: hidden;
+        }
+
+        .ai-chat-sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 350px;
+            height: 100vh;
+            background: #ffffff;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+            z-index: 10000;
+            transform: translateY(-110%);
+            opacity: 0;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #e5e7eb;
+        }
+
+        .ai-chat-sidebar.open {
+            animation: aiSidebarDrop 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+        }
+
+        .ai-chat-sidebar.closing {
+            animation: aiSidebarLift 0.45s ease-in-out forwards;
+        }
+
+        .ai-chat-header {
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Sidebar content stagger animation */
+        .ai-chat-header,
+        .ai-chat-messages,
+        .ai-chat-input-area {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+
+        .ai-chat-sidebar.open .ai-chat-header,
+        .ai-chat-sidebar.open .ai-chat-messages,
+        .ai-chat-sidebar.open .ai-chat-input-area {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .ai-chat-sidebar.open .ai-chat-header {
+            transition: opacity 0.3s ease-out 0.12s, transform 0.3s ease-out 0.12s;
+        }
+
+        .ai-chat-sidebar.open .ai-chat-messages {
+            transition: opacity 0.32s ease-out 0.2s, transform 0.32s ease-out 0.2s;
+        }
+
+        .ai-chat-sidebar.open .ai-chat-input-area {
+            transition: opacity 0.3s ease-out 0.28s, transform 0.3s ease-out 0.28s;
+        }
+
+        .ai-chat-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .ai-chat-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 9999px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+            flex-shrink: 0;
+        }
+
+        .ai-chat-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .ai-chat-title-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ai-chat-title-main {
+            font-weight: 600;
+        }
+
+        .ai-chat-badge {
+            display: inline-flex;
+            align-items: center;
+            align-self: flex-start;
+            padding: 0 0.4rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(15, 23, 42, 0.25);
+            color: #e5e7eb;
+            margin-top: 2px;
+        }
+
+        .ai-chat-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.25rem;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        }
+
+        .ai-chat-close:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .ai-chat-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            background: #f9fafb;
+        }
+
+        .chat-message {
+            max-width: 85%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .chat-message-text {
+            display: block;
+        }
+
+        .chat-message-meta {
+            margin-top: 0.25rem;
+            font-size: 0.68rem; /* ~11px */
+            color: #e2e3e4;
+        }
+
+        .chat-message.user .chat-message-meta {
+            text-align: right;
+        }
+
+        .chat-message.ai .chat-message-meta {
+            text-align: left;
+        }
+
+        .chat-message.user {
+            align-self: flex-end;
+            background: #14b8a6;
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .chat-message.ai {
+            align-self: flex-start;
+            background: #ffffff;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 0.25rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .chat-message.loading {
+            background: #f3f4f6;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .ai-chat-input-area {
+            padding: 1rem;
+            background: #ffffff;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .ai-chat-input-wrapper {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .ai-chat-input-icon {
+            position: absolute;
+            left: 0.9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            pointer-events: none;
+            font-size: 0.9rem;
+        }
+
+        .ai-chat-textarea {
+            flex: 1;
+            width: 100%;
+            display: block;
+            border: 1px solid #d1d5db;
+            border-radius: 1.5rem;
+            padding: 0.75rem 1.25rem 0.75rem 2.4rem; /* extra right padding so text stays clear of scrollbar */
+            resize: none;
+            height: 46px; /* Initial height */
+            max-height: 120px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            transition: border-color 0.2s;
+            overflow-y: hidden;
+        }
+
+        /* Hide scrollbar completely, keep scrolling via wheel/touch */
+        .ai-chat-textarea::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+
+        .ai-chat-textarea::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .ai-chat-textarea::-webkit-scrollbar-thumb {
+            background: transparent;
+        }
+
+        /* Firefox scrollbar styling: no visible bar */
+        .ai-chat-textarea {
+            scrollbar-width: none;
+            scrollbar-color: transparent transparent;
+        }
+
+        .ai-chat-textarea:focus {
+            outline: none;
+            border-color: #14b8a6;
+        }
+
+        .ai-chat-send-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #14b8a6;
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s ease-out, opacity 0.15s ease-out;
+            flex-shrink: 0;
+        }
+
+        .ai-chat-send-btn:hover {
+            background: #0d9488;
+        }
+
+        .ai-chat-send-btn:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            opacity: 0.6;
+            transform: scale(0.95);
+        }
+
+        .ai-chat-send-btn.ai-send-pop {
+            animation: aiSendPop 0.22s ease-out forwards;
+        }
+
+        /* Markdown styling within chat */
+        .chat-message.ai p {
+            margin-bottom: 0.5rem;
+        }
+        .chat-message.ai p:last-child {
+            margin-bottom: 0;
+        }
+        .chat-message.ai ul, .chat-message.ai ol {
+            margin-left: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .chat-message.ai code {
+            background: #f3f4f6;
+            padding: 0.1rem 0.3rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
     </style>
 @endpush
 
 @section('content')
     <div class="px-sm-30 p-15 bd-b-one bd-c-stroke-2 d-flex justify-content-between align-items-center">
         <h4 class="fs-24 fw-600 lh-34 text-black-2">{{ __('Career Corner') }}</h4>
+        <!-- Chat button removed, replaced by floating icon -->
     </div>
     <div class="p-sm-30 p-15">
         @if(isset($formStructure) && $formStructure && isset($formData) && !empty($formData))
@@ -823,7 +1269,7 @@
                 @endforeach
 
                 {{-- Navigation buttons (only shown in step mode) --}}
-                <div class="career-form-navigation" id="careerFormNavigation" style="{{ (isset($submission) && $submission) ? 'display: none;' : '' }}">
+                <div class="career-form-navigation" id="careerFormNavigation" @if(isset($submission) && $submission) style="display:none;" @endif>
                     <div class="career-form-navigation-buttons">
                         <button type="button" class="career-form-nav-btn career-form-nav-btn-prev" id="careerFormPrevBtn" disabled>
                             <i class="fa-solid fa-arrow-left"></i>
@@ -857,6 +1303,43 @@
             </div>
         @endif
     </div>
+    <div class="ai-chat-overlay" id="aiChatOverlay"></div>
+    <div id="aiChatIcon" class="ai-chat-icon">
+        <img src="{{ asset('assets/images/ai-chat-icon.jpg') }}" alt="{{ __('AI Assistant') }}">
+    </div>
+
+    <div id="aiChatSidebar" class="ai-chat-sidebar">
+        <div class="ai-chat-header">
+            <div class="ai-chat-title">
+                <div class="ai-chat-avatar">
+                    <img src="{{ asset('assets/images/ai-chat-icon.jpg') }}" alt="{{ __('AI Assistant') }}">
+                </div>
+                <div class="ai-chat-title-text">
+                    <span class="ai-chat-title-main">{{ __('AI Career Assistant') }}</span>
+                    <span class="ai-chat-badge">AI &bull; 24/7</span>
+                </div>
+            </div>
+            <button id="aiChatClose" type="button" class="ai-chat-close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div id="aiChatMessages" class="ai-chat-messages">
+            <div class="chat-message ai">
+                {{ __('Hi! I\'m your AI assistant. Ask me anything about your career, universities, or study options.') }}
+            </div>
+        </div>
+        <div class="ai-chat-input-area">
+            <div class="ai-chat-input-wrapper">
+                <span class="ai-chat-input-icon">
+                    <i class="fa-regular fa-lightbulb"></i>
+                </span>
+                <textarea id="aiChatInput" class="ai-chat-textarea" placeholder="{{ __('Type your message...') }}"></textarea>
+            </div>
+            <button id="aiChatSend" type="button" class="ai-chat-send-btn">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
 @endsection
 
 @push('script')
@@ -867,7 +1350,7 @@
                 // File change handler - no logging needed
             });
             // Track if form is in readonly mode
-            let isReadonly = {{ isset($submission) && $submission ? 'true' : 'false' }};
+            let isReadonly = "{{ isset($submission) && $submission ? 'true' : 'false' }}" === "true";
 
             // Step-by-step navigation variables
             let stepNavigation = {
@@ -1177,7 +1660,8 @@
                     if (isRequired) {
                         let isValid = false;
                         let $fieldToValidate = null;
-                        let errorMessage = '{{ __('Please answer this question before proceeding') }}';
+                        let errorMessage = `{{ __('Please answer this question before proceeding') }}`;
+
 
                         // Validate based on question type
                         if (questionType === 'radio') {
@@ -1211,11 +1695,17 @@
                                 }
                             }
                         } else if (questionType === 'file') {
-                            // Check if a file is selected
+                            // Check if a new file is selected OR an existing file already exists
                             const $fileInput = $question.find('input[type="file"]');
                             if ($fileInput.length > 0) {
                                 const files = $fileInput[0].files;
-                                isValid = files && files.length > 0;
+                                const hasNewFile = files && files.length > 0;
+
+                                // Existing file path is stored in data-field-value on the question container
+                                const existingFileValue = $question.data('field-value');
+                                const hasExistingFile = existingFileValue !== null && existingFileValue !== undefined && String(existingFileValue).trim() !== '';
+
+                                isValid = hasNewFile || hasExistingFile;
                                 if (!isValid) {
                                     $fieldToValidate = $fileInput;
                                 }
@@ -1241,9 +1731,19 @@
                                 // Remove existing error message
                                 $question.find('.career-form-error-message').remove();
 
-                                // Add error message
+                                // Add error message after the appropriate container (group for radio/checkbox)
+                                let $targetElement = $fieldToValidate;
+                                const $checkboxGroup = $fieldToValidate.closest('.career-form-checkbox-group');
+                                const $radioGroup = $fieldToValidate.closest('.career-form-radio-group');
+
+                                if ($checkboxGroup.length) {
+                                    $targetElement = $checkboxGroup;
+                                } else if ($radioGroup.length) {
+                                    $targetElement = $radioGroup;
+                                }
+
                                 const $errorMsg = $('<div class="career-form-error-message">' + errorMessage + '</div>');
-                                $fieldToValidate.after($errorMsg);
+                                $targetElement.after($errorMsg);
                             }
 
                             if (typeof toastr !== 'undefined') {
@@ -1333,65 +1833,139 @@
                     }
 
                     // Validate nested questions if they are visible
-                    const $visibleNestedContainer = $question.siblings('.career-form-nested-questions.show, .career-form-nested-questions.step-active').first();
-                    if ($visibleNestedContainer.length > 0) {
-                        let nestedHasErrors = false;
-                        $visibleNestedContainer.find('.career-form-question').each(function() {
-                            const $nestedQ = $(this);
-                            const nestedIsRequired = $nestedQ.data('question-required') === '1' || $nestedQ.data('question-required') === 1;
-                            const nestedType = $nestedQ.data('question-type');
+                    const questionIdForNested = $question.data('question-id');
+                    let $visibleNestedContainers = $();
 
-                            if (nestedIsRequired) {
-                                let nestedIsValid = false;
+                    if (questionIdForNested) {
+                        // Use the same helper used elsewhere to locate nested containers for this parent question
+                        const $allNestedForParent = findNestedContainers($question, questionIdForNested);
 
-                                if (nestedType === 'radio') {
-                                    const $radioInputs = $nestedQ.find('input[type="radio"]');
-                                    if ($radioInputs.length > 0) {
-                                        const fieldName = $radioInputs.first().attr('name');
-                                        nestedIsValid = $nestedQ.find('input[type="radio"][name="' + fieldName + '"]:checked').length > 0;
-                                    }
-                                } else if (nestedType === 'checkbox') {
-                                    const $checkboxInputs = $nestedQ.find('input[type="checkbox"]');
-                                    if ($checkboxInputs.length > 0) {
-                                        const fieldName = $checkboxInputs.first().attr('name');
-                                        nestedIsValid = $nestedQ.find('input[type="checkbox"][name^="' + fieldName.replace('[]', '') + '"]:checked').length > 0;
-                                    }
-                                } else if (nestedType === 'select') {
-                                    const $select = $nestedQ.find('select');
-                                    if ($select.length > 0) {
-                                        const value = $select.val();
-                                        nestedIsValid = value !== null && value !== '' && value !== undefined;
-                                    }
-                                } else if (nestedType === 'file') {
-                                    const $fileInput = $nestedQ.find('input[type="file"]');
-                                    if ($fileInput.length > 0) {
-                                        const files = $fileInput[0].files;
-                                        nestedIsValid = files && files.length > 0;
-                                    }
-                                } else {
-                                    const $input = $nestedQ.find('input, textarea').first();
-                                    if ($input.length > 0) {
-                                        const value = $input.val();
-                                        nestedIsValid = value !== null && value !== '' && value !== undefined && (typeof value !== 'string' || value.trim() !== '');
-                                    }
-                                }
+                        // Only keep containers that are actually visible for the currently selected option
+                        $visibleNestedContainers = $allNestedForParent.filter(function() {
+                            const $container = $(this);
 
-                                if (!nestedIsValid) {
-                                    nestedHasErrors = true;
-                                    const $nestedField = $nestedQ.find('input, select, textarea').first();
-                                    if ($nestedField.length > 0) {
-                                        $nestedField.addClass('is-invalid');
-                                        $nestedQ.find('.career-form-error-message').remove();
-                                        const $errorMsg = $('<div class="career-form-error-message">' + errorMessage + '</div>');
-                                        $nestedField.after($errorMsg);
-                                    }
-                                }
+                            // Must be marked as shown / active and not hidden via CSS
+                            if ((!$container.hasClass('show') && !$container.hasClass('step-active')) || $container.css('display') === 'none') {
+                                return false;
                             }
+
+                            const parentQuestionId = $container.data('parent-question');
+                            let containerOptionValue = $container.data('option-value') || $container.attr('data-option-value');
+
+                            if (parentQuestionId && containerOptionValue) {
+                                const $checkedRadio = $(`input[type="radio"][data-question-id="${parentQuestionId}"]:checked`);
+                                if ($checkedRadio.length === 0) {
+                                    return false;
+                                }
+
+                                const selectedValue = String($checkedRadio.val()).trim().toLowerCase();
+                                const containerValue = String(containerOptionValue).trim().toLowerCase();
+                                return selectedValue === containerValue;
+                            }
+
+                            return true;
+                        });
+                    }
+
+                    if ($visibleNestedContainers.length > 0) {
+                        const nestedErrorMessage = `{{ __('Please answer this question before proceeding') }}`;
+                        let nestedHasErrors = false;
+                        let $firstInvalidNestedField = null;
+
+                        $visibleNestedContainers.each(function() {
+                            const $container = $(this);
+
+                            $container.find('.career-form-question').each(function() {
+                                const $nestedQ = $(this);
+                                const nestedIsRequired = $nestedQ.data('question-required') === '1' || $nestedQ.data('question-required') === 1 || $nestedQ.data('question-required') === true;
+                                const nestedType = $nestedQ.data('question-type');
+
+                                if (nestedIsRequired) {
+                                    let nestedIsValid = false;
+
+                                    if (nestedType === 'radio') {
+                                        const $radioInputs = $nestedQ.find('input[type="radio"]');
+                                        if ($radioInputs.length > 0) {
+                                            const fieldName = $radioInputs.first().attr('name');
+                                            nestedIsValid = $nestedQ.find('input[type="radio"][name="' + fieldName + '"]:checked').length > 0;
+                                        }
+                                    } else if (nestedType === 'checkbox') {
+                                        const $checkboxInputs = $nestedQ.find('input[type="checkbox"]');
+                                        if ($checkboxInputs.length > 0) {
+                                            const fieldName = $checkboxInputs.first().attr('name');
+                                            nestedIsValid = $nestedQ.find('input[type="checkbox"][name^="' + fieldName.replace('[]', '') + '"]:checked').length > 0;
+                                        }
+                                    } else if (nestedType === 'select') {
+                                        const $select = $nestedQ.find('select');
+                                        if ($select.length > 0) {
+                                            const value = $select.val();
+                                            nestedIsValid = value !== null && value !== '' && value !== undefined;
+                                        }
+                                    } else if (nestedType === 'file') {
+                                        const $fileInput = $nestedQ.find('input[type="file"]');
+                                        if ($fileInput.length > 0) {
+                                            const files = $fileInput[0].files;
+                                            const hasNewFile = files && files.length > 0;
+
+                                            const existingFileValue = $nestedQ.data('field-value');
+                                            const hasExistingFile = existingFileValue !== null && existingFileValue !== undefined && String(existingFileValue).trim() !== '';
+
+                                            nestedIsValid = hasNewFile || hasExistingFile;
+                                        }
+                                    } else {
+                                        const $input = $nestedQ.find('input, textarea').first();
+                                        if ($input.length > 0) {
+                                            const value = $input.val();
+                                            nestedIsValid = value !== null && value !== '' && value !== undefined && (typeof value !== 'string' || value.trim() !== '');
+                                        }
+                                    }
+
+                                    if (!nestedIsValid) {
+                                        nestedHasErrors = true;
+                                        const $nestedField = $nestedQ.find('input, select, textarea').first();
+                                        if ($nestedField.length > 0) {
+                                            $nestedField.addClass('is-invalid');
+                                            $nestedQ.find('.career-form-error-message').remove();
+
+                                            // Place error message after the appropriate container (group for radio/checkbox)
+                                            let $nestedTarget = $nestedField;
+                                            const $nestedCheckboxGroup = $nestedField.closest('.career-form-checkbox-group');
+                                            const $nestedRadioGroup = $nestedField.closest('.career-form-radio-group');
+
+                                            if ($nestedCheckboxGroup.length) {
+                                                $nestedTarget = $nestedCheckboxGroup;
+                                            } else if ($nestedRadioGroup.length) {
+                                                $nestedTarget = $nestedRadioGroup;
+                                            }
+
+                                            const $errorMsg = $('<div class="career-form-error-message">' + nestedErrorMessage + '</div>');
+                                            $nestedTarget.after($errorMsg);
+
+                                            if (!$firstInvalidNestedField) {
+                                                $firstInvalidNestedField = $nestedField;
+                                            }
+                                        }
+                                    }
+                                }
+                            });
                         });
 
                         if (nestedHasErrors) {
+                            if ($firstInvalidNestedField && $firstInvalidNestedField.length > 0) {
+                                const $nestedQuestionContainer = $firstInvalidNestedField.closest('.career-form-question');
+                                const offset = $nestedQuestionContainer.offset();
+                                if (offset) {
+                                    $('html, body').animate({
+                                        scrollTop: offset.top - 100
+                                    }, 300);
+                                }
+                                $firstInvalidNestedField[0].focus();
+                            }
+
                             if (typeof toastr !== 'undefined') {
-                                toastr.error('{{ __('Please answer all required nested questions before proceeding') }}');
+                                toastr.error(nestedErrorMessage);
+                            } else {
+                                alert(nestedErrorMessage);
                             }
                             return;
                         }
@@ -1446,7 +2020,7 @@
                 $('#careerCornerForm select[disabled]').prop('disabled', false).removeAttr('style');
                 $('#careerCornerForm input[disabled]').prop('disabled', false);
 
-                // Handle file fields - hide readonly display and show file input
+                // Handle file fields - show file input and indicate currently uploaded file
                 $('.career-form-file-display').each(function() {
                     const $fileDisplay = $(this);
                     const $question = $fileDisplay.closest('.career-form-question');
@@ -1479,9 +2053,45 @@
                         $fileDisplay.after($fileInput);
                     }
 
-                    // Hide readonly display and show file input
+                    // Clone the readonly file display (icon + filename + download) so it is visible in edit mode
+                    const $existingInline = $fileDisplay.clone().addClass('career-form-file-existing-inline');
+                    $existingInline.show();
+
+                    // Remove any previous inline clone and insert the fresh one above the file input
+                    $question.find('.career-form-file-existing-inline').remove();
+                    $fileInput.before($existingInline);
+
+                    // Keep the original display hidden inside the readonly answer block
                     $fileDisplay.hide();
                     $fileInput.css('display', 'block').removeAttr('style').show();
+                });
+
+                // Fallback: ensure ALL file questions (including nested children) show an inline existing-file block
+                $('.career-form-question[data-question-type="file"]').each(function() {
+                    const $question = $(this);
+                    const questionId = $question.data('question-id');
+                    const fieldName = 'career_q_' + questionId;
+
+                    // Find file input for this question
+                    let $fileInput = $question.find('input[type="file"][name="' + fieldName + '"]');
+                    if ($fileInput.length === 0) {
+                        return;
+                    }
+
+                    // If an inline display is already present, do nothing
+                    if ($question.find('.career-form-file-existing-inline').length > 0) {
+                        return;
+                    }
+
+                    // Try to find the readonly display (may be inside a hidden answer div)
+                    const $readonlyDisplay = $question.find('.career-form-file-display').first();
+                    if ($readonlyDisplay.length > 0) {
+                        const $existingInline = $readonlyDisplay.clone().addClass('career-form-file-existing-inline');
+                        $existingInline.show();
+
+                        // Insert cloned display above the file input
+                        $fileInput.before($existingInline);
+                    }
                 });
 
                 // Also find and show any file inputs that might be hidden in divs (including those not found above)
@@ -1621,6 +2231,12 @@
                         if ($field[0] && $field[0].setCustomValidity) {
                             $field[0].setCustomValidity('');
                         }
+                    }
+
+                    // If a new file is chosen, hide the existing inline file display
+                    if ($field.is('input[type="file"]')) {
+                        const $question = $field.closest('.career-form-question');
+                        $question.find('.career-form-file-existing-inline').hide();
                     }
                 });
 
@@ -1860,7 +2476,7 @@
                         if (questionType === 'email' && fieldValue) {
                             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                             if (!emailRegex.test(fieldValue.trim())) {
-                                const errorMsg = '{{ __('Please enter a valid email address') }}';
+                                const errorMsg = `{{ __('Please enter a valid email address') }}`;
                                 if ($field[0] && $field[0].setCustomValidity) {
                                     $field[0].setCustomValidity(errorMsg);
                                 }
@@ -1911,7 +2527,7 @@
                             if (!firstRequiredError) {
                                 firstRequiredError = {
                                     field: $field,
-                                    message: '{{ __('This field is required') }}'
+                                    message: `{{ __('This field is required') }}`
                                 };
                                 }
                             }
@@ -1988,7 +2604,7 @@
                     // Show loading state
                     const $btn = $(this).find('button[type="submit"]');
                     const originalHtml = $btn.html();
-                    $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>{{ __('Submitting...') }}');
+                    $btn.prop('disabled', true).html(`<i class="fa-solid fa-spinner fa-spin me-2"></i>{{ __('Submitting...') }}`);
 
                     // Collect form data, excluding hidden nested questions
                     const formData = new FormData();
@@ -2114,9 +2730,9 @@
                         success: function(response) {
                             if (response.status) {
                                 if (typeof toastr !== 'undefined') {
-                                    toastr.success(response.message || '{{ __('Form submitted successfully!') }}');
+                                    toastr.success(response.message || `{{ __('Form submitted successfully!') }}`);
                                 } else {
-                                    alert(response.message || '{{ __('Form submitted successfully!') }}');
+                                    alert(response.message || `{{ __('Form submitted successfully!') }}`);
                                 }
 
                                 // Refresh matching universities after submission
@@ -2128,15 +2744,15 @@
                                 }, 1500);
                             } else {
                                 if (typeof toastr !== 'undefined') {
-                                    toastr.error(response.message || '{{ __('Error submitting form') }}');
+                                    toastr.error(response.message || `{{ __('Error submitting form') }}`);
                                 } else {
-                                    alert(response.message || '{{ __('Error submitting form') }}');
+                                    alert(response.message || `{{ __('Error submitting form') }}`);
                                 }
                             }
                             $btn.prop('disabled', false).html(originalHtml);
                         },
                         error: function(xhr) {
-                            let errorMessage = '{{ __('Error submitting form. Please try again.') }}';
+                            let errorMessage = `{{ __('Error submitting form. Please try again.') }}`;
 
                             if (xhr.responseJSON) {
                                 if (xhr.responseJSON.message) {
@@ -2179,12 +2795,12 @@
                                         errorMessage = errorMessages[0];
                                     }
                             } else if (xhr.status === 422) {
-                                errorMessage = '{{ __('Validation error. Please check your inputs.') }}';
+                                errorMessage = `{{ __('Validation error. Please check your inputs.') }}`;
                                 }
                             } else if (xhr.status === 401) {
-                                errorMessage = '{{ __('Please login to submit the form') }}';
+                                errorMessage = `{{ __('Please login to submit the form') }}`;
                             } else if (xhr.status === 405) {
-                                errorMessage = '{{ __('Method not allowed. Please refresh the page and try again.') }}';
+                                errorMessage = `{{ __('Method not allowed. Please refresh the page and try again.') }}`;
                             }
 
                             if (typeof toastr !== 'undefined') {
@@ -2201,14 +2817,14 @@
             // Change Preferences button handler
             $('#changePreferencesBtn').on('click', function() {
                 Swal.fire({
-                    title: '{{ __('Edit Form') }}',
-                    text: '{{ __('Are you sure you want to edit your submitted form?') }}',
+                    title: `{{ __('Edit Form') }}`,
+                    text: `{{ __('Are you sure you want to edit your submitted form?') }}`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '{{ __('Yes, Edit It') }}',
-                    cancelButtonText: '{{ __('Cancel') }}'
+                    confirmButtonText: `{{ __('Yes, Edit It') }}`,
+                    cancelButtonText: `{{ __('Cancel') }}`
                 }).then((result) => {
                     if (result.isConfirmed || result.value) {
                         makeFormEditable();
@@ -2219,14 +2835,14 @@
             // Cancel Edit button handler
             $('#cancelEditBtn').on('click', function() {
                 Swal.fire({
-                    title: '{{ __('Cancel Editing') }}',
-                    text: '{{ __('Are you sure you want to cancel editing? Any unsaved changes will be lost.') }}',
+                    title: `{{ __('Cancel Editing') }}`,
+                    text: `{{ __('Are you sure you want to cancel editing? Any unsaved changes will be lost.') }}`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#d33',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '{{ __('Yes, Cancel') }}',
-                    cancelButtonText: '{{ __('No, Continue Editing') }}'
+                    confirmButtonText: `{{ __('Yes, Cancel') }}`,
+                    cancelButtonText: `{{ __('No, Continue Editing') }}`
                 }).then((result) => {
                     if (result.isConfirmed || result.value) {
                         revertToReadonlyMode();
@@ -2471,51 +3087,47 @@
                 });
             });
 
-            if (isReadonly) {
-                // Form is readonly, just show all nested questions that should be visible
-                // They are already shown by the server-side logic
-                return;
-            }
+            if (!isReadonly) {
+                // Initialize form interactivity for editable form
+                initializeFormInteractivity();
 
-            // Initialize form interactivity for editable form
-            initializeFormInteractivity();
+                // Attach form submission handler
+                attachFormSubmitHandler();
 
-            // Attach form submission handler
-            attachFormSubmitHandler();
+                // Clear error messages when user starts typing/selecting
+                // This works for both first-time and editable modes
+                $(document).off('input change', '.career-form-input, .career-form-textarea, .career-form-select, input[type="radio"], input[type="checkbox"], input[type="file"]');
+                $(document).on('input change', '.career-form-input, .career-form-textarea, .career-form-select, input[type="radio"], input[type="checkbox"], input[type="file"]', function() {
+                    const $field = $(this);
+                    const $question = $field.closest('.career-form-question');
 
-            // Clear error messages when user starts typing/selecting
-            // This works for both first-time and editable modes
-            $(document).off('input change', '.career-form-input, .career-form-textarea, .career-form-select, input[type="radio"], input[type="checkbox"], input[type="file"]');
-            $(document).on('input change', '.career-form-input, .career-form-textarea, .career-form-select, input[type="radio"], input[type="checkbox"], input[type="file"]', function() {
-                const $field = $(this);
-                const $question = $field.closest('.career-form-question');
-
-                // Clear error for this field
-                if ($field.hasClass('is-invalid')) {
-                    $field.removeClass('is-invalid');
-                    if ($field[0] && $field[0].setCustomValidity) {
-                        $field[0].setCustomValidity('');
+                    // Clear error for this field
+                    if ($field.hasClass('is-invalid')) {
+                        $field.removeClass('is-invalid');
+                        if ($field[0] && $field[0].setCustomValidity) {
+                            $field[0].setCustomValidity('');
+                        }
                     }
-                }
 
-                // For radio buttons, clear error for all radios in the group
-                if ($field.is(':radio')) {
-                    const fieldName = $field.attr('name');
-                    $question.find('input[type="radio"][name="' + fieldName + '"]').removeClass('is-invalid');
-                }
+                    // For radio buttons, clear error for all radios in the group
+                    if ($field.is(':radio')) {
+                        const fieldName = $field.attr('name');
+                        $question.find('input[type="radio"][name="' + fieldName + '"]').removeClass('is-invalid');
+                    }
 
-                // For checkboxes, clear error for all checkboxes in the group
-                if ($field.is(':checkbox')) {
-                    const fieldName = $field.attr('name');
-                    $question.find('input[type="checkbox"][name^="' + fieldName.replace('[]', '') + '"]').removeClass('is-invalid');
-                }
+                    // For checkboxes, clear error for all checkboxes in the group
+                    if ($field.is(':checkbox')) {
+                        const fieldName = $field.attr('name');
+                        $question.find('input[type="checkbox"][name^="' + fieldName.replace('[]', '') + '"]').removeClass('is-invalid');
+                    }
 
-                // Remove error message from question
-                $question.find('.career-form-error-message').remove();
-            });
+                    // Remove error message from question
+                    $question.find('.career-form-error-message').remove();
+                });
 
-            // Also handle on page load - check if any radio is already selected
-            $('input[type="radio"][data-question-id]:checked').trigger('change');
+                // Also handle on page load - check if any radio is already selected
+                $('input[type="radio"][data-question-id]:checked').trigger('change');
+            }
 
             // Function to refresh matching universities via AJAX (optional - page reloads anyway)
             function refreshMatchingUniversities() {
@@ -2533,6 +3145,188 @@
                     }
                 });
             }
+            // AI Chat Functionality
+            const $chatIcon = $('#aiChatIcon');
+            const $chatSidebar = $('#aiChatSidebar');
+            const $chatOverlay = $('#aiChatOverlay');
+            const $body = $('body');
+            const $chatClose = $('#aiChatClose');
+            const $chatMessages = $('#aiChatMessages');
+            const $chatInput = $('#aiChatInput');
+            const $chatSend = $('#aiChatSend');
+            let chatSessionId = '{{ uniqid() }}'; // Generate a session ID for this page load
+            let aiChatBaseScrollHeight = null; // Measured one-line scroll height baseline
+
+            // Toggle Sidebar with icon explode/rebuild animations
+            $chatIcon.on('click', function() {
+                if ($chatSidebar.hasClass('open') || $chatIcon.hasClass('ai-icon-exploding')) {
+                    return;
+                }
+                $chatIcon.addClass('ai-icon-exploding');
+            });
+
+            // Handle icon animation end to open sidebar or rebuild icon
+            $chatIcon.on('animationend', function(e) {
+                const animName = e.originalEvent && e.originalEvent.animationName;
+                if (animName === 'aiIconExplode') {
+                    $chatIcon.removeClass('ai-icon-exploding').addClass('ai-icon-hidden');
+                    $chatSidebar.removeClass('closing').addClass('open');
+                    $chatOverlay.addClass('open');
+                    $body.addClass('ai-chat-scroll-locked');
+                    setTimeout(() => $chatInput.focus(), 400);
+                } else if (animName === 'aiIconRebuild') {
+                    $chatIcon.removeClass('ai-icon-rebuild ai-icon-hidden');
+                }
+            });
+
+            function closeAiChat() {
+                if (!$chatSidebar.hasClass('open')) {
+                    return;
+                }
+                $chatSidebar.removeClass('open').addClass('closing');
+                $chatOverlay.removeClass('open');
+                $body.removeClass('ai-chat-scroll-locked');
+                setTimeout(function() {
+                    $chatIcon.addClass('ai-icon-rebuild');
+                    $chatSidebar.removeClass('closing');
+                }, 600);
+            }
+
+            $chatClose.on('click', function() {
+                closeAiChat();
+            });
+
+            $chatOverlay.on('click', function() {
+                closeAiChat();
+            });
+
+            // Auto-resize textarea
+            $chatInput.on('input', function() {
+                const baseHeight = 46; // Initial one-line height
+                const maxHeight = 120; // Same as CSS max-height
+                this.style.height = 'auto';
+
+                const scrollHeight = this.scrollHeight;
+
+                // When empty, always reset to base height and hide scrollbar
+                if (!this.value.trim()) {
+                    this.style.height = baseHeight + 'px';
+                    this.style.overflowY = 'hidden';
+                    return;
+                }
+
+                // Measure baseline one-line scroll height on first non-empty input
+                if (aiChatBaseScrollHeight === null) {
+                    aiChatBaseScrollHeight = scrollHeight;
+                }
+
+                let newHeight = baseHeight;
+
+                // Only grow once content clearly exceeds the measured one-line baseline
+                if (scrollHeight > aiChatBaseScrollHeight + 4) {
+                    newHeight = Math.min(scrollHeight, maxHeight);
+                }
+
+                this.style.height = newHeight + 'px';
+
+                if (scrollHeight > maxHeight) {
+                    // Content exceeds max height, enable vertical scrolling
+                    this.style.overflowY = 'auto';
+                } else {
+                    // Below max height, no scrollbar
+                    this.style.overflowY = 'hidden';
+                }
+            });
+
+            // Send Message
+            function sendMessage() {
+                const message = $chatInput.val().trim();
+                if (!message) return;
+
+                // Add user message
+                appendMessage(message, 'user');
+                $chatSend.addClass('ai-send-pop');
+                $chatInput.val('').css('height', '46px');
+                $chatInput[0].style.overflowY = 'hidden';
+                $chatSend.prop('disabled', true);
+
+                // Show loading
+                const $loadingMsg = $('<div class="chat-message ai loading"><i class="fa-solid fa-circle-notch fa-spin me-2"></i>Typing...</div>');
+                $chatMessages.append($loadingMsg);
+                scrollToBottom();
+
+                // API Call
+                $.ajax({
+                    url: 'https://n8n.exploring-talent.com/webhook/consultancy/startchat',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        sessionId: chatSessionId,
+                        chatInput: message
+                    }),
+                    success: function(response) {
+                        $loadingMsg.remove();
+                        $chatSend.prop('disabled', false);
+
+                        // Assuming response is text or JSON with a specific field. 
+                        // Adjust based on actual API response structure.
+                        // If response is just text string:
+                        let aiResponse = '';
+                        if (typeof response === 'string') {
+                            aiResponse = response;
+                        } else if (typeof response === 'object') {
+                            // Try to find the message in common fields
+                            aiResponse = response.output || response.message || response.text || response.response || JSON.stringify(response);
+                        }
+
+                        appendMessage(aiResponse, 'ai');
+                    },
+                    error: function(xhr) {
+                        $loadingMsg.remove();
+                        $chatSend.prop('disabled', false);
+                        appendMessage('Sorry, I encountered an error. Please try again.', 'ai');
+                        console.error('AI Chat Error:', xhr);
+                    }
+                });
+            }
+
+            $chatSend.on('click', sendMessage);
+
+            // Remove send pop class after animation completes
+            $chatSend.on('animationend', function(e) {
+                if (e.originalEvent && e.originalEvent.animationName === 'aiSendPop') {
+                    $chatSend.removeClass('ai-send-pop');
+                }
+            });
+
+            $chatInput.on('keypress', function(e) {
+                if (e.which === 13 && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            function appendMessage(text, type) {
+                // Simple markdown-like parsing for bold and newlines
+                let formattedText = text
+                    .replace(/\n/g, '<br>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1<\/strong>');
+
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+
+                const $msg = $('<div class="chat-message ' + type + '">' +
+                    '<span class="chat-message-text">' + formattedText + '</span>' +
+                    '<div class="chat-message-meta">' + timeStr + '</div>' +
+                    '</div>');
+                $chatMessages.append($msg);
+                scrollToBottom();
+            }
+
+            function scrollToBottom() {
+                $chatMessages.scrollTop($chatMessages[0].scrollHeight);
+            }
+
         });
     </script>
 @endpush
