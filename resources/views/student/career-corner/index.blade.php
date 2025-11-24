@@ -3156,14 +3156,98 @@
             const $chatSend = $('#aiChatSend');
             let chatSessionId = '{{ uniqid() }}'; // Generate a session ID for this page load
             let aiChatBaseScrollHeight = null; // Measured one-line scroll height baseline
+            
+            // Student context variables
+            let studentContext = null;
+            let studentContextLoaded = false;
+
+            // Function to fetch student context
+            function fetchStudentContext() {
+                return $.ajax({
+                    url: '{{ route("student.career-corner.student-context") }}',
+                    type: 'GET',
+                    dataType: 'json'
+                });
+            }
 
             // Toggle Sidebar with icon explode/rebuild animations
             $chatIcon.on('click', function() {
                 if ($chatSidebar.hasClass('open') || $chatIcon.hasClass('ai-icon-exploding')) {
                     return;
                 }
-                $chatIcon.addClass('ai-icon-exploding');
+                
+                // Fetch student context before opening chat (only once)
+                if (!studentContextLoaded) {
+                    fetchStudentContext()
+                        .done(function(response) {
+                            if (response.status && response.hasProfile) {
+                                studentContext = response.studentContext;
+                                studentContextLoaded = true;
+                                console.log('Student context loaded:', studentContext);
+                                
+                                // Show context indicator in chat
+                                showStudentContextIndicator(studentContext);
+                            } else {
+                                studentContextLoaded = true;
+                                console.log('No student profile found');
+                            }
+                            // Proceed to open chat
+                            $chatIcon.addClass('ai-icon-exploding');
+                        })
+                        .fail(function(xhr, status, error) {
+                            console.error('Failed to fetch student context:', error);
+                            studentContextLoaded = true;
+                            // Open chat anyway
+                            $chatIcon.addClass('ai-icon-exploding');
+                        });
+                } else {
+                    $chatIcon.addClass('ai-icon-exploding');
+                }
             });
+            
+            // Function to show student context indicator
+            function showStudentContextIndicator(context) {
+                if (!context || !context.criteria) return;
+                
+                const criteria = context.criteria;
+                const indicators = [];
+                
+                if (criteria.budget) {
+                    indicators.push(`Budget: ${criteria.budget}`);
+                }
+                if (criteria.preferredCountries && criteria.preferredCountries.length > 0) {
+                    indicators.push(`Countries: ${criteria.preferredCountries.join(', ')}`);
+                }
+                if (criteria.courseInterest) {
+                    indicators.push(`Interest: ${criteria.courseInterest}`);
+                }
+                
+                if (indicators.length > 0) {
+                    const contextHtml = `
+                        <div class="chat-context-indicator" style="
+                            background: #f0fdfa;
+                            border: 1px solid #14b8a6;
+                            border-radius: 0.5rem;
+                            padding: 0.75rem;
+                            margin-bottom: 1rem;
+                            font-size: 0.85rem;
+                        ">
+                            <div style="font-weight: 600; color: #0d9488; margin-bottom: 0.5rem;">
+                                <i class="fa-solid fa-user-circle me-1"></i> Your Profile
+                            </div>
+                            <div style="color: #374151;">
+                                ${indicators.join(' • ')}
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Insert after initial AI message
+                    setTimeout(function() {
+                        $chatMessages.find('.chat-message.ai').first().after(contextHtml);
+                        scrollToBottom();
+                    }, 500);
+                }
+            }
 
             // Handle icon animation end to open sidebar or rebuild icon
             $chatIcon.on('animationend', function(e) {
@@ -3255,15 +3339,31 @@
                 $chatMessages.append($loadingMsg);
                 scrollToBottom();
 
+                // Prepare payload with student context
+                const payload = {
+                    sessionId: chatSessionId,
+                    chatInput: message
+                };
+                
+                // Add student context if available
+                if (studentContext) {
+                    payload.studentContext = {
+                        hasProfile: true,
+                        formattedAnswers: studentContext.formattedAnswers || [],
+                        criteria: studentContext.criteria || {}
+                    };
+                } else {
+                    payload.studentContext = {
+                        hasProfile: false
+                    };
+                }
+
                 // API Call
                 $.ajax({
                     url: 'https://n8n.exploring-talent.com/webhook/consultancy/startchat',
                     type: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify({
-                        sessionId: chatSessionId,
-                        chatInput: message
-                    }),
+                    data: JSON.stringify(payload),
                     success: function(response) {
                         $loadingMsg.remove();
                         $chatSend.prop('disabled', false);

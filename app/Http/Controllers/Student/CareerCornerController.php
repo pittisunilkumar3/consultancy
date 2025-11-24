@@ -760,4 +760,193 @@ class CareerCornerController extends Controller
 
         return $formData;
     }
+
+    /**
+     * Get student context for AI chat
+     * Returns student's career corner submission data formatted for AI
+     */
+    public function getStudentContext(Request $request)
+    {
+        $user = auth()->user();
+        
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'hasProfile' => false,
+                'message' => __('User not authenticated')
+            ]);
+        }
+        
+        $structure = FormStructure::where('slug', 'career-corner')->first();
+        
+        if (!$structure) {
+            return response()->json([
+                'status' => false,
+                'hasProfile' => false,
+                'message' => __('Form structure not found')
+            ]);
+        }
+        
+        $submission = CareerCornerSubmission::where('user_id', $user->id)
+            ->where('form_structure_id', $structure->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+        
+        if (!$submission) {
+            return response()->json([
+                'status' => true,
+                'hasProfile' => false,
+                'message' => __('No submission found')
+            ]);
+        }
+        
+        // Build student context from form_data
+        $context = $this->buildStudentContext($submission);
+        
+        return response()->json([
+            'status' => true,
+            'hasProfile' => true,
+            'studentContext' => $context,
+            'submissionDate' => $submission->updated_at->toDateTimeString()
+        ]);
+    }
+
+    /**
+     * Build student context from submission
+     */
+    private function buildStudentContext($submission)
+    {
+        $formData = $submission->form_data;
+        $snapshot = $submission->getFormStructureData();
+        $questions = $snapshot['questions'] ?? [];
+        
+        $context = [
+            'rawAnswers' => [],
+            'formattedAnswers' => [],
+            'criteria' => []
+        ];
+        
+        // Parse each answer
+        foreach ($formData as $fieldName => $value) {
+            if (strpos($fieldName, 'career_q_') !== 0) continue;
+            
+            $questionId = str_replace('career_q_', '', $fieldName);
+            $questionId = preg_replace('/\[\]$/', '', $questionId);
+            
+            if (!is_numeric($questionId)) continue;
+            
+            $question = $questions[$questionId] ?? null;
+            
+            if (!$question) continue;
+            
+            $questionText = $question['question'] ?? '';
+            $questionKey = $question['key'] ?? '';
+            
+            // Format the answer based on type
+            $formattedValue = $this->formatAnswerValue($value, $question);
+            
+            $context['rawAnswers'][$questionKey] = $value;
+            $context['formattedAnswers'][] = [
+                'question' => $questionText,
+                'answer' => $formattedValue,
+                'key' => $questionKey
+            ];
+        }
+        
+        // Extract key criteria
+        $context['criteria'] = $this->extractKeyCriteria($formData, $questions);
+        
+        return $context;
+    }
+
+    /**
+     * Format answer value based on question type
+     */
+    private function formatAnswerValue($value, $question)
+    {
+        if (is_array($value)) {
+            return implode(', ', $value);
+        }
+        
+        // For file type, return filename
+        if (isset($question['type']) && $question['type'] === 'file' && !empty($value)) {
+            return basename($value);
+        }
+        
+        return $value;
+    }
+
+    /**
+     * Extract key criteria from form data
+     */
+    private function extractKeyCriteria($formData, $questions)
+    {
+        $criteria = [
+            'budget' => null,
+            'preferredCountries' => [],
+            'courseInterest' => null,
+            'studyLevel' => null,
+            'languageTests' => [],
+            'academicBackground' => null,
+            'intakePreference' => null
+        ];
+        
+        foreach ($formData as $fieldName => $value) {
+            if (strpos($fieldName, 'career_q_') !== 0) continue;
+            
+            $questionId = str_replace('career_q_', '', $fieldName);
+            $questionId = preg_replace('/\[\]$/', '', $questionId);
+            
+            if (!is_numeric($questionId)) continue;
+            
+            $question = $questions[$questionId] ?? null;
+            if (!$question) continue;
+            
+            $key = $question['key'] ?? '';
+            $questionText = $question['question'] ?? '';
+            
+            // Map question keys to criteria (case-insensitive search)
+            if (stripos($key, 'budget') !== false || stripos($questionText, 'budget') !== false) {
+                $criteria['budget'] = is_array($value) ? implode(', ', $value) : $value;
+            }
+            
+            if (stripos($key, 'country') !== false || stripos($key, 'countries') !== false || 
+                stripos($questionText, 'country') !== false || stripos($questionText, 'countries') !== false) {
+                $criteria['preferredCountries'] = is_array($value) ? $value : [$value];
+            }
+            
+            if (stripos($key, 'course') !== false || stripos($key, 'program') !== false || 
+                stripos($key, 'field') !== false || stripos($key, 'major') !== false ||
+                stripos($questionText, 'course') !== false || stripos($questionText, 'program') !== false) {
+                $criteria['courseInterest'] = is_array($value) ? implode(', ', $value) : $value;
+            }
+            
+            if (stripos($key, 'level') !== false || stripos($key, 'degree') !== false ||
+                stripos($questionText, 'level') !== false || stripos($questionText, 'degree') !== false) {
+                $criteria['studyLevel'] = is_array($value) ? implode(', ', $value) : $value;
+            }
+            
+            if (stripos($key, 'ielts') !== false || stripos($key, 'toefl') !== false || 
+                stripos($key, 'language') !== false || stripos($key, 'english') !== false ||
+                stripos($questionText, 'ielts') !== false || stripos($questionText, 'toefl') !== false) {
+                $testValue = is_array($value) ? implode(', ', $value) : $value;
+                if (!empty($testValue)) {
+                    $criteria['languageTests'][] = $testValue;
+                }
+            }
+            
+            if (stripos($key, 'cgpa') !== false || stripos($key, 'gpa') !== false || 
+                stripos($key, 'percentage') !== false || stripos($key, 'marks') !== false ||
+                stripos($questionText, 'cgpa') !== false || stripos($questionText, 'gpa') !== false) {
+                $criteria['academicBackground'] = is_array($value) ? implode(', ', $value) : $value;
+            }
+            
+            if (stripos($key, 'intake') !== false || stripos($key, 'semester') !== false || 
+                stripos($key, 'session') !== false || stripos($questionText, 'intake') !== false) {
+                $criteria['intakePreference'] = is_array($value) ? implode(', ', $value) : $value;
+            }
+        }
+        
+        return $criteria;
+    }
 }

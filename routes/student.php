@@ -79,6 +79,7 @@ Route::group(['prefix' => 'career-corner', 'as' => 'career-corner.'], function (
     Route::get('', [\App\Http\Controllers\Student\CareerCornerController::class, 'index'])->name('index');
     Route::post('submit', [\App\Http\Controllers\Student\CareerCornerController::class, 'submit'])->name('submit');
     Route::get('matching-universities', [\App\Http\Controllers\Student\CareerCornerController::class, 'getMatchingUniversities'])->name('matching-universities');
+    Route::get('student-context', [\App\Http\Controllers\Student\CareerCornerController::class, 'getStudentContext'])->name('student-context');
 });
 
 Route::group(['prefix' => 'universities', 'as' => 'universities.'], function () {
