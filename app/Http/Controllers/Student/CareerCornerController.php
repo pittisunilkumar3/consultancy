@@ -820,6 +820,48 @@ class CareerCornerController extends Controller
         $snapshot = $submission->getFormStructureData();
         $questions = $snapshot['questions'] ?? [];
         
+        // Collect question IDs that are in form_data but not in snapshot
+        $missingQuestionIds = [];
+        foreach ($formData as $fieldName => $value) {
+            if (strpos($fieldName, 'career_q_') !== 0) continue;
+            
+            $questionId = str_replace('career_q_', '', $fieldName);
+            $questionId = preg_replace('/\[\]$/', '', $questionId);
+            
+            if (!is_numeric($questionId)) continue;
+            
+            $questionId = (int)$questionId;
+            
+            // If question not in snapshot, add to missing list
+            if (!isset($questions[$questionId])) {
+                $missingQuestionIds[] = $questionId;
+            }
+        }
+        
+        // Load missing questions from database (child questions that might not be in snapshot)
+        if (!empty($missingQuestionIds)) {
+            $missingQuestions = Question::whereIn('id', $missingQuestionIds)
+                ->get()
+                ->keyBy('id')
+                ->map(function ($question) {
+                    return [
+                        'id' => $question->id,
+                        'key' => $question->key,
+                        'question' => $question->question,
+                        'type' => $question->type,
+                        'options' => $question->options,
+                        'required' => $question->required,
+                        'help_text' => $question->help_text,
+                    ];
+                })
+                ->toArray();
+            
+            // Merge missing questions into questions array
+            foreach ($missingQuestions as $id => $question) {
+                $questions[$id] = $question;
+            }
+        }
+        
         $context = [
             'rawAnswers' => [],
             'formattedAnswers' => [],
@@ -835,6 +877,7 @@ class CareerCornerController extends Controller
             
             if (!is_numeric($questionId)) continue;
             
+            $questionId = (int)$questionId;
             $question = $questions[$questionId] ?? null;
             
             if (!$question) continue;
@@ -910,9 +953,19 @@ class CareerCornerController extends Controller
                 $criteria['budget'] = is_array($value) ? implode(', ', $value) : $value;
             }
             
+            // Handle country IDs - convert to names
             if (stripos($key, 'country') !== false || stripos($key, 'countries') !== false || 
                 stripos($questionText, 'country') !== false || stripos($questionText, 'countries') !== false) {
-                $criteria['preferredCountries'] = is_array($value) ? $value : [$value];
+                $countryIds = is_array($value) ? $value : [$value];
+                $countryIds = array_filter($countryIds); // Remove empty values
+                
+                if (!empty($countryIds)) {
+                    // Convert country IDs to names
+                    $countries = \App\Models\Country::whereIn('id', $countryIds)
+                        ->pluck('name')
+                        ->toArray();
+                    $criteria['preferredCountries'] = $countries;
+                }
             }
             
             if (stripos($key, 'course') !== false || stripos($key, 'program') !== false || 
@@ -921,17 +974,90 @@ class CareerCornerController extends Controller
                 $criteria['courseInterest'] = is_array($value) ? implode(', ', $value) : $value;
             }
             
-            if (stripos($key, 'level') !== false || stripos($key, 'degree') !== false ||
-                stripos($questionText, 'level') !== false || stripos($questionText, 'degree') !== false) {
-                $criteria['studyLevel'] = is_array($value) ? implode(', ', $value) : $value;
+            // Study level - STRICT detection to avoid false matches
+            // Only match if question is specifically about education level/degree
+            // Exclude: sponsor, financial, work-related questions
+            $isEducationQuestion = (
+                (stripos($key, 'degree') !== false || stripos($key, 'qualification') !== false) ||
+                (stripos($questionText, 'highest degree') !== false || 
+                 stripos($questionText, 'highest qualification') !== false ||
+                 stripos($questionText, 'education level') !== false ||
+                 stripos($questionText, 'completed degree') !== false ||
+                 stripos($questionText, 'degree name') !== false ||
+                 stripos($questionText, 'specialization') !== false ||
+                 (stripos($questionText, 'graduation') !== false && stripos($questionText, 'year') === false))
+            );
+            
+            // Exclude sponsor, financial, work questions
+            $isExcluded = (
+                stripos($questionText, 'sponsor') !== false ||
+                stripos($questionText, 'financial') !== false ||
+                stripos($questionText, 'work') !== false ||
+                stripos($questionText, 'job') !== false ||
+                stripos($questionText, 'employment') !== false
+            );
+            
+            if ($isEducationQuestion && !$isExcluded && !empty($value)) {
+                $studyLevelValue = is_array($value) ? implode(', ', $value) : $value;
+                
+                // Skip generic short answers like "UG", "PG" if we already have a detailed answer
+                $isGenericAnswer = in_array(strtoupper(trim($studyLevelValue)), ['UG', 'PG', 'UNDERGRADUATE', 'POSTGRADUATE', 'GRADUATE']);
+                
+                // Only update if we don't have a value yet, OR if current value is generic and new one is detailed
+                if (empty($criteria['studyLevel']) || 
+                    ($isGenericAnswer === false && !empty($criteria['studyLevel']) && strlen($studyLevelValue) > strlen($criteria['studyLevel']))) {
+                    
+                    // Add context based on question text
+                    if (stripos($questionText, 'completed') !== false || 
+                        stripos($questionText, 'highest') !== false ||
+                        stripos($questionText, 'current') !== false) {
+                        $criteria['studyLevel'] = $studyLevelValue . ' (Completed)';
+                    } elseif (stripos($questionText, 'pursuing') !== false || 
+                              stripos($questionText, 'want to study') !== false ||
+                              stripos($questionText, 'planning') !== false ||
+                              stripos($questionText, 'target') !== false) {
+                        $criteria['studyLevel'] = $studyLevelValue . ' (Target)';
+                    } else {
+                        $criteria['studyLevel'] = $studyLevelValue;
+                    }
+                }
             }
             
+            // Language tests - detect test type and score
             if (stripos($key, 'ielts') !== false || stripos($key, 'toefl') !== false || 
-                stripos($key, 'language') !== false || stripos($key, 'english') !== false ||
-                stripos($questionText, 'ielts') !== false || stripos($questionText, 'toefl') !== false) {
+                stripos($key, 'pte') !== false || stripos($key, 'language') !== false || 
+                stripos($key, 'english') !== false || stripos($key, 'test') !== false ||
+                stripos($questionText, 'ielts') !== false || stripos($questionText, 'toefl') !== false ||
+                stripos($questionText, 'pte') !== false || stripos($questionText, 'test type') !== false ||
+                stripos($questionText, 'english test') !== false || stripos($questionText, 'proficiency test') !== false ||
+                stripos($questionText, 'overall score') !== false || stripos($questionText, 'test score') !== false) {
+                
                 $testValue = is_array($value) ? implode(', ', $value) : $value;
-                if (!empty($testValue)) {
-                    $criteria['languageTests'][] = $testValue;
+                if (!empty($testValue) && $testValue !== 'Yes' && $testValue !== 'YES' && $testValue !== 'NO' && $testValue !== 'No') {
+                    // Check if this looks like a test name (IELTS, TOEFL, PTE)
+                    $isTestName = (stripos($testValue, 'IELTS') !== false || 
+                                   stripos($testValue, 'TOEFL') !== false || 
+                                   stripos($testValue, 'PTE') !== false);
+                    
+                    // Check if this looks like a score (number or contains number)
+                    $isScore = is_numeric($testValue) || preg_match('/\d/', $testValue);
+                    
+                    // If it's a test name, store it temporarily
+                    if ($isTestName) {
+                        $criteria['_tempTestName'] = $testValue;
+                    }
+                    // If it's a score, combine with test name if available
+                    elseif ($isScore) {
+                        if (isset($criteria['_tempTestName'])) {
+                            $criteria['languageTests'][] = $criteria['_tempTestName'] . ' ' . $testValue;
+                        } else {
+                            $criteria['languageTests'][] = $testValue;
+                        }
+                    }
+                    // Otherwise just add it
+                    else {
+                        $criteria['languageTests'][] = $testValue;
+                    }
                 }
             }
             
@@ -946,6 +1072,9 @@ class CareerCornerController extends Controller
                 $criteria['intakePreference'] = is_array($value) ? implode(', ', $value) : $value;
             }
         }
+        
+        // Clean up temporary variables
+        unset($criteria['_tempTestName']);
         
         return $criteria;
     }
