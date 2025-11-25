@@ -11,6 +11,10 @@
 @section('content')
     <div class="px-sm-30 p-15 bd-b-one bd-c-stroke-2 d-flex justify-content-between align-items-center">
         <h4 class="fs-18 fw-700 lh-24 text-title-text">{{ $pageTitle }}</h4>
+
+        <a href="{{ route('admin.questions.index') }}" class="flipBtn sf-flipBtn-secondary flex-shrink-0">
+            <i class="fa-solid fa-arrow-left me-1"></i>{{ __('Back to Questions') }}
+        </a>
     </div>
 
     <div class="p-sm-30 p-15">

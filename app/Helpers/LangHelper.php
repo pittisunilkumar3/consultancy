@@ -5,10 +5,17 @@ if (!function_exists('__')) {
     {
         if (session()->get('local') != null) {
             $path = resource_path() . "/lang/" . session()->get('local') . ".json";
+
+            // Avoid writing translation files in production; just fall back to the key
             if (!file_exists($path)) {
-                file_put_contents(resource_path() . "/lang/" . session()->get('local') . ".json", '{}');
+                if (!app()->environment('production')) {
+                    file_put_contents($path, '{}');
+                } else {
+                    return $key;
+                }
             }
-            $website = json_decode(file_get_contents(resource_path("/lang/" . session()->get('local') . ".json")), true);
+
+            $website = json_decode(file_get_contents($path), true) ?: [];
 
             $key = preg_replace('/\s+/S', " ", $key);
 
@@ -20,7 +27,12 @@ if (!function_exists('__')) {
             }
 
             $website[$key] = $key;
-            file_put_contents(resource_path("/lang/" . session()->get('local') . ".json"), json_encode($website));
+
+            // Only auto-update translation JSON in non-production environments
+            if (!app()->environment('production')) {
+                file_put_contents($path, json_encode($website));
+            }
+
             if (session()->get('local') == null) {
                 return $key;
             }
