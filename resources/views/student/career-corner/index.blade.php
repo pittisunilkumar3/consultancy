@@ -1223,11 +1223,6 @@
                             </div>
                         @endforeach
                     </div>
-                    <div class="text-center mt-4">
-                        <a href="{{ route('student.universities.index') }}" class="flipBtn sf-flipBtn-primary">
-                            <i class="fa-solid fa-search me-2"></i>{{ __('View All Universities') }}
-                        </a>
-                    </div>
                 </div>
                 @elseif(isset($matchingUniversities) && $matchingUniversities->count() === 0 && isset($submission))
                 <div class="alert alert-info mb-4" id="noMatchingUniversitiesAlert">

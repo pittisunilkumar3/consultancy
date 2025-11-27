@@ -89,6 +89,48 @@
                             </li>
                         </ul>
                     </div>
+
+                    @if(isset($universityCriteria) && $universityCriteria->count() > 0)
+                        <div class="subject-details-sidebar bd-ra-20 bg-secondary-bg p-sm-25 p-15 mt-3">
+                            <h4 class="title">{{ __('Eligibility & Criteria') }}</h4>
+                            <ul class="zList-pb-13">
+                                @foreach($universityCriteria as $criteria)
+                                    @if($criteria->criteriaField)
+                                        @php
+                                            $rawValue = $criteria->value;
+                                            $displayValue = $rawValue;
+
+                                            $decoded = null;
+                                            if (is_string($rawValue)) {
+                                                $decoded = json_decode($rawValue, true);
+                                            }
+
+                                            if (is_array($decoded)) {
+                                                $displayValue = implode(' / ', $decoded);
+                                            }
+
+                                            if (in_array(strtolower((string)$rawValue), ['1','true','yes'], true)) {
+                                                $displayValue = __('Yes');
+                                            } elseif (in_array(strtolower((string)$rawValue), ['0','false','no'], true)) {
+                                                $displayValue = __('No');
+                                            }
+                                        @endphp
+                                        <li class="item">
+                                            <div class="left w-100">
+                                                <div class="icon"><img src="{{ asset('assets/images/icon/qualification.svg') }}" alt="" /></div>
+                                                <p class="fs-16 fw-400 lh-28 text-para-text d-flex flex-grow-1 justify-content-between g-5 text-break">
+                                                    <span class="flex-shrink-0 pe-2" style="min-width: 55%; max-width: 65%; word-break: break-word; white-space: normal;">
+                                                        {{ $criteria->criteriaField->name }} :
+                                                    </span>
+                                                    <span class="text-end flex-grow-1">{{ $displayValue }}</span>
+                                                </p>
+                                            </div>
+                                        </li>
+                                    @endif
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
