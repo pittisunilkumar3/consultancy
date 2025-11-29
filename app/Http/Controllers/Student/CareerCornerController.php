@@ -908,7 +908,7 @@ class CareerCornerController extends Controller
     private function formatAnswerValue($value, $question)
     {
         if (is_array($value)) {
-            return implode(', ', $value);
+            return $this->stringifyAnswerValue($value);
         }
         
         // For file type, return filename
@@ -917,6 +917,30 @@ class CareerCornerController extends Controller
         }
         
         return $value;
+    }
+
+    private function stringifyAnswerValue($value)
+    {
+        if (!is_array($value)) {
+            return $value;
+        }
+
+        $flattened = [];
+        foreach ($value as $item) {
+            if (is_array($item)) {
+                if (isset($item['label'])) {
+                    $flattened[] = $item['label'];
+                } elseif (isset($item['value'])) {
+                    $flattened[] = $item['value'];
+                } else {
+                    $flattened[] = json_encode($item);
+                }
+            } else {
+                $flattened[] = $item;
+            }
+        }
+
+        return implode(', ', $flattened);
     }
 
     /**
@@ -950,28 +974,100 @@ class CareerCornerController extends Controller
             
             // Map question keys to criteria (case-insensitive search)
             if (stripos($key, 'budget') !== false || stripos($questionText, 'budget') !== false) {
-                $criteria['budget'] = is_array($value) ? implode(', ', $value) : $value;
+                $criteria['budget'] = is_array($value) ? $this->stringifyAnswerValue($value) : $value;
             }
             
-            // Handle country IDs - convert to names
-            if (stripos($key, 'country') !== false || stripos($key, 'countries') !== false || 
+            // Handle country answers - support IDs, labels, and JSON-encoded values
+            if ((trim($key) !== '' && (stripos($key, 'country') !== false || stripos($key, 'countries') !== false)) || 
                 stripos($questionText, 'country') !== false || stripos($questionText, 'countries') !== false) {
-                $countryIds = is_array($value) ? $value : [$value];
-                $countryIds = array_filter($countryIds); // Remove empty values
                 
+                $rawValues = is_array($value) ? $value : [$value];
+                $rawValues = array_filter($rawValues); // Remove empty values
+
+                $countryIds = [];
+                $countryNames = [];
+
+                foreach ($rawValues as $countryValue) {
+                    // If nested array
+                    if (is_array($countryValue)) {
+                        // Check if it's an associative array with value/label keys
+                        if (isset($countryValue['value']) && is_numeric($countryValue['value'])) {
+                            $countryIds[] = (int)$countryValue['value'];
+                        }
+                        if (isset($countryValue['label']) && is_string($countryValue['label'])) {
+                            $countryNames[] = $countryValue['label'];
+                        }
+                        
+                        // If it's a simple indexed array like ["Canada"], extract the values
+                        if (!isset($countryValue['value']) && !isset($countryValue['label'])) {
+                            foreach ($countryValue as $item) {
+                                if (is_string($item) && $item !== '') {
+                                    $countryNames[] = $item;
+                                } elseif (is_numeric($item)) {
+                                    $countryIds[] = (int)$item;
+                                }
+                            }
+                        }
+                        continue;
+                    }
+
+                    // Scalar value
+                    if (is_numeric($countryValue)) {
+                        // Treat as country ID
+                        $countryIds[] = (int)$countryValue;
+                        continue;
+                    }
+
+                    // Try to decode JSON (e.g. '["Canada"]')
+                    if (is_string($countryValue)) {
+                        $decoded = json_decode($countryValue, true);
+                        if (json_last_error() === JSON_ERROR_NONE) {
+                            if (is_array($decoded)) {
+                                foreach ($decoded as $decodedItem) {
+                                    if (is_string($decodedItem) && $decodedItem !== '') {
+                                        $countryNames[] = $decodedItem;
+                                    }
+                                }
+                            } elseif (is_string($decoded) && $decoded !== '') {
+                                $countryNames[] = $decoded;
+                            }
+                        } else {
+                            // Plain string - assume it's a country name
+                            $trimmed = trim($countryValue, " \"[]");
+                            if ($trimmed !== '') {
+                                $countryNames[] = $trimmed;
+                            }
+                        }
+                    }
+                }
+
+                $resolvedNames = [];
+
                 if (!empty($countryIds)) {
-                    // Convert country IDs to names
-                    $countries = \App\Models\Country::whereIn('id', $countryIds)
+                    $resolvedNames = \App\Models\Country::whereIn('id', array_unique($countryIds))
                         ->pluck('name')
                         ->toArray();
-                    $criteria['preferredCountries'] = $countries;
+                }
+
+                if (!empty($countryNames)) {
+                    // Try to resolve by name from DB; if not found, keep raw names
+                    $dbNames = \App\Models\Country::whereIn('name', array_unique($countryNames))
+                        ->pluck('name')
+                        ->toArray();
+
+                    // Merge DB-resolved and raw names (for AI context, raw names are fine)
+                    $resolvedNames = array_merge($resolvedNames, $dbNames ?: $countryNames);
+                }
+
+                if (!empty($resolvedNames)) {
+                    $criteria['preferredCountries'] = array_values(array_unique($resolvedNames));
                 }
             }
             
             if (stripos($key, 'course') !== false || stripos($key, 'program') !== false || 
                 stripos($key, 'field') !== false || stripos($key, 'major') !== false ||
                 stripos($questionText, 'course') !== false || stripos($questionText, 'program') !== false) {
-                $criteria['courseInterest'] = is_array($value) ? implode(', ', $value) : $value;
+                $criteria['courseInterest'] = is_array($value) ? $this->stringifyAnswerValue($value) : $value;
             }
             
             // Study level - STRICT detection to avoid false matches
@@ -998,7 +1094,7 @@ class CareerCornerController extends Controller
             );
             
             if ($isEducationQuestion && !$isExcluded && !empty($value)) {
-                $studyLevelValue = is_array($value) ? implode(', ', $value) : $value;
+                $studyLevelValue = is_array($value) ? $this->stringifyAnswerValue($value) : $value;
                 
                 // Skip generic short answers like "UG", "PG" if we already have a detailed answer
                 $isGenericAnswer = in_array(strtoupper(trim($studyLevelValue)), ['UG', 'PG', 'UNDERGRADUATE', 'POSTGRADUATE', 'GRADUATE']);
@@ -1032,7 +1128,7 @@ class CareerCornerController extends Controller
                 stripos($questionText, 'english test') !== false || stripos($questionText, 'proficiency test') !== false ||
                 stripos($questionText, 'overall score') !== false || stripos($questionText, 'test score') !== false) {
                 
-                $testValue = is_array($value) ? implode(', ', $value) : $value;
+                $testValue = is_array($value) ? $this->stringifyAnswerValue($value) : $value;
                 if (!empty($testValue) && $testValue !== 'Yes' && $testValue !== 'YES' && $testValue !== 'NO' && $testValue !== 'No') {
                     // Check if this looks like a test name (IELTS, TOEFL, PTE)
                     $isTestName = (stripos($testValue, 'IELTS') !== false || 
@@ -1064,12 +1160,12 @@ class CareerCornerController extends Controller
             if (stripos($key, 'cgpa') !== false || stripos($key, 'gpa') !== false || 
                 stripos($key, 'percentage') !== false || stripos($key, 'marks') !== false ||
                 stripos($questionText, 'cgpa') !== false || stripos($questionText, 'gpa') !== false) {
-                $criteria['academicBackground'] = is_array($value) ? implode(', ', $value) : $value;
+                $criteria['academicBackground'] = is_array($value) ? $this->stringifyAnswerValue($value) : $value;
             }
             
             if (stripos($key, 'intake') !== false || stripos($key, 'semester') !== false || 
                 stripos($key, 'session') !== false || stripos($questionText, 'intake') !== false) {
-                $criteria['intakePreference'] = is_array($value) ? implode(', ', $value) : $value;
+                $criteria['intakePreference'] = is_array($value) ? $this->stringifyAnswerValue($value) : $value;
             }
         }
         
