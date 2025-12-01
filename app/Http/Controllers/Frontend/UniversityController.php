@@ -77,6 +77,23 @@ class UniversityController extends Controller
         $data['universityData'] = University::leftjoin('countries','universities.country_id','=','countries.id')
             ->select('universities.*','countries.name as countryName')
             ->where('universities.slug',$slug)->first();
+
+        if ($data['universityData']) {
+            $criteriaValues = $data['universityData']->criteriaValues()
+                ->with('criteriaField')
+                ->whereHas('criteriaField', function ($query) {
+                    $query->where('status', STATUS_ACTIVE);
+                })
+                ->get()
+                ->sortBy(function ($value) {
+                    return $value->criteriaField->order ?? 0;
+                });
+
+            $data['universityCriteria'] = $criteriaValues;
+        } else {
+            $data['universityCriteria'] = collect();
+        }
+
         $data['faqData'] = Faq::where('status',STATUS_ACTIVE)->get();
         $data['subjectData'] = Subject::leftjoin('universities','subjects.university_id','=','universities.id')
              ->leftjoin('countries','subjects.country_id','=','countries.id')

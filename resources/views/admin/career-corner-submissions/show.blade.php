@@ -143,6 +143,131 @@
             color: #6b7280;
             flex: 1;
         }
+
+        /* Readonly Summary View - Clean display without form fields */
+        .career-form-readonly-mode .career-form-question {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 2rem;
+            padding: 1.25rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: #9be4e32b;
+            margin-bottom: 2px;
+        }
+
+        .career-form-readonly-mode .career-form-question:last-child {
+            border-bottom: none;
+        }
+
+        .career-form-readonly-mode .career-form-question-label {
+            flex: 0 0 40%;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0;
+            padding-right: 1rem;
+        }
+
+        .career-form-readonly-mode .career-form-question-answer {
+            flex: 1;
+            color: #1f2937;
+            font-size: 1rem;
+            line-height: 1.6;
+            word-wrap: break-word;
+            display: block;
+        }
+
+        .career-form-readonly-mode .career-form-question-answer:empty::before {
+            content: '\2014';
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .career-form-readonly-mode .career-form-question-help {
+            display: none;
+        }
+
+        .career-form-readonly-mode .career-form-input,
+        .career-form-readonly-mode .career-form-textarea,
+        .career-form-readonly-mode .career-form-select,
+        .career-form-readonly-mode .career-form-radio-group,
+        .career-form-readonly-mode .career-form-checkbox-group,
+        .career-form-readonly-mode input[type="radio"],
+        .career-form-readonly-mode input[type="checkbox"],
+        .career-form-readonly-mode input[type="file"] {
+            display: none !important;
+        }
+
+        .career-form-readonly-mode .career-form-section {
+            background: #ffffff;
+            border: none;
+            box-shadow: none;
+            padding: 5px;
+            margin-bottom: 2.5rem;
+        }
+
+        .career-form-readonly-mode .career-form-section-title {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #14b8a6;
+        }
+
+        /* Nested questions in readonly mode - break out of flex layout like in student view */
+        .career-form-readonly-mode .career-form-nested-questions {
+            flex-basis: 100%;
+            width: 100%;
+            min-width: 100%;
+            margin-top: 1.5rem;
+            padding-left: 0;
+            padding-right: 0;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 1.25rem;
+            margin-left: 0;
+            margin-right: 0;
+            order: 10;
+        }
+
+        .career-form-readonly-mode .career-form-nested-questions .career-form-question {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 2rem;
+            padding-left: 2rem;
+            border-left: 3px solid #14b8a6;
+            margin-top: 0.75rem;
+            margin-bottom: 0.75rem;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            background: #f9fafb;
+            border-radius: 0.375rem;
+        }
+
+        .career-form-readonly-mode .career-form-nested-questions .career-form-question:first-child {
+            margin-top: 0;
+        }
+
+        .career-form-readonly-mode .career-form-nested-questions .career-form-question:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+        }
+
+        .career-form-readonly-mode .career-form-nested-questions .career-form-question-label {
+            flex: 0 0 40%;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0;
+            padding-right: 1rem;
+        }
+
+        .career-form-readonly-mode .career-form-nested-questions .career-form-question-answer {
+            flex: 1;
+            color: #1f2937;
+            font-size: 1rem;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
     </style>
 @endpush
 
@@ -183,7 +308,7 @@
         </a>
     </div>
 
-    <div class="p-sm-30 p-15">
+    <div class="p-sm-30 p-15 career-form-readonly-mode">
         @if(isset($structureChanged) && $structureChanged)
             <div class="alert alert-warning mb-4">
                 <i class="fa-solid fa-triangle-exclamation me-2"></i>

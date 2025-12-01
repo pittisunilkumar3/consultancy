@@ -41,7 +41,7 @@ Route::get('/local/{ln}', function ($ln) {
 Route::get('', [HomeController::class, 'index'])->name('frontend');
 Route::get('/universities/{country_id?}', [HomeController::class, 'getUniversitiesByCountry'])->name('universities.byCountry');
 Route::get('universities-list', [UniversityController::class, 'list'])->name('universities.list');
-Route::get('universities-{slug}', [UniversityController::class, 'details'])->name('universities.details');
+Route::middleware('auth')->get('universities-{slug}', [UniversityController::class, 'details'])->name('universities.details');
 Route::get('page-{slug}', [HomeController::class, 'page'])->name('page');
 Route::get('contact-us', [HomeController::class, 'contactUs'])->name('contact-us');
 Route::post('contact-us', [HomeController::class, 'contactUsStore'])->name('contact-us.store');
