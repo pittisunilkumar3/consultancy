@@ -69,3 +69,8 @@ Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallba
 
 Route::get('auth/facebook', [FacebookController::class, 'redirectToFacebook'])->name('facebook-login');
 Route::get('auth/facebook/callback', [FacebookController::class, 'handleFacebookCallback']);
+
+// CSRF token refresh route for mobile devices
+Route::get('/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+})->middleware('web');

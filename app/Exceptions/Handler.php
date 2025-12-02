@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Session\TokenMismatchException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -46,5 +47,33 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+    }
+
+    /**
+     * Render an exception into an HTTP response.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Throwable  $exception
+     * @return \Symfony\Component\HttpFoundation\Response
+     *
+     * @throws \Throwable
+     */
+    public function render($request, Throwable $exception)
+    {
+        // Handle CSRF token mismatch (419 error) for mobile users
+        if ($exception instanceof TokenMismatchException) {
+            // Check if it's a mobile request
+            $userAgent = $request->header('User-Agent');
+            $isMobile = preg_match('/(Mobile|Android|iPhone|iPad|iPod|BlackBerry|Windows Phone)/i', $userAgent);
+            
+            if ($isMobile || $request->ajax()) {
+                // For mobile or AJAX requests, redirect back with a friendly message
+                return redirect()->back()
+                    ->withInput($request->except(['_token', 'password', 'password_confirmation']))
+                    ->with('error', 'Your session has expired. Please try again.');
+            }
+        }
+
+        return parent::render($request, $exception);
     }
 }

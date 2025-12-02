@@ -50,4 +50,37 @@
             toastr.error("{{ $error }}");
         @endforeach
     @endif
+
+    // Mobile-friendly CSRF token handling
+    $(document).ready(function() {
+        // Set up CSRF token for all AJAX requests
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+
+        // Handle CSRF token expiration for mobile
+        $(document).ajaxError(function(event, xhr, settings) {
+            if (xhr.status === 419) {
+                // CSRF token expired
+                toastr.warning('Your session has expired. Please refresh the page and try again.');
+                
+                // Try to refresh the page after a short delay
+                setTimeout(function() {
+                    window.location.reload();
+                }, 2000);
+            }
+        });
+
+        // Refresh CSRF token periodically for long sessions (every 30 minutes)
+        setInterval(function() {
+            $.get('/csrf-token', function(data) {
+                $('meta[name="csrf-token"]').attr('content', data.token);
+                $('input[name="_token"]').val(data.token);
+            }).fail(function() {
+                console.log('Failed to refresh CSRF token');
+            });
+        }, 30 * 60 * 1000); // 30 minutes
+    });
 </script>

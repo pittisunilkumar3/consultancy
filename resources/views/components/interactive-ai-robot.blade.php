@@ -364,16 +364,17 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0);
+    background: rgba(0, 0, 0, 0.5);
     opacity: 0;
-    pointer-events: none;
-    transition: all 0.4s ease;
-    z-index: 9998;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 999998;
+    backdrop-filter: blur(2px);
 }
 
-.robot-chat-overlay.open {
-    background: rgba(0, 0, 0, 0.3);
+.robot-chat-overlay.show {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
 }
 
@@ -390,7 +391,7 @@
     display: flex;
     flex-direction: column;
     box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
-    z-index: 9999;
+    z-index: 999999;
 }
 
 .robot-chat-sidebar.open {
@@ -664,10 +665,12 @@
 .robot-chat-messages {
     flex: 1;
     padding: 20px;
+    padding-bottom: 10px;
     overflow-y: auto;
     background: white;
     display: flex;
     flex-direction: column;
+    margin-bottom: 0;
 }
 
 .robot-message.typing {
@@ -700,6 +703,9 @@
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
     display: flex;
     justify-content: center;
+    position: relative;
+    z-index: 1000000;
+    min-height: 90px;
 }
 
 .expandable-chat-input {
@@ -714,6 +720,7 @@
     transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
     box-shadow: 0 5px 15px rgba(102, 210, 234, 0.3);
+    z-index: 1000001;
 }
 
 .expandable-chat-input.expanded {
@@ -1170,6 +1177,22 @@
         padding: 3px 8px;
     }
     
+    .robot-chat-input-area {
+        position: fixed;
+        bottom: 60px; /* Move up on tablets */
+        left: 0;
+        right: 0;
+        padding: 18px;
+        background: white;
+        border-top: 2px solid #e5e7eb;
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
+        z-index: 1000002;
+    }
+    
+    .robot-chat-messages {
+        padding-bottom: 100px; /* Add space for floating input */
+    }
+    
     .quick-questions-section {
         padding: 8px 12px;
         max-height: 120px;
@@ -1200,10 +1223,25 @@
     
     .robot-chat-messages {
         padding: 15px;
+        padding-bottom: 120px; /* Add space for floating input */
     }
     
     .robot-chat-input-area {
+        position: fixed;
+        bottom: 80px; /* Move up from bottom */
+        left: 0;
+        right: 0;
         padding: 15px;
+        background: white;
+        border-top: 2px solid #e5e7eb;
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
+        z-index: 1000002;
+    }
+    
+    /* Handle mobile browsers with dynamic viewport */
+    .robot-chat-sidebar {
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height for modern browsers */
     }
     
     .ai-message-container {
