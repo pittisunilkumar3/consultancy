@@ -25,12 +25,22 @@
     width: 80px;
     height: 80px;
     pointer-events: auto;
-    cursor: pointer;
+    cursor: move;
     z-index: 10000;
     animation: premiumRobotEntrance 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
     opacity: 0;
     transform: translateY(50px) scale(0.6) rotateY(-20deg);
     perspective: 1000px;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    transition: filter 0.2s ease;
+}
+
+.ai-robot-character.dragging {
+    cursor: grabbing;
+    filter: brightness(1.1);
 }
 
 .robot-face {
@@ -229,95 +239,7 @@
     animation-delay: 0.4s;
 }
 
-/* Premium Expandable Chat Input (Hidden by default) */
-.robot-chat-input {
-    position: fixed;
-    bottom: 30px;
-    right: 130px;
-    width: 55px;
-    height: 55px;
-    background: linear-gradient(145deg, #ffffff, #f8fafc);
-    border-radius: 28px;
-    box-shadow: 
-        0 15px 35px rgba(0, 0, 0, 0.12),
-        0 5px 15px rgba(0, 0, 0, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    border: 2px solid rgba(102, 126, 234, 0.2);
-    pointer-events: auto;
-    cursor: pointer;
-    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(10px);
-    display: none; /* Hidden by default - only shows in chat */
-}
-
-.robot-chat-input.expanded {
-    width: 350px;
-    border-radius: 25px;
-    cursor: default;
-}
-
-.robot-chat-input-icon {
-    font-size: 20px;
-    color: #6366f1;
-    transition: all 0.3s ease;
-}
-
-.robot-chat-input.expanded .robot-chat-input-icon {
-    opacity: 0;
-    transform: scale(0);
-}
-
-.robot-chat-textarea {
-    position: absolute;
-    left: 20px;
-    right: 60px;
-    top: 50%;
-    transform: translateY(-50%);
-    border: none;
-    outline: none;
-    font-size: 14px;
-    resize: none;
-    opacity: 0;
-    transition: opacity 0.3s ease 0.2s;
-    background: transparent;
-    color: #374151;
-}
-
-.robot-chat-input.expanded .robot-chat-textarea {
-    opacity: 1;
-}
-
-.robot-send-btn {
-    position: absolute;
-    right: 5px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(145deg, #6366f1, #8b5cf6);
-    border: none;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transform: translateY(-50%) scale(0);
-    transition: all 0.3s ease 0.2s;
-}
-
-.robot-chat-input.expanded .robot-send-btn {
-    opacity: 1;
-    transform: translateY(-50%) scale(1);
-}
-
-.robot-send-btn:hover {
-    transform: translateY(-50%) scale(1.1);
-    box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
-}
+/* Removed unused expandable chat input styles - chat opens directly to sidebar */
 
 /* Full Chat Interface */
 .robot-chat-overlay {
@@ -326,18 +248,23 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(15, 23, 42, 0);
     opacity: 0;
     visibility: hidden;
-    transition: all 0.3s ease;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 999998;
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(0px) brightness(1);
+    -webkit-backdrop-filter: blur(0px) brightness(1);
 }
 
-.robot-chat-overlay.show {
+.robot-chat-overlay.show,
+.robot-chat-overlay.open {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
+    backdrop-filter: blur(8px) brightness(0.7) saturate(1.2);
+    -webkit-backdrop-filter: blur(8px) brightness(0.7) saturate(1.2);
+    background: rgba(15, 23, 42, 0.5);
 }
 
 .robot-chat-sidebar {
@@ -354,6 +281,7 @@
     flex-direction: column;
     box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
     z-index: 999999;
+    overflow: hidden;
 }
 
 .robot-chat-sidebar.open {
@@ -362,8 +290,8 @@
 
 .robot-chat-header {
     padding: 20px 25px 25px 25px;
-    background: linear-gradient(135deg, #66d2ea 0%, #4ba252 100%);
-    color: white;
+    background: #eaefefff;
+    color: rgba(65, 55, 81, 1);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -373,36 +301,7 @@
     box-shadow: 0 4px 20px rgba(102, 210, 234, 0.3);
 }
 
-.robot-chat-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
-    pointer-events: none;
-}
 
-.robot-chat-header::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.05) 50%, transparent 70%);
-    animation: headerShimmer 3s ease-in-out infinite;
-    pointer-events: none;
-}
-
-@keyframes headerShimmer {
-    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-    50% { transform: translateX(-50%) translateY(-50%) rotate(45deg); }
-    100% { transform: translateX(0%) translateY(0%) rotate(45deg); }
-}
 
 .robot-chat-title {
     display: flex;
@@ -554,15 +453,16 @@
     bottom: 60px;
     right: 0;
     width: 320px;
-    background: white;
+    background: rgba(255, 255, 255, 0.95);
     border-radius: 15px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    border: 1px solid #e2e8f0;
+    box-shadow: 0 10px 40px rgba(102, 210, 234, 0.2);
+    border: 1px solid rgba(102, 210, 234, 0.2);
     transform: translateY(10px);
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
     z-index: 1000002;
+    backdrop-filter: blur(10px);
 }
 
 .quick-questions-popup:not(.collapsed) {
@@ -573,14 +473,14 @@
 
 .quick-questions-popup-header {
     padding: 15px 20px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid rgba(102, 210, 234, 0.2);
     display: flex;
     align-items: center;
     justify-content: space-between;
     font-weight: 600;
     color: #374151;
     font-size: 14px;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    background: linear-gradient(135deg, rgba(240, 249, 255, 0.8) 0%, rgba(224, 242, 254, 0.8) 100%);
     border-radius: 15px 15px 0 0;
 }
 
@@ -674,17 +574,117 @@
     padding: 20px;
     padding-bottom: 10px;
     overflow-y: auto;
-    background: white;
+    background: linear-gradient(135deg, rgba(240, 249, 255, 0.95) 0%, rgba(224, 242, 254, 0.95) 50%, rgba(240, 253, 244, 0.95) 100%);
     display: flex;
     flex-direction: column;
     margin-bottom: 0;
+    border-radius: 25px 25px 0 0;
+    margin-top: -25px;
+    padding-top: 45px;
+    position: relative;
+    z-index: 1;
     /* Hide scrollbar but keep scroll functionality */
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE and Edge */
+    /* Mask to make messages go under header */
+    -webkit-mask: linear-gradient(to bottom, transparent 0px, black 25px, black 100%);
+    mask: linear-gradient(to bottom, transparent 0px, black 25px, black 100%);
 }
 
 .robot-chat-messages::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
+}
+
+/* Aurora Background - Fixed position wrapper */
+.aurora-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.aurora-layer {
+    position: absolute;
+    inset: -10px;
+    opacity: 0.6;
+    will-change: transform;
+    pointer-events: none;
+    
+    /* Define CSS custom properties for colors - matching header gradient */
+    --white: rgba(255, 255, 255, 0.15);
+    --transparent: rgba(255, 255, 255, 0);
+    --cyan-400: rgba(102, 210, 234, 0.4);
+    --teal-300: rgba(94, 234, 212, 0.3);
+    --green-400: rgba(75, 162, 82, 0.4);
+    --blue-400: rgba(102, 210, 234, 0.3);
+    --emerald-300: rgba(110, 231, 183, 0.3);
+    
+    /* Aurora gradient patterns */
+    background-image: 
+        repeating-linear-gradient(100deg, var(--white) 0%, var(--white) 7%, var(--transparent) 10%, var(--transparent) 12%, var(--white) 16%),
+        repeating-linear-gradient(100deg, var(--cyan-400) 10%, var(--teal-300) 15%, var(--green-400) 20%, var(--emerald-300) 25%, var(--blue-400) 30%);
+    
+    background-size: 300%, 200%;
+    background-position: 50% 50%, 50% 50%;
+    
+    filter: blur(10px);
+    animation: aurora 20s ease-in-out infinite;
+}
+
+.aurora-layer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: 
+        repeating-linear-gradient(100deg, var(--white) 0%, var(--white) 7%, var(--transparent) 10%, var(--transparent) 12%, var(--white) 16%),
+        repeating-linear-gradient(100deg, var(--cyan-400) 10%, var(--teal-300) 15%, var(--green-400) 20%, var(--emerald-300) 25%, var(--blue-400) 30%);
+    
+    background-size: 200%, 100%;
+    background-attachment: fixed;
+    mix-blend-mode: difference;
+    animation: aurora-reverse 25s ease-in-out infinite;
+}
+
+@keyframes aurora {
+    0%, 100% {
+        background-position: 50% 50%, 50% 50%;
+        transform: rotate(0deg);
+    }
+    25% {
+        background-position: 0% 100%, 100% 0%;
+        transform: rotate(1deg);
+    }
+    50% {
+        background-position: 100% 0%, 0% 100%;
+        transform: rotate(0deg);
+    }
+    75% {
+        background-position: 0% 0%, 100% 100%;
+        transform: rotate(-1deg);
+    }
+}
+
+@keyframes aurora-reverse {
+    0%, 100% {
+        background-position: 100% 100%, 0% 0%;
+        transform: rotate(0deg);
+    }
+    25% {
+        background-position: 0% 0%, 100% 100%;
+        transform: rotate(-1deg);
+    }
+    50% {
+        background-position: 100% 100%, 0% 0%;
+        transform: rotate(0deg);
+    }
+    75% {
+        background-position: 50% 50%, 50% 50%;
+        transform: rotate(1deg);
+    }
 }
 
 .robot-message.typing {
@@ -712,14 +712,15 @@
 /* Expandable Chat Input Area in Sidebar */
 .robot-chat-input-area {
     padding: 20px;
-    background: white;
-    border-top: 1px solid #e5e7eb;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    background: linear-gradient(135deg, rgba(240, 249, 255, 0.95) 0%, rgba(224, 242, 254, 0.95) 100%);
+    border-top: 1px solid rgba(102, 210, 234, 0.2);
+    box-shadow: 0 -2px 10px rgba(102, 210, 234, 0.1);
     display: flex;
     justify-content: center;
     position: relative;
     z-index: 1000000;
     min-height: 90px;
+    backdrop-filter: blur(10px);
 }
 
 .expandable-chat-input {
@@ -739,14 +740,15 @@
 
 .expandable-chat-input.expanded {
     width: 100%;
-    background: white;
-    border: 2px solid #e5e7eb;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(102, 210, 234, 0.3);
     border-radius: 25px;
     padding: 6px 15px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 5px 20px rgba(102, 210, 234, 0.2);
     cursor: default;
     align-items: center;
     min-height: 56px;
+    backdrop-filter: blur(10px);
 }
 
 .expandable-input-icon {
@@ -790,7 +792,8 @@
 
 .expandable-chat-input.expanded:focus-within {
     border-color: #66d2ea;
-    box-shadow: 0 5px 20px rgba(102, 210, 234, 0.3);
+    box-shadow: 0 5px 25px rgba(102, 210, 234, 0.4);
+    background: rgba(255, 255, 255, 0.95);
 }
 
 /* Typing animation styles */
@@ -1249,7 +1252,7 @@
     
     .robot-chat-input-area {
         position: fixed;
-        bottom: 80px; /* Move up from bottom */
+        bottom: 5px; /* Move up from bottom */
         left: 0;
         right: 0;
         padding: 15px;
@@ -1296,14 +1299,7 @@
         </div>
     </div>
 
-    <!-- Expandable Chat Input -->
-    <div class="robot-chat-input" id="robotChatInput">
-        <div class="robot-chat-input-icon">💬</div>
-        <textarea class="robot-chat-textarea" id="robotTextarea" placeholder="Ask me anything about universities..." rows="1"></textarea>
-        <button class="robot-send-btn" id="robotSendBtn">
-            <i class="fa-solid fa-paper-plane"></i>
-        </button>
-    </div>
+    <!-- Expandable Chat Input removed - using sidebar chat only -->
 
     <!-- Chat Overlay -->
     <div class="robot-chat-overlay" id="robotChatOverlay"></div>
@@ -1328,18 +1324,12 @@
             <button class="robot-chat-close" id="robotChatClose">×</button>
         </div>
 
-        <div class="robot-chat-messages" id="robotChatMessages" style="position: relative;">
-            <!-- Shader Background Canvas for Chat Messages -->
-            <canvas id="robot-chat-shader-canvas" style="
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: auto;
-                height: auto;
-                z-index: 1;
-                pointer-events: none;
-                border-radius: inherit;
-            "></canvas>
+        <!-- Aurora Background - Fixed behind everything -->
+        <div class="aurora-background">
+            <div class="aurora-layer"></div>
+        </div>
+        
+        <div class="robot-chat-messages" id="robotChatMessages">
             <!-- Messages will be added dynamically -->
         </div>
         
@@ -1400,9 +1390,14 @@
 <script>
 // Interactive AI Robot JavaScript
 let robotChatOpen = false;
-let inputExpanded = false;
-let chatInputExpanded = true; // sidebar input is always expanded
 let speechTimeout;
+let isDragging = false;
+let currentX;
+let currentY;
+let initialX;
+let initialY;
+let xOffset = 0;
+let yOffset = 0;
 
 // N8N Chat Integration Variables
 let chatSessionId = '{{ uniqid() }}'; // Generate a session ID for this page load
@@ -1446,23 +1441,65 @@ function showRobotSpeech(message, showTyping = false) {
     }, 4000);
 }
 
-// Expandable Input Management
-function toggleChatInput() {
-    const chatInput = document.getElementById('robotChatInput');
-    const textarea = document.getElementById('robotTextarea');
+// Removed unused expandable input functions - chat opens directly to sidebar
+
+// Drag functionality for robot face
+function dragStart(e) {
+    if (robotChatOpen) return; // Don't drag when chat is open
     
-    if (!inputExpanded) {
-        chatInput.classList.add('expanded');
-        inputExpanded = true;
-        setTimeout(() => textarea.focus(), 300);
-        showRobotSpeech("Great! What would you like to know?", true);
+    if (e.type === "touchstart") {
+        initialX = e.touches[0].clientX - xOffset;
+        initialY = e.touches[0].clientY - yOffset;
+    } else {
+        initialX = e.clientX - xOffset;
+        initialY = e.clientY - yOffset;
+    }
+
+    if (e.target.closest('#aiRobotCharacter')) {
+        isDragging = true;
+        document.getElementById('aiRobotCharacter').classList.add('dragging');
     }
 }
 
-function collapseChatInput() {
-    const chatInput = document.getElementById('robotChatInput');
-    chatInput.classList.remove('expanded');
-    inputExpanded = false;
+function drag(e) {
+    if (isDragging) {
+        e.preventDefault();
+        
+        if (e.type === "touchmove") {
+            currentX = e.touches[0].clientX - initialX;
+            currentY = e.touches[0].clientY - initialY;
+        } else {
+            currentX = e.clientX - initialX;
+            currentY = e.clientY - initialY;
+        }
+
+        xOffset = currentX;
+        yOffset = currentY;
+
+        setTranslate(currentX, currentY, document.getElementById('aiRobotCharacter'));
+    }
+}
+
+function dragEnd(e) {
+    if (isDragging) {
+        initialX = currentX;
+        initialY = currentY;
+        isDragging = false;
+        document.getElementById('aiRobotCharacter').classList.remove('dragging');
+    }
+}
+
+function setTranslate(xPos, yPos, el) {
+    // Calculate position from bottom-right corner
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // Original position: 30px from right, 30px from bottom
+    const newRight = 30 - xPos;
+    const newBottom = 30 - yPos;
+    
+    el.style.right = newRight + 'px';
+    el.style.bottom = newBottom + 'px';
 }
 
 // Function to fetch student context
@@ -1513,15 +1550,8 @@ function openFullChat() {
     document.getElementById('robotChatSidebar').classList.add('open');
     document.body.style.overflow = 'hidden';
     
-    // Initialize shader background in chat messages area
-    if (typeof window.initRobotChatShaderBackground === 'function') {
-        window.initRobotChatShaderBackground();
-    }
-    
     // Hide robot face completely when chat opens
     document.getElementById('aiRobotCharacter').style.display = 'none';
-    // Hide the expandable input (we now have input in sidebar)
-    document.getElementById('robotChatInput').style.display = 'none';
     
     // Focus on the main chat input
     setTimeout(() => {
@@ -1543,14 +1573,8 @@ function closeFullChat() {
     document.getElementById('robotChatSidebar').classList.remove('open');
     document.body.style.overflow = '';
     
-    // Stop shader background
-    if (typeof window.stopRobotChatShaderBackground === 'function') {
-        window.stopRobotChatShaderBackground();
-    }
-    
-    // Show robot face again (hide expandable input)
+    // Show robot face again
     document.getElementById('aiRobotCharacter').style.display = 'block';
-    document.getElementById('robotChatInput').style.display = 'none';
 }
 
 // Message Management for Main Chat
@@ -1619,40 +1643,7 @@ function sendMainChatMessage() {
     autoResizeTextarea(textarea);
 }
 
-// Expandable Chat Input Management
-function toggleChatInput() {
-    const chatInput = document.getElementById('expandableChatInput');
-    const textarea = document.getElementById('robotChatTextareaMain');
-    const sendBtn = document.getElementById('robotChatSendMain');
-    
-    if (!chatInputExpanded) {
-        // Expand the input
-        chatInput.classList.add('expanded');
-        textarea.style.display = 'block';
-        sendBtn.style.display = 'flex';
-        chatInputExpanded = true;
-        
-        setTimeout(() => {
-            textarea.focus();
-        }, 300);
-    }
-}
-
-function collapseChatInput() {
-    const chatInput = document.getElementById('expandableChatInput');
-    const textarea = document.getElementById('robotChatTextareaMain');
-    const sendBtn = document.getElementById('robotChatSendMain');
-    
-    if (chatInputExpanded) {
-        chatInput.classList.remove('expanded');
-        textarea.style.display = 'none';
-        sendBtn.style.display = 'none';
-        textarea.value = '';
-        textarea.style.height = '44px'; // Reset height
-        chatInput.style.minHeight = '50px'; // Reset container height
-        chatInputExpanded = false;
-    }
-}
+// Sidebar chat input is always expanded - no toggle needed
 
 // Auto-resize textarea
 function autoResizeTextarea(textarea) {
@@ -1906,15 +1897,44 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize quick questions
     initQuickQuestions();
     
-    // Robot character click - opens full chat directly
-    document.getElementById('aiRobotCharacter').addEventListener('click', function() {
-        if (!robotChatOpen) {
+    const robotCharacter = document.getElementById('aiRobotCharacter');
+    
+    // Drag event listeners
+    robotCharacter.addEventListener('mousedown', dragStart);
+    robotCharacter.addEventListener('touchstart', dragStart);
+    
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('touchmove', drag, { passive: false });
+    
+    document.addEventListener('mouseup', dragEnd);
+    document.addEventListener('touchend', dragEnd);
+    
+    // Robot character click - opens full chat directly (only if not dragging)
+    let clickStartTime;
+    let clickStartX;
+    let clickStartY;
+    
+    robotCharacter.addEventListener('mousedown', function(e) {
+        clickStartTime = Date.now();
+        clickStartX = e.clientX;
+        clickStartY = e.clientY;
+    });
+    
+    robotCharacter.addEventListener('mouseup', function(e) {
+        const clickDuration = Date.now() - clickStartTime;
+        const moveDistance = Math.sqrt(
+            Math.pow(e.clientX - clickStartX, 2) + 
+            Math.pow(e.clientY - clickStartY, 2)
+        );
+        
+        // Only open chat if it was a quick click and minimal movement (not a drag)
+        if (clickDuration < 300 && moveDistance < 10 && !robotChatOpen) {
             openChatDirectly();
         }
     });
     
     // Robot hover effects
-    document.getElementById('aiRobotCharacter').addEventListener('mouseenter', function() {
+    robotCharacter.addEventListener('mouseenter', function() {
         if (!robotChatOpen) {
             showRobotSpeech("Click me to start chatting! 😊");
         }
@@ -1940,27 +1960,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('robotChatClose').addEventListener('click', closeFullChat);
     document.getElementById('robotChatOverlay').addEventListener('click', closeFullChat);
     
-    // Textarea enter key
-    document.getElementById('robotTextarea').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendRobotMessage();
-        }
-    });
-    
-    // Click outside to collapse input
-    document.addEventListener('click', function(e) {
-        const chatInput = document.getElementById('robotChatInput');
-        const robot = document.getElementById('aiRobotCharacter');
-        
-        if (inputExpanded && !chatInput.contains(e.target) && !robot.contains(e.target)) {
-            collapseChatInput();
-        }
-    });
-    
     // Auto-change robot messages
     setInterval(() => {
-        if (!robotChatOpen && !inputExpanded) {
+        if (!robotChatOpen) {
             const randomMessage = robotMessages[Math.floor(Math.random() * robotMessages.length)];
             showRobotSpeech(randomMessage);
         }
@@ -1973,201 +1975,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-{{-- Simple Shader Background Script for Chat Messages --}}
-<script>
-// Simple animated background for robot chat messages area
-let robotChatShaderCanvas = null;
-let robotChatShaderGL = null;
-let robotChatShaderProgram = null;
-let robotChatAnimationId = null;
-
-window.initRobotChatShaderBackground = function() {
-    robotChatShaderCanvas = document.getElementById('robot-chat-shader-canvas');
-    if (!robotChatShaderCanvas) return;
-
-    robotChatShaderGL = robotChatShaderCanvas.getContext('webgl');
-    if (!robotChatShaderGL) {
-        console.error('❌ WebGL not supported in this browser');
-        robotChatShaderCanvas.style.background = 'linear-gradient(135deg, rgba(13, 13, 51, 0.8) 0%, rgba(76, 29, 149, 0.8) 50%, rgba(30, 64, 175, 0.8) 100%)';
-        return;
-    }
-    
-    console.log('✅ WebGL context created successfully');
-
-    // Simple vertex shader
-    const vsSource = `
-        attribute vec4 aVertexPosition;
-        void main() {
-            gl_Position = aVertexPosition;
-        }
-    `;
-
-    // Beautiful flowing waves shader like in the image
-    const fsSource = `
-        precision highp float;
-        uniform vec2 iResolution;
-        uniform float iTime;
-
-        // Function to create smooth flowing lines
-        float sdLine(vec2 p, vec2 a, vec2 b) {
-            vec2 pa = p - a;
-            vec2 ba = b - a;
-            float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
-            return length(pa - ba * h);
-        }
-
-        // Create flowing wave paths - optimized for chat container
-        vec2 getWavePoint(float t, float offset, float amplitude) {
-            float x = t * 0.5; // Slower horizontal movement
-            float y = sin(t * 2.0 + iTime * 1.8 + offset) * amplitude + 
-                     sin(t * 5.0 + iTime * 1.2 + offset * 1.5) * amplitude * 0.4 +
-                     sin(t * 8.0 + iTime * 0.8 + offset * 0.8) * amplitude * 0.2;
-            return vec2(x, y);
-        }
-
-        void main() {
-            // Adjust UV for chat container aspect ratio
-            vec2 uv = gl_FragCoord.xy / iResolution.xy;
-            uv = (uv - 0.5) * 2.0;
-            
-            // Scale for better wave visibility in narrow containers
-            uv.x *= iResolution.x / iResolution.y; // Adjust for aspect ratio
-            uv *= 0.8; // Scale down for better wave visibility
-            
-            // Dark purple to blue gradient background
-            vec3 bgColor = mix(vec3(0.02, 0.02, 0.15), vec3(0.08, 0.02, 0.25), uv.y * 0.5 + 0.5);
-            vec3 finalColor = bgColor;
-            
-            // Create multiple flowing wave lines - optimized for chat
-            for(int i = 0; i < 6; i++) {
-                float offset = float(i) * 1.2;
-                float amplitude = 0.4 + sin(iTime * 0.3 + offset) * 0.15;
-                
-                // Create flowing line segments with better spacing
-                for(float t = -3.0; t < 3.0; t += 0.15) {
-                    vec2 p1 = getWavePoint(t, offset, amplitude);
-                    vec2 p2 = getWavePoint(t + 0.15, offset, amplitude);
-                    
-                    float dist = sdLine(uv, p1, p2);
-                    float intensity = 1.0 / (1.0 + dist * 30.0); // Softer glow
-                    
-                    // Enhanced purple to cyan gradient
-                    vec3 lineColor = mix(
-                        vec3(0.6, 0.1, 1.0),  // Brighter Purple
-                        vec3(0.1, 0.9, 1.0),  // Brighter Cyan
-                        sin(t * 0.5 + iTime * 0.8 + offset) * 0.5 + 0.5
-                    );
-                    
-                    // Enhanced glow effect
-                    intensity *= (0.6 + sin(iTime * 1.5 + offset + t * 3.0) * 0.4);
-                    finalColor += lineColor * intensity * 0.5; // Brighter lines
-                }
-            }
-            
-            // Add some sparkle effects
-            vec2 sparkleUV = uv * 10.0;
-            float sparkle = sin(sparkleUV.x * 15.0 + iTime * 3.0) * sin(sparkleUV.y * 15.0 + iTime * 2.0);
-            sparkle = smoothstep(0.9, 1.0, sparkle);
-            finalColor += vec3(0.8, 0.6, 1.0) * sparkle * 0.2;
-            
-            gl_FragColor = vec4(finalColor, 1.0);
-        }
-    `;
-
-    // Create and compile shaders
-    function createShader(type, source) {
-        const shader = robotChatShaderGL.createShader(type);
-        robotChatShaderGL.shaderSource(shader, source);
-        robotChatShaderGL.compileShader(shader);
-        if (!robotChatShaderGL.getShaderParameter(shader, robotChatShaderGL.COMPILE_STATUS)) {
-            console.error('❌ Shader compile error:', robotChatShaderGL.getShaderInfoLog(shader));
-            console.error('Shader source:', source);
-            return null;
-        }
-        console.log('✅ Shader compiled successfully:', type === robotChatShaderGL.VERTEX_SHADER ? 'VERTEX' : 'FRAGMENT');
-        return shader;
-    }
-
-    const vertexShader = createShader(robotChatShaderGL.VERTEX_SHADER, vsSource);
-    const fragmentShader = createShader(robotChatShaderGL.FRAGMENT_SHADER, fsSource);
-
-    if (!vertexShader || !fragmentShader) {
-        robotChatShaderCanvas.style.background = 'linear-gradient(135deg, rgba(13, 13, 51, 0.8) 0%, rgba(76, 29, 149, 0.8) 50%, rgba(30, 64, 175, 0.8) 100%)';
-        return;
-    }
-
-    // Create program
-    robotChatShaderProgram = robotChatShaderGL.createProgram();
-    robotChatShaderGL.attachShader(robotChatShaderProgram, vertexShader);
-    robotChatShaderGL.attachShader(robotChatShaderProgram, fragmentShader);
-    robotChatShaderGL.linkProgram(robotChatShaderProgram);
-
-    if (!robotChatShaderGL.getProgramParameter(robotChatShaderProgram, robotChatShaderGL.LINK_STATUS)) {
-        console.error('❌ Program link error:', robotChatShaderGL.getProgramInfoLog(robotChatShaderProgram));
-        robotChatShaderCanvas.style.background = 'linear-gradient(135deg, rgba(13, 13, 51, 0.8) 0%, rgba(76, 29, 149, 0.8) 50%, rgba(30, 64, 175, 0.8) 100%)';
-        return;
-    }
-    
-    console.log('✅ Shader program linked successfully');
-
-    // Setup geometry
-    const positions = [-1, -1, 1, -1, -1, 1, 1, 1];
-    const positionBuffer = robotChatShaderGL.createBuffer();
-    robotChatShaderGL.bindBuffer(robotChatShaderGL.ARRAY_BUFFER, positionBuffer);
-    robotChatShaderGL.bufferData(robotChatShaderGL.ARRAY_BUFFER, new Float32Array(positions), robotChatShaderGL.STATIC_DRAW);
-
-    const positionLocation = robotChatShaderGL.getAttribLocation(robotChatShaderProgram, 'aVertexPosition');
-    const resolutionLocation = robotChatShaderGL.getUniformLocation(robotChatShaderProgram, 'iResolution');
-    const timeLocation = robotChatShaderGL.getUniformLocation(robotChatShaderProgram, 'iTime');
-
-    // Resize function - now updates dynamically
-    function resizeCanvas() {
-        const messagesContainer = document.getElementById('robotChatMessages');
-        if (messagesContainer) {
-            robotChatShaderCanvas.width = messagesContainer.clientWidth;
-            robotChatShaderCanvas.height = messagesContainer.scrollHeight; // Use scrollHeight for dynamic content
-            robotChatShaderGL.viewport(0, 0, robotChatShaderCanvas.width, robotChatShaderCanvas.height);
-        }
-    }
-
-    // Observe messages container for changes
-    const messagesContainer = document.getElementById('robotChatMessages');
-    if (messagesContainer) {
-        const observer = new MutationObserver(resizeCanvas);
-        observer.observe(messagesContainer, { childList: true, subtree: true });
-    }
-
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    // Animation loop
-    const startTime = Date.now();
-    function animate() {
-        const currentTime = (Date.now() - startTime) / 1000;
-
-        robotChatShaderGL.clearColor(0.1, 0.1, 0.3, 0.3);
-        robotChatShaderGL.clear(robotChatShaderGL.COLOR_BUFFER_BIT);
-
-        robotChatShaderGL.useProgram(robotChatShaderProgram);
-        robotChatShaderGL.uniform2f(resolutionLocation, robotChatShaderCanvas.width, robotChatShaderCanvas.height);
-        robotChatShaderGL.uniform1f(timeLocation, currentTime);
-
-        robotChatShaderGL.bindBuffer(robotChatShaderGL.ARRAY_BUFFER, positionBuffer);
-        robotChatShaderGL.vertexAttribPointer(positionLocation, 2, robotChatShaderGL.FLOAT, false, 0, 0);
-        robotChatShaderGL.enableVertexAttribArray(positionLocation);
-
-        robotChatShaderGL.drawArrays(robotChatShaderGL.TRIANGLE_STRIP, 0, 4);
-        robotChatAnimationId = requestAnimationFrame(animate);
-    }
-
-    console.log('🎨 Shader background animation started!');
-    animate();
-};
-
-window.stopRobotChatShaderBackground = function() {
-    if (robotChatAnimationId) {
-        cancelAnimationFrame(robotChatAnimationId);
-        robotChatAnimationId = null;
-    }
-};
-</script>
