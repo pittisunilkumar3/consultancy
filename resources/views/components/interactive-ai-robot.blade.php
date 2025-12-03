@@ -1,4 +1,5 @@
 {{-- Premium 3D AI Robot Chat System --}}
+
 <!-- Include Animate.css for smooth animations -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 <!-- Include jQuery for N8N API calls -->
@@ -15,45 +16,6 @@
     pointer-events: none;
     z-index: 9997;
 }
-
-/* Cursor Following Dots - Only in Chat Sidebar */
-.cursor-dots {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 1;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.robot-chat-sidebar.open .cursor-dots {
-    opacity: 1;
-}
-
-.cursor-dot {
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    background: linear-gradient(45deg, #66d2ea, #4ba252);
-    border-radius: 50%;
-    opacity: 0;
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    box-shadow: 0 0 10px rgba(102, 210, 234, 0.5);
-}
-
-.cursor-dot.active {
-    opacity: 0.8;
-    transform: scale(1.2);
-}
-
-.cursor-dot:nth-child(1) { transition-delay: 0ms; }
-.cursor-dot:nth-child(2) { transition-delay: 50ms; }
-.cursor-dot:nth-child(3) { transition-delay: 100ms; }
-.cursor-dot:nth-child(4) { transition-delay: 150ms; }
-.cursor-dot:nth-child(5) { transition-delay: 200ms; }
 
 /* Premium 3D AI Robot Face */
 .ai-robot-character {
@@ -399,7 +361,7 @@
 }
 
 .robot-chat-header {
-    padding: 30px 25px;
+    padding: 20px 25px 25px 25px;
     background: linear-gradient(135deg, #66d2ea 0%, #4ba252 100%);
     color: white;
     display: flex;
@@ -407,6 +369,8 @@
     justify-content: space-between;
     position: relative;
     overflow: hidden;
+    border-radius: 0 0 25px 25px;
+    box-shadow: 0 4px 20px rgba(102, 210, 234, 0.3);
 }
 
 .robot-chat-header::before {
@@ -449,28 +413,29 @@
 }
 
 .robot-header-avatar {
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
     background: rgba(255, 255, 255, 0.15);
-    border-radius: 20px;
+    border-radius: 25px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: 32px;
     animation: headerRobotFloat 2s ease-in-out infinite;
     overflow: hidden;
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    border: 3px solid rgba(255, 255, 255, 0.3);
     box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
+        0 10px 40px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(15px);
+    flex-shrink: 0;
 }
 
 .robot-header-avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 18px;
+    border-radius: 22px;
 }
 
 .header-info {
@@ -518,22 +483,23 @@
 }
 
 .robot-chat-close {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     color: white;
-    font-size: 20px;
+    font-size: 22px;
     cursor: pointer;
-    padding: 10px;
+    padding: 12px;
     border-radius: 50%;
     transition: all 0.3s ease;
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     z-index: 1;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(15px);
+    flex-shrink: 0;
 }
 
 .robot-chat-close:hover {
@@ -542,63 +508,101 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Quick Questions Section */
-.quick-questions-section {
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    border-bottom: 1px solid #e2e8f0;
-    padding: 12px 16px;
-    max-height: 140px;
-    overflow-y: auto;
-    transition: all 0.3s ease;
+/* Floating Quick Questions */
+.quick-questions-floating {
+    position: absolute;
+    bottom: 100px;
+    right: 20px;
+    z-index: 1000001;
 }
 
-.quick-questions-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    font-weight: 600;
-    color: #374151;
-    font-size: 13px;
-}
-
-.quick-questions-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.quick-questions-toggle {
+.quick-questions-fab {
     background: linear-gradient(135deg, #66d2ea 0%, #4ba252 100%);
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 12px;
+    border-radius: 25px;
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
-    gap: 6px;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(102, 210, 234, 0.3);
+    gap: 8px;
+    box-shadow: 0 4px 20px rgba(102, 210, 234, 0.4);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
-.quick-questions-toggle:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 210, 234, 0.4);
+.quick-questions-fab:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(102, 210, 234, 0.5);
 }
 
-.quick-questions-section.collapsed .quick-questions-grid {
-    display: none;
-}
-
-.quick-questions-section.collapsed {
-    padding: 10px 16px;
-}
-
-.quick-questions-icon {
+.fab-icon {
     font-size: 16px;
     animation: pulse 2s infinite;
+}
+
+.fab-text {
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.quick-questions-popup {
+    position: absolute;
+    bottom: 60px;
+    right: 0;
+    width: 320px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e2e8f0;
+    transform: translateY(10px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1000002;
+}
+
+.quick-questions-popup:not(.collapsed) {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+.quick-questions-popup-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 15px 15px 0 0;
+}
+
+.popup-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.popup-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #374151;
 }
 
 @keyframes pulse {
@@ -608,8 +612,11 @@
 
 .quick-questions-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: 1fr;
     gap: 8px;
+    padding: 15px 20px;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 .quick-question-btn {
@@ -671,6 +678,13 @@
     display: flex;
     flex-direction: column;
     margin-bottom: 0;
+    /* Hide scrollbar but keep scroll functionality */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.robot-chat-messages::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 .robot-message.typing {
@@ -822,6 +836,13 @@
     margin: 8px 0;
     display: flex;
     align-items: flex-start;
+    position: relative;
+    z-index: 2;
+}
+
+.robot-message.user {
+    position: relative;
+    z-index: 2;
 }
 
 .ai-message-container {
@@ -1289,14 +1310,6 @@
 
     <!-- Full Chat Sidebar -->
     <div class="robot-chat-sidebar" id="robotChatSidebar">
-        <!-- Cursor Following Dots -->
-        <div class="cursor-dots" id="cursorDots">
-            <div class="cursor-dot"></div>
-            <div class="cursor-dot"></div>
-            <div class="cursor-dot"></div>
-            <div class="cursor-dot"></div>
-            <div class="cursor-dot"></div>
-        </div>
         
         <div class="robot-chat-header">
             <div class="robot-chat-title">
@@ -1314,57 +1327,69 @@
             </div>
             <button class="robot-chat-close" id="robotChatClose">×</button>
         </div>
-        
-        <!-- Quick Questions Section -->
-        <div class="quick-questions-section" id="quickQuestionsSection">
-            <div class="quick-questions-header">
-                <div class="quick-questions-title">
-                    <span class="quick-questions-icon">💡</span>
-                    <span>Quick Questions</span>
-                </div>
-                <button class="quick-questions-toggle" id="quickQuestionsToggle" style="display: none;">
-                    <span class="toggle-icon">📝</span>
-                    Show Questions
-                </button>
-            </div>
-            <div class="quick-questions-grid">
-                <button class="quick-question-btn" data-question="Which universities accept my score?">
-                    <span class="question-icon">🎓</span>
-                    Which universities accept my score?
-                </button>
-                <button class="quick-question-btn" data-question="What documents do I need?">
-                    <span class="question-icon">📄</span>
-                    What documents do I need?
-                </button>
-                <button class="quick-question-btn" data-question="When are visa processing deadlines?">
-                    <span class="question-icon">⏰</span>
-                    When are visa processing deadlines?
-                </button>
-                <button class="quick-question-btn" data-question="Can I work part-time?">
-                    <span class="question-icon">💼</span>
-                    Can I work part-time?
-                </button>
-                <button class="quick-question-btn" data-question="What's the SOP format?">
-                    <span class="question-icon">📝</span>
-                    What's the SOP format?
-                </button>
-                <button class="quick-question-btn" data-question="Which universities can I apply to with IELTS 6.5?">
-                    <span class="question-icon">🌟</span>
-                    Which universities can I apply to with IELTS 6.5?
-                </button>
-            </div>
-        </div>
 
-        <div class="robot-chat-messages" id="robotChatMessages">
+        <div class="robot-chat-messages" id="robotChatMessages" style="position: relative;">
+            <!-- Shader Background Canvas for Chat Messages -->
+            <canvas id="robot-chat-shader-canvas" style="
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: auto;
+                height: auto;
+                z-index: 1;
+                pointer-events: none;
+                border-radius: inherit;
+            "></canvas>
             <!-- Messages will be added dynamically -->
         </div>
         
+        <!-- Quick Questions Floating Button -->
+        <div class="quick-questions-floating" id="quickQuestionsFloating">
+            <button class="quick-questions-fab" id="quickQuestionsFab" onclick="toggleQuickQuestions()">
+                <span class="fab-icon">💡</span>
+            </button>
+            
+            <!-- Quick Questions Popup -->
+            <div class="quick-questions-popup collapsed" id="quickQuestionsPopup">
+                <div class="quick-questions-popup-header">
+                    <span>💡 Quick Questions</span>
+                    <button class="popup-close" onclick="toggleQuickQuestions()">×</button>
+                </div>
+                <div class="quick-questions-grid">
+                    <button class="quick-question-btn" data-question="Which universities accept my score?">
+                        <span class="question-icon">🎓</span>
+                        Which universities accept my score?
+                    </button>
+                    <button class="quick-question-btn" data-question="What documents do I need?">
+                        <span class="question-icon">📄</span>
+                        What documents do I need?
+                    </button>
+                    <button class="quick-question-btn" data-question="When are visa processing deadlines?">
+                        <span class="question-icon">⏰</span>
+                        When are visa processing deadlines?
+                    </button>
+                    <button class="quick-question-btn" data-question="Can I work part-time?">
+                        <span class="question-icon">💼</span>
+                        Can I work part-time?
+                    </button>
+                    <button class="quick-question-btn" data-question="What's the SOP format?">
+                        <span class="question-icon">📝</span>
+                        What's the SOP format?
+                    </button>
+                    <button class="quick-question-btn" data-question="How much does it cost?">
+                        <span class="question-icon">💰</span>
+                        How much does it cost?
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Expandable Chat Input Area -->
         <div class="robot-chat-input-area">
-            <div class="expandable-chat-input" id="expandableChatInput">
+            <div class="expandable-chat-input expanded" id="expandableChatInput">
                 <div class="expandable-input-icon" id="expandableInputIcon">💬</div>
-                <textarea class="robot-chat-textarea-main" id="robotChatTextareaMain" placeholder="Ask me anything about universities..." rows="1" style="display: none;"></textarea>
-                <button class="robot-chat-send-main" id="robotChatSendMain" style="display: none;">
+                <textarea class="robot-chat-textarea-main" id="robotChatTextareaMain" placeholder="Ask me anything about universities..." rows="1"></textarea>
+                <button class="robot-chat-send-main" id="robotChatSendMain">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
             </div>
@@ -1376,7 +1401,7 @@
 // Interactive AI Robot JavaScript
 let robotChatOpen = false;
 let inputExpanded = false;
-let chatInputExpanded = false;
+let chatInputExpanded = true; // sidebar input is always expanded
 let speechTimeout;
 
 // N8N Chat Integration Variables
@@ -1488,6 +1513,11 @@ function openFullChat() {
     document.getElementById('robotChatSidebar').classList.add('open');
     document.body.style.overflow = 'hidden';
     
+    // Initialize shader background in chat messages area
+    if (typeof window.initRobotChatShaderBackground === 'function') {
+        window.initRobotChatShaderBackground();
+    }
+    
     // Hide robot face completely when chat opens
     document.getElementById('aiRobotCharacter').style.display = 'none';
     // Hide the expandable input (we now have input in sidebar)
@@ -1513,6 +1543,11 @@ function closeFullChat() {
     document.getElementById('robotChatSidebar').classList.remove('open');
     document.body.style.overflow = '';
     
+    // Stop shader background
+    if (typeof window.stopRobotChatShaderBackground === 'function') {
+        window.stopRobotChatShaderBackground();
+    }
+    
     // Show robot face again (hide expandable input)
     document.getElementById('aiRobotCharacter').style.display = 'block';
     document.getElementById('robotChatInput').style.display = 'none';
@@ -1527,9 +1562,6 @@ function sendMainChatMessage() {
     
     // Add user message
     addRobotMessage('user', message);
-    
-    // Collapse the input after sending
-    collapseChatInput();
     
     // Show typing indicator
     showTypingIndicator();
@@ -1580,6 +1612,11 @@ function sendMainChatMessage() {
             console.error('AI Chat Error:', xhr);
         }
     });
+
+    // Clear input but keep it expanded
+    textarea.value = '';
+    textarea.style.height = '44px';
+    autoResizeTextarea(textarea);
 }
 
 // Expandable Chat Input Management
@@ -1667,7 +1704,7 @@ function addRobotMessage(sender, message, isTyping = false) {
 }
 
 // Animated typing function with faster speed
-function typeMessage(element, message, speed = 25) {
+function typeMessage(element, message, speed = 10) {
     // Format message with markdown-like parsing for bold, newlines, and bullet points
     const formattedMessage = message
         .replace(/\n/g, '<br>')
@@ -1775,41 +1812,7 @@ function hideTypingIndicator() {
     }
 }
 
-// Cursor Following Dots Effect - Only in Chat Sidebar
-let cursorDots = [];
-let mouseX = 0, mouseY = 0;
 
-function initCursorDots() {
-    const dotsContainer = document.getElementById('cursorDots');
-    const chatSidebar = document.getElementById('robotChatSidebar');
-    cursorDots = Array.from(dotsContainer.children);
-    
-    // Only track mouse movement within the chat sidebar
-    chatSidebar.addEventListener('mousemove', (e) => {
-        const rect = chatSidebar.getBoundingClientRect();
-        mouseX = e.clientX - rect.left;
-        mouseY = e.clientY - rect.top;
-        
-        cursorDots.forEach((dot, index) => {
-            setTimeout(() => {
-                dot.style.left = mouseX + 'px';
-                dot.style.top = mouseY + 'px';
-                dot.classList.add('active');
-                
-                setTimeout(() => {
-                    dot.classList.remove('active');
-                }, 300);
-            }, index * 50);
-        });
-    });
-    
-    // Hide dots when mouse leaves sidebar
-    chatSidebar.addEventListener('mouseleave', () => {
-        cursorDots.forEach(dot => {
-            dot.classList.remove('active');
-        });
-    });
-}
 
 // Quick Questions Functionality
 function initQuickQuestions() {
@@ -1822,8 +1825,11 @@ function initQuickQuestions() {
             // Add question as user message
             addRobotMessage('user', question);
             
-            // Hide quick questions after first use
-            hideQuickQuestions();
+            // Hide quick questions popup after use
+            const quickQuestionsPopup = document.getElementById('quickQuestionsPopup');
+            if (quickQuestionsPopup) {
+                quickQuestionsPopup.classList.add('collapsed');
+            }
             
             // Show typing indicator
             showTypingIndicator();
@@ -1884,44 +1890,21 @@ function sendQuestionToAI(message) {
     });
 }
 
-function hideQuickQuestions() {
-    const quickQuestionsSection = document.getElementById('quickQuestionsSection');
-    const toggleButton = document.getElementById('quickQuestionsToggle');
-    
-    // Collapse the section instead of hiding completely
-    quickQuestionsSection.classList.add('collapsed');
-    toggleButton.style.display = 'flex';
-    toggleButton.innerHTML = '<span class="toggle-icon">📝</span> Show Questions';
-}
-
-function showQuickQuestions() {
-    const quickQuestionsSection = document.getElementById('quickQuestionsSection');
-    const toggleButton = document.getElementById('quickQuestionsToggle');
-    
-    quickQuestionsSection.classList.remove('collapsed');
-    toggleButton.innerHTML = '<span class="toggle-icon">📋</span> Hide Questions';
-}
-
 function toggleQuickQuestions() {
-    const quickQuestionsSection = document.getElementById('quickQuestionsSection');
+    const quickQuestionsPopup = document.getElementById('quickQuestionsPopup');
     
-    if (quickQuestionsSection.classList.contains('collapsed')) {
-        showQuickQuestions();
+    if (quickQuestionsPopup.classList.contains('collapsed')) {
+        quickQuestionsPopup.classList.remove('collapsed');
     } else {
-        hideQuickQuestions();
+        quickQuestionsPopup.classList.add('collapsed');
     }
 }
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize cursor dots effect
-    initCursorDots();
     
     // Initialize quick questions
     initQuickQuestions();
-    
-    // Quick questions toggle button
-    document.getElementById('quickQuestionsToggle').addEventListener('click', toggleQuickQuestions);
     
     // Robot character click - opens full chat directly
     document.getElementById('aiRobotCharacter').addEventListener('click', function() {
@@ -1934,13 +1917,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('aiRobotCharacter').addEventListener('mouseenter', function() {
         if (!robotChatOpen) {
             showRobotSpeech("Click me to start chatting! 😊");
-        }
-    });
-    
-    // Expandable chat input click
-    document.getElementById('expandableChatInput').addEventListener('click', function() {
-        if (!chatInputExpanded) {
-            toggleChatInput();
         }
     });
     
@@ -1958,16 +1934,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-resize main textarea
     document.getElementById('robotChatTextareaMain').addEventListener('input', function() {
         autoResizeTextarea(this);
-    });
-    
-    // Click outside to collapse chat input
-    document.addEventListener('click', function(e) {
-        const chatInput = document.getElementById('expandableChatInput');
-        const sidebar = document.getElementById('robotChatSidebar');
-        
-        if (chatInputExpanded && !chatInput.contains(e.target) && sidebar.contains(e.target)) {
-            collapseChatInput();
-        }
     });
     
     // Close chat
@@ -2005,4 +1971,203 @@ document.addEventListener('DOMContentLoaded', function() {
         showRobotSpeech(robotMessages[0]);
     }, 2000);
 });
+</script>
+
+{{-- Simple Shader Background Script for Chat Messages --}}
+<script>
+// Simple animated background for robot chat messages area
+let robotChatShaderCanvas = null;
+let robotChatShaderGL = null;
+let robotChatShaderProgram = null;
+let robotChatAnimationId = null;
+
+window.initRobotChatShaderBackground = function() {
+    robotChatShaderCanvas = document.getElementById('robot-chat-shader-canvas');
+    if (!robotChatShaderCanvas) return;
+
+    robotChatShaderGL = robotChatShaderCanvas.getContext('webgl');
+    if (!robotChatShaderGL) {
+        console.error('❌ WebGL not supported in this browser');
+        robotChatShaderCanvas.style.background = 'linear-gradient(135deg, rgba(13, 13, 51, 0.8) 0%, rgba(76, 29, 149, 0.8) 50%, rgba(30, 64, 175, 0.8) 100%)';
+        return;
+    }
+    
+    console.log('✅ WebGL context created successfully');
+
+    // Simple vertex shader
+    const vsSource = `
+        attribute vec4 aVertexPosition;
+        void main() {
+            gl_Position = aVertexPosition;
+        }
+    `;
+
+    // Beautiful flowing waves shader like in the image
+    const fsSource = `
+        precision highp float;
+        uniform vec2 iResolution;
+        uniform float iTime;
+
+        // Function to create smooth flowing lines
+        float sdLine(vec2 p, vec2 a, vec2 b) {
+            vec2 pa = p - a;
+            vec2 ba = b - a;
+            float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+            return length(pa - ba * h);
+        }
+
+        // Create flowing wave paths - optimized for chat container
+        vec2 getWavePoint(float t, float offset, float amplitude) {
+            float x = t * 0.5; // Slower horizontal movement
+            float y = sin(t * 2.0 + iTime * 1.8 + offset) * amplitude + 
+                     sin(t * 5.0 + iTime * 1.2 + offset * 1.5) * amplitude * 0.4 +
+                     sin(t * 8.0 + iTime * 0.8 + offset * 0.8) * amplitude * 0.2;
+            return vec2(x, y);
+        }
+
+        void main() {
+            // Adjust UV for chat container aspect ratio
+            vec2 uv = gl_FragCoord.xy / iResolution.xy;
+            uv = (uv - 0.5) * 2.0;
+            
+            // Scale for better wave visibility in narrow containers
+            uv.x *= iResolution.x / iResolution.y; // Adjust for aspect ratio
+            uv *= 0.8; // Scale down for better wave visibility
+            
+            // Dark purple to blue gradient background
+            vec3 bgColor = mix(vec3(0.02, 0.02, 0.15), vec3(0.08, 0.02, 0.25), uv.y * 0.5 + 0.5);
+            vec3 finalColor = bgColor;
+            
+            // Create multiple flowing wave lines - optimized for chat
+            for(int i = 0; i < 6; i++) {
+                float offset = float(i) * 1.2;
+                float amplitude = 0.4 + sin(iTime * 0.3 + offset) * 0.15;
+                
+                // Create flowing line segments with better spacing
+                for(float t = -3.0; t < 3.0; t += 0.15) {
+                    vec2 p1 = getWavePoint(t, offset, amplitude);
+                    vec2 p2 = getWavePoint(t + 0.15, offset, amplitude);
+                    
+                    float dist = sdLine(uv, p1, p2);
+                    float intensity = 1.0 / (1.0 + dist * 30.0); // Softer glow
+                    
+                    // Enhanced purple to cyan gradient
+                    vec3 lineColor = mix(
+                        vec3(0.6, 0.1, 1.0),  // Brighter Purple
+                        vec3(0.1, 0.9, 1.0),  // Brighter Cyan
+                        sin(t * 0.5 + iTime * 0.8 + offset) * 0.5 + 0.5
+                    );
+                    
+                    // Enhanced glow effect
+                    intensity *= (0.6 + sin(iTime * 1.5 + offset + t * 3.0) * 0.4);
+                    finalColor += lineColor * intensity * 0.5; // Brighter lines
+                }
+            }
+            
+            // Add some sparkle effects
+            vec2 sparkleUV = uv * 10.0;
+            float sparkle = sin(sparkleUV.x * 15.0 + iTime * 3.0) * sin(sparkleUV.y * 15.0 + iTime * 2.0);
+            sparkle = smoothstep(0.9, 1.0, sparkle);
+            finalColor += vec3(0.8, 0.6, 1.0) * sparkle * 0.2;
+            
+            gl_FragColor = vec4(finalColor, 1.0);
+        }
+    `;
+
+    // Create and compile shaders
+    function createShader(type, source) {
+        const shader = robotChatShaderGL.createShader(type);
+        robotChatShaderGL.shaderSource(shader, source);
+        robotChatShaderGL.compileShader(shader);
+        if (!robotChatShaderGL.getShaderParameter(shader, robotChatShaderGL.COMPILE_STATUS)) {
+            console.error('❌ Shader compile error:', robotChatShaderGL.getShaderInfoLog(shader));
+            console.error('Shader source:', source);
+            return null;
+        }
+        console.log('✅ Shader compiled successfully:', type === robotChatShaderGL.VERTEX_SHADER ? 'VERTEX' : 'FRAGMENT');
+        return shader;
+    }
+
+    const vertexShader = createShader(robotChatShaderGL.VERTEX_SHADER, vsSource);
+    const fragmentShader = createShader(robotChatShaderGL.FRAGMENT_SHADER, fsSource);
+
+    if (!vertexShader || !fragmentShader) {
+        robotChatShaderCanvas.style.background = 'linear-gradient(135deg, rgba(13, 13, 51, 0.8) 0%, rgba(76, 29, 149, 0.8) 50%, rgba(30, 64, 175, 0.8) 100%)';
+        return;
+    }
+
+    // Create program
+    robotChatShaderProgram = robotChatShaderGL.createProgram();
+    robotChatShaderGL.attachShader(robotChatShaderProgram, vertexShader);
+    robotChatShaderGL.attachShader(robotChatShaderProgram, fragmentShader);
+    robotChatShaderGL.linkProgram(robotChatShaderProgram);
+
+    if (!robotChatShaderGL.getProgramParameter(robotChatShaderProgram, robotChatShaderGL.LINK_STATUS)) {
+        console.error('❌ Program link error:', robotChatShaderGL.getProgramInfoLog(robotChatShaderProgram));
+        robotChatShaderCanvas.style.background = 'linear-gradient(135deg, rgba(13, 13, 51, 0.8) 0%, rgba(76, 29, 149, 0.8) 50%, rgba(30, 64, 175, 0.8) 100%)';
+        return;
+    }
+    
+    console.log('✅ Shader program linked successfully');
+
+    // Setup geometry
+    const positions = [-1, -1, 1, -1, -1, 1, 1, 1];
+    const positionBuffer = robotChatShaderGL.createBuffer();
+    robotChatShaderGL.bindBuffer(robotChatShaderGL.ARRAY_BUFFER, positionBuffer);
+    robotChatShaderGL.bufferData(robotChatShaderGL.ARRAY_BUFFER, new Float32Array(positions), robotChatShaderGL.STATIC_DRAW);
+
+    const positionLocation = robotChatShaderGL.getAttribLocation(robotChatShaderProgram, 'aVertexPosition');
+    const resolutionLocation = robotChatShaderGL.getUniformLocation(robotChatShaderProgram, 'iResolution');
+    const timeLocation = robotChatShaderGL.getUniformLocation(robotChatShaderProgram, 'iTime');
+
+    // Resize function - now updates dynamically
+    function resizeCanvas() {
+        const messagesContainer = document.getElementById('robotChatMessages');
+        if (messagesContainer) {
+            robotChatShaderCanvas.width = messagesContainer.clientWidth;
+            robotChatShaderCanvas.height = messagesContainer.scrollHeight; // Use scrollHeight for dynamic content
+            robotChatShaderGL.viewport(0, 0, robotChatShaderCanvas.width, robotChatShaderCanvas.height);
+        }
+    }
+
+    // Observe messages container for changes
+    const messagesContainer = document.getElementById('robotChatMessages');
+    if (messagesContainer) {
+        const observer = new MutationObserver(resizeCanvas);
+        observer.observe(messagesContainer, { childList: true, subtree: true });
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Animation loop
+    const startTime = Date.now();
+    function animate() {
+        const currentTime = (Date.now() - startTime) / 1000;
+
+        robotChatShaderGL.clearColor(0.1, 0.1, 0.3, 0.3);
+        robotChatShaderGL.clear(robotChatShaderGL.COLOR_BUFFER_BIT);
+
+        robotChatShaderGL.useProgram(robotChatShaderProgram);
+        robotChatShaderGL.uniform2f(resolutionLocation, robotChatShaderCanvas.width, robotChatShaderCanvas.height);
+        robotChatShaderGL.uniform1f(timeLocation, currentTime);
+
+        robotChatShaderGL.bindBuffer(robotChatShaderGL.ARRAY_BUFFER, positionBuffer);
+        robotChatShaderGL.vertexAttribPointer(positionLocation, 2, robotChatShaderGL.FLOAT, false, 0, 0);
+        robotChatShaderGL.enableVertexAttribArray(positionLocation);
+
+        robotChatShaderGL.drawArrays(robotChatShaderGL.TRIANGLE_STRIP, 0, 4);
+        robotChatAnimationId = requestAnimationFrame(animate);
+    }
+
+    console.log('🎨 Shader background animation started!');
+    animate();
+};
+
+window.stopRobotChatShaderBackground = function() {
+    if (robotChatAnimationId) {
+        cancelAnimationFrame(robotChatAnimationId);
+        robotChatAnimationId = null;
+    }
+};
 </script>

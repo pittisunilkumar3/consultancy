@@ -209,9 +209,9 @@
     right: 0;
     width: 400px;
     height: 100vh;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(25px);
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
     transform: translateX(100%);
     transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     pointer-events: auto;
@@ -269,13 +269,14 @@
     flex: 1;
     padding: 20px;
     overflow-y: auto;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .enhanced-chat-input-area {
     padding: 20px;
-    background: white;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .enhanced-chat-input-wrapper {
@@ -460,6 +461,7 @@ function openEnhancedChat() {
     document.getElementById('aiAssistantCard').style.display = 'none';
     document.getElementById('aiCharacter').style.display = 'none';
     document.body.style.overflow = 'hidden';
+    
 }
 
 function closeEnhancedChat() {
@@ -470,6 +472,7 @@ function closeEnhancedChat() {
     }
     document.getElementById('aiCharacter').style.display = 'block';
     document.body.style.overflow = '';
+    
 }
 
 function dismissCard() {
@@ -535,3 +538,4 @@ document.getElementById('enhancedChatInput').addEventListener('keypress', functi
     }
 });
 </script>
+
