@@ -29,14 +29,12 @@
                                            class="form-control zForm-control-alt">
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="worldRanking" class="zForm-label-alt">{{ __('World Ranking') }} <span
-                                            class="text-danger">*</span></label>
+                                    <label for="worldRanking" class="zForm-label-alt">{{ __('World Ranking') }}</label>
                                     <input type="number" name="world_ranking" id="worldRanking" placeholder="{{ __('Type World Ranking') }}"
                                            class="form-control zForm-control-alt">
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="internationalStudent" class="zForm-label-alt">{{ __('International Student') }} <span
-                                            class="text-danger">*</span></label>
+                                    <label for="internationalStudent" class="zForm-label-alt">{{ __('International Student') }}</label>
                                     <input type="number" name="international_student" id="internationalStudent" placeholder="{{ __('Type International Student') }}"
                                            class="form-control zForm-control-alt">
                                 </div>
