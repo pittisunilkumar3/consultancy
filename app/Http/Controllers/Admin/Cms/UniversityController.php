@@ -12,7 +12,9 @@ use App\Models\UniversityCriteriaValue;
 use Illuminate\Http\Request;
 use App\Traits\ResponseTrait;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Exception;
+use Throwable;
 
 class UniversityController extends Controller
 {
@@ -294,9 +296,14 @@ class UniversityController extends Controller
 
             $message = $request->id ? __('Updated successfully.') : __('Created successfully.');
             return $this->success([], $message);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
-            return $this->error([], getMessage($e->getMessage()));
+            Log::error('University store failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+            return $this->error([], getMessage(SOMETHING_WENT_WRONG));
         }
     }
 
@@ -306,7 +313,12 @@ class UniversityController extends Controller
             $data = University::find($id);
             $data->delete();
             return $this->success([], getMessage(DELETED_SUCCESSFULLY));
-        } catch (Exception $exception) {
+        } catch (Throwable $exception) {
+            Log::error('University delete failed', [
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+            ]);
             return $this->error([], getMessage(SOMETHING_WENT_WRONG));
         }
     }
