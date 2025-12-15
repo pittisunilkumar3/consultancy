@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Session\TokenMismatchException;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -71,6 +72,15 @@ class Handler extends ExceptionHandler
                 return redirect()->back()
                     ->withInput($request->except(['_token', 'password', 'password_confirmation']))
                     ->with('error', 'Your session has expired. Please try again.');
+            }
+        }
+
+        if ($exception instanceof PostTooLargeException) {
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'status' => 413,
+                    'message' => 'Uploaded file is too large. Please upload a smaller file.'
+                ], 413);
             }
         }
 

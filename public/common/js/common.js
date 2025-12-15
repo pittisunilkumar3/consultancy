@@ -131,6 +131,9 @@
         var ajaxData = {
             type: type,
             url: url,
+            headers: {
+                'Accept': 'application/json'
+            },
             dataType: 'json',
             success: successHandler,
             error: errorHandler
@@ -144,6 +147,66 @@
             ajaxData.processData = false;
         }
         $.ajax(ajaxData);
+    }
+
+    window.previewFile = function (e) {
+        "use strict";
+        var img = e && e.previousElementSibling ? e.previousElementSibling : null;
+        var file = e && e.files && e.files[0] ? e.files[0] : null;
+        var reader = new FileReader();
+
+        if (!file) {
+            if (img) {
+                img.src = "";
+            }
+            return;
+        }
+
+        if (file.size > 1000000) {
+            e.value = "";
+            if (img) {
+                img.src = "";
+            }
+            alert("Maximum file size is 1MB!");
+            return;
+        }
+
+        reader.onloadend = function () {
+            if (img) {
+                img.src = reader.result;
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+
+    window.previewFile2 = function (e) {
+        "use strict";
+        var img = e && e.closest ? e.closest('.image-wrap')?.querySelector('img') : null;
+        var file = e && e.files && e.files[0] ? e.files[0] : null;
+        var reader = new FileReader();
+
+        if (!file) {
+            if (img) {
+                img.src = "";
+            }
+            return;
+        }
+
+        if (file.size > 1000000) {
+            e.value = "";
+            if (img) {
+                img.src = "";
+            }
+            alert("Maximum file size is 1MB!");
+            return;
+        }
+
+        reader.onloadend = function () {
+            if (img) {
+                img.src = reader.result;
+            }
+        };
+        reader.readAsDataURL(file);
     }
 
     window.showMessage = function (response) {
@@ -162,17 +225,21 @@
         var type = 'error';
         $('.error-message').remove();
         $('.is-invalid').removeClass('is-invalid');
-        if (data['status'] == false) {
-            output = output + data['message'];
-        } else if (data['status'] === 422) {
-            var errors = data['responseJSON']['errors'];
-            output = getValidationError(errors);
-        } else if (data['status'] === 500) {
-            output = data['responseJSON']['message'];
-        } else if (typeof data['responseJSON']['error'] !== 'undefined') {
-            output = data['responseJSON']['error'];
+        var statusCode = data && typeof data.status !== 'undefined' ? data.status : null;
+        var responseJson = data && data.responseJSON ? data.responseJSON : null;
+
+        if (statusCode === false) {
+            output = output + (data.message || 'Something went wrong.');
+        } else if (statusCode === 422 && responseJson && responseJson.errors) {
+            output = getValidationError(responseJson.errors);
+        } else if (statusCode === 413) {
+            output = (responseJson && responseJson.message) ? responseJson.message : 'Uploaded file is too large.';
+        } else if (responseJson && typeof responseJson.error !== 'undefined') {
+            output = responseJson.error;
+        } else if (responseJson && typeof responseJson.message !== 'undefined') {
+            output = responseJson.message;
         } else {
-            output = data['responseJSON']['message'];
+            output = 'Something went wrong. Please try again.';
         }
         alertAjaxMessage(type, output);
     }

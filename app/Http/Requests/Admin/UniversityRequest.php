@@ -32,20 +32,12 @@ class UniversityRequest extends FormRequest
             'country_id' => 'required',
             'thumbnail_image' => $this->id ? 'nullable|mimes:jpeg,png,jpg,svg,webp|max:1024' : 'required|mimes:jpeg,png,jpg,svg,webp|max:1024',
             'logo' => $this->id ? 'nullable|mimes:jpeg,png,jpg,svg,webp|max:1024' : 'required|mimes:jpeg,png,jpg,svg,webp|max:1024',
+            'core_benefits_title.*' => 'nullable|string',
+            'core_benefits_icon.*' => 'nullable|mimes:jpeg,png,jpg,svg,webp|max:1024',
         ];
 
         for ($i = 0; $i < 4; $i++) {
             $rules["gallery_image.$i"] = $this->id ? 'nullable|mimes:jpeg,png,jpg,svg,webp|max:1024' : 'required|mimes:jpeg,png,jpg,svg,webp|max:1024';
-        }
-
-        $coreBenefitsCount = count($this->core_benefits_title ?? []);
-
-        for ($i = 0; $i < $coreBenefitsCount; $i++) {
-            $rules["core_benefits_icon.$i"] = (empty($this->core_benefits_icon_id[$i]) || $this->hasFile("core_benefits_icon.$i"))
-                ? 'required|mimes:jpeg,png,jpg,svg,webp|max:1024'
-                : 'nullable|mimes:jpeg,png,jpg,svg,webp|max:1024';
-
-            $rules["core_benefits_title.$i"] = 'required|string';
         }
 
         return $rules;
@@ -54,8 +46,6 @@ class UniversityRequest extends FormRequest
     public function messages()
     {
         $messages = [
-            'core_benefits_title.*.required' => 'This field is required.',
-            'core_benefits_icon.*.required' => 'This field is required.',
             'gallery_image.*.required' => 'This field is required.',
             'thumbnail_image.required' => 'This field is required.',
             'logo.required' => 'This field is required.',
