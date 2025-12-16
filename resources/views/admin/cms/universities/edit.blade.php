@@ -33,14 +33,12 @@
                                        class="form-control zForm-control-alt">
                             </div>
                             <div class="col-md-6">
-                                <label for="worldRanking" class="zForm-label-alt">{{ __('World Ranking') }} <span
-                                        class="text-danger">*</span></label>
+                                <label for="worldRanking" class="zForm-label-alt">{{ __('World Ranking') }}</label>
                                 <input type="number" name="world_ranking" id="worldRanking" placeholder="{{ __('Type World Ranking') }}" value="{{$universityData->world_ranking}}"
                                        class="form-control zForm-control-alt">
                             </div>
                             <div class="col-md-6">
-                                <label for="internationalStudent" class="zForm-label-alt">{{ __('International Student') }} <span
-                                        class="text-danger">*</span></label>
+                                <label for="internationalStudent" class="zForm-label-alt">{{ __('International Student') }}</label>
                                 <input type="number" name="international_student" id="internationalStudent" placeholder="{{ __('Type International Student') }}" value="{{$universityData->international_student}}"
                                        class="form-control zForm-control-alt">
                             </div>
@@ -159,8 +157,7 @@
                                 <div class="universityCoreBenefitsItems row rg-20 bd-b-one bd-c-one bd-c-stroke-2 pb-15">
                                     <div class="col-md-6 pt-14">
                                         <label for="core_benefits_title-{{$index}}"
-                                               class="zForm-label-alt">{{ __('Core Benefits Title') }} <span
-                                                class="text-danger">*</span></label>
+                                               class="zForm-label-alt">{{ __('Core Benefits Title') }}</label>
                                         <input type="text" name="core_benefits_title[]"
                                                id="core_benefits_title-{{$index}}"
                                                placeholder="{{ __('Type Core Benefits Title') }}" value="{{ $title }}"
@@ -174,7 +171,6 @@
                                                     {{ __('Core Benefits Icon') }}
                                                     <span
                                                         class="text-mime-type">{{ __('(jpeg,png,jpg,svg,webp)') }}</span>
-                                                    <span class="text-danger">*</span>
                                                     <small class="preview-image-div">
                                                         <a href="{{getFileUrl($universityData->core_benefits_icon[$index])}}"
                                                            target="_blank"><i class="fa-solid fa-eye"></i></a>

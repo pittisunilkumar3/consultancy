@@ -216,26 +216,42 @@
     </section>
 
     <!-- Core Benefits -->
-    <section class="section-gap-top">
-        <div class="container" data-aos="fade-up" data-aos-duration="1000">
-            <div class="section-content-wrap max-w-550 m-auto">
-                <h4 class="section-title text-center">{{__('Core Benefits')}}</h4>
-                <p class="section-info text-center">{{__('Hear from our students who have experienced the life-changing journey of studying abroad with Studylifter’s expert guidance.')}}</p>
-            </div>
-            <div class="row rg-20">
-                @foreach($universityData->core_benefits_title as $key => $title)
-                    <div class="col-xl-3 col-md-4 col-sm-6">
-                        <div class="choose-item-alt">
-                            <div class="icon">
-                                <img src="{{ getFileUrl($universityData->core_benefits_icon[$key]) }}" alt=""/>
+    @php
+        $coreBenefitTitles = $universityData->core_benefits_title ?? [];
+        $coreBenefitIcons = $universityData->core_benefits_icon ?? [];
+        $coreBenefits = [];
+
+        foreach ($coreBenefitTitles as $key => $title) {
+            $title = trim((string) $title);
+            $iconId = $coreBenefitIcons[$key] ?? null;
+            if ($title === '' || empty($iconId)) {
+                continue;
+            }
+            $coreBenefits[] = ['title' => $title, 'icon' => $iconId];
+        }
+    @endphp
+    @if(count($coreBenefits) > 0)
+        <section class="section-gap-top">
+            <div class="container" data-aos="fade-up" data-aos-duration="1000">
+                <div class="section-content-wrap max-w-550 m-auto">
+                    <h4 class="section-title text-center">{{__('Core Benefits')}}</h4>
+                    <p class="section-info text-center">{{__('Hear from our students who have experienced the life-changing journey of studying abroad with Studylifter’s expert guidance.')}}</p>
+                </div>
+                <div class="row rg-20">
+                    @foreach($coreBenefits as $benefit)
+                        <div class="col-xl-3 col-md-4 col-sm-6">
+                            <div class="choose-item-alt">
+                                <div class="icon">
+                                    <img src="{{ getFileUrl($benefit['icon']) }}" alt=""/>
+                                </div>
+                                <p class="info pt-17">{{ $benefit['title'] }}</p>
                             </div>
-                            <p class="info pt-17">{{ $title }}</p>
                         </div>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
+    @endif
 
     <!-- Gallery -->
     <section class="section-gap-top">

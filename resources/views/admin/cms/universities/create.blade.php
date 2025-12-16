@@ -29,14 +29,12 @@
                                            class="form-control zForm-control-alt">
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="worldRanking" class="zForm-label-alt">{{ __('World Ranking') }} <span
-                                            class="text-danger">*</span></label>
+                                    <label for="worldRanking" class="zForm-label-alt">{{ __('World Ranking') }}</label>
                                     <input type="number" name="world_ranking" id="worldRanking" placeholder="{{ __('Type World Ranking') }}"
                                            class="form-control zForm-control-alt">
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="internationalStudent" class="zForm-label-alt">{{ __('International Student') }} <span
-                                            class="text-danger">*</span></label>
+                                    <label for="internationalStudent" class="zForm-label-alt">{{ __('International Student') }}</label>
                                     <input type="number" name="international_student" id="internationalStudent" placeholder="{{ __('Type International Student') }}"
                                            class="form-control zForm-control-alt">
                                 </div>
@@ -151,8 +149,7 @@
                                 </div>
                                 <div class="universityCoreBenefitsItems row rg-20 bd-b-one bd-c-one bd-c-stroke-2 pb-15">
                                     <div class="col-md-6 pt-14">
-                                        <label for="core_benefits_title" class="zForm-label-alt">{{ __('Core Benefits Title') }} <span
-                                                class="text-danger">*</span></label>
+                                        <label for="core_benefits_title" class="zForm-label-alt">{{ __('Core Benefits Title') }}</label>
                                         <input type="text" name="core_benefits_title[]" id="core_benefits_title-0"
                                                placeholder="{{ __('Type Core Benefits Title') }}"
                                                class="form-control zForm-control-alt core_benefits_title">
@@ -162,8 +159,7 @@
                                             <div class="primary-form-group-wrap zImage-upload-details mw-100 mt-12">
                                                 <label for="coreBenefitsIcon-0"
                                                        class="zForm-label-alt">{{ __('Core Benefits Icon') }} <span
-                                                        class="text-mime-type">{{__('(jpeg,png,jpg,svg,webp)')}}</span> <span
-                                                        class="text-danger">*</span></label>
+                                                        class="text-mime-type">{{__('(jpeg,png,jpg,svg,webp)')}}</span></label>
                                                 <div class="d-flex align-items-center g-10">
                                                     <div class="file-upload-one d-flex flex-column g-10 w-100">
                                                         <label for="coreBenefitsIcon-0">

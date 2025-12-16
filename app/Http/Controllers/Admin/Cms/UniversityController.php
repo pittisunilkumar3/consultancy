@@ -12,7 +12,9 @@ use App\Models\UniversityCriteriaValue;
 use Illuminate\Http\Request;
 use App\Traits\ResponseTrait;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Exception;
+use Throwable;
 
 class UniversityController extends Controller
 {
@@ -115,8 +117,29 @@ class UniversityController extends Controller
             $university->avg_cost = $request->avg_cost;
             $university->feature = $request->feature ?? STATUS_PENDING;
             $university->top_university = $request->top_university ?? STATUS_PENDING;
-            $university->core_benefits_title = $request->core_benefits_title ?? [];
             $university->status = $request->status;
+
+            $coreBenefitsTitles = $request->core_benefits_title ?? [];
+            $coreBenefitsIconIds = $request->core_benefits_icon_id ?? [];
+            $sanitizedTitles = [];
+            $sanitizedIconIds = [];
+            $sanitizedIndexes = [];
+
+            foreach ($coreBenefitsTitles as $idx => $title) {
+                $title = trim((string)$title);
+                $hasNewIcon = $request->hasFile("core_benefits_icon.$idx");
+                $existingIconId = $coreBenefitsIconIds[$idx] ?? null;
+
+                if ($title === '' && !$hasNewIcon && empty($existingIconId)) {
+                    continue;
+                }
+
+                $sanitizedTitles[] = $title;
+                $sanitizedIconIds[] = $existingIconId;
+                $sanitizedIndexes[] = $idx;
+            }
+
+            $university->core_benefits_title = $sanitizedTitles;
 
             if ($request->hasFile('thumbnail_image')) {
                 $newFile = new FileManager();
@@ -129,12 +152,12 @@ class UniversityController extends Controller
                 $university->logo = $uploadedFile->id;
             }
 
-            $coreBenefitsIcon = $request->core_benefits_icon_id ?? [];
-            foreach ($request->core_benefits_icon ?? [] as $index => $icon) {
-                if ($request->hasFile("core_benefits_icon.$index")) {
+            $coreBenefitsIcon = $sanitizedIconIds;
+            foreach ($sanitizedIndexes as $newIndex => $originalIndex) {
+                if ($request->hasFile("core_benefits_icon.$originalIndex")) {
                     $newFile = new FileManager();
-                    $uploadedFile = $newFile->upload('study-university', $icon);
-                    $coreBenefitsIcon[$index] = $uploadedFile->id;
+                    $uploadedFile = $newFile->upload('study-university', $request->file("core_benefits_icon.$originalIndex"));
+                    $coreBenefitsIcon[$newIndex] = $uploadedFile->id;
                 }
             }
             $university->core_benefits_icon = array_values($coreBenefitsIcon);
@@ -273,9 +296,14 @@ class UniversityController extends Controller
 
             $message = $request->id ? __('Updated successfully.') : __('Created successfully.');
             return $this->success([], $message);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
-            return $this->error([], getMessage($e->getMessage()));
+            Log::error('University store failed', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+            return $this->error([], getMessage(SOMETHING_WENT_WRONG));
         }
     }
 
@@ -285,7 +313,12 @@ class UniversityController extends Controller
             $data = University::find($id);
             $data->delete();
             return $this->success([], getMessage(DELETED_SUCCESSFULLY));
-        } catch (Exception $exception) {
+        } catch (Throwable $exception) {
+            Log::error('University delete failed', [
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+            ]);
             return $this->error([], getMessage(SOMETHING_WENT_WRONG));
         }
     }
