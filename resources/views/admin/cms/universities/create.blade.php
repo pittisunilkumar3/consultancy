@@ -198,8 +198,7 @@
                                                 <p class="fs-15 fw-500 lh-16 text-1b1c17">{{ __('Drag & drop files here') }}
                                                 </p>
                                             </div>
-                                            <label for="galleryImage1" class="zForm-label-alt">{{ __('Gallery Image 1') }} <span
-                                                    class="text-danger">*</span></label>
+                                                <label for="galleryImage1" class="zForm-label-alt">{{ __('Gallery Image 1') }}</label>
                                             <div class="upload-img-box">
                                                 <img src=""/>
                                                 <input type="file" name="gallery_image[]" class="gallery_image"
@@ -221,8 +220,7 @@
                                                 <p class="fs-15 fw-500 lh-16 text-1b1c17">{{ __('Drag & drop files here') }}
                                                 </p>
                                             </div>
-                                            <label for="galleryImage2" class="zForm-label-alt">{{ __('Gallery Image 2') }} <span
-                                                    class="text-danger">*</span></label>
+                                                <label for="galleryImage2" class="zForm-label-alt">{{ __('Gallery Image 2') }}</label>
                                             <div class="upload-img-box">
                                                 <img src=""/>
                                                 <input type="file" name="gallery_image[]" class="gallery_image"
@@ -244,8 +242,7 @@
                                                 <p class="fs-15 fw-500 lh-16 text-1b1c17">{{ __('Drag & drop files here') }}
                                                 </p>
                                             </div>
-                                            <label for="galleryImage3" class="zForm-label-alt">{{ __('Gallery Image 3') }} <span
-                                                    class="text-danger">*</span></label>
+                                                <label for="galleryImage3" class="zForm-label-alt">{{ __('Gallery Image 3') }}</label>
                                             <div class="upload-img-box">
                                                 <img src=""/>
                                                 <input type="file" name="gallery_image[]" class="gallery_image"
@@ -267,8 +264,7 @@
                                                 <p class="fs-15 fw-500 lh-16 text-1b1c17">{{ __('Drag & drop files here') }}
                                                 </p>
                                             </div>
-                                            <label for="galleryImage4" class="zForm-label-alt">{{ __('Gallery Image 4') }} <span
-                                                    class="text-danger">*</span></label>
+                                                <label for="galleryImage4" class="zForm-label-alt">{{ __('Gallery Image 4') }}</label>
                                             <div class="upload-img-box">
                                                 <img src=""/>
                                                 <input type="file" name="gallery_image[]" class="gallery_image"

@@ -246,7 +246,6 @@
                                             </div>
                                             <label for="zImageUpload{{ $key }}" class="zForm-label-alt">
                                                 {{ __('Gallery Image ') }} {{ $key + 1 }}
-                                                <span class="text-danger">*</span>
                                             </label>
                                             <div class="upload-img-box">
                                                 <img src="{{ getFileUrl($imageId) }}"/>

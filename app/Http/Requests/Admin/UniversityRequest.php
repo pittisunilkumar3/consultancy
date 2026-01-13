@@ -37,7 +37,7 @@ class UniversityRequest extends FormRequest
         ];
 
         for ($i = 0; $i < 4; $i++) {
-            $rules["gallery_image.$i"] = $this->id ? 'nullable|mimes:jpeg,png,jpg,svg,webp|max:1024' : 'required|mimes:jpeg,png,jpg,svg,webp|max:1024';
+            $rules["gallery_image.$i"] = 'nullable|mimes:jpeg,png,jpg,svg,webp|max:1024';
         }
 
         return $rules;
@@ -46,7 +46,6 @@ class UniversityRequest extends FormRequest
     public function messages()
     {
         $messages = [
-            'gallery_image.*.required' => 'This field is required.',
             'thumbnail_image.required' => 'This field is required.',
             'logo.required' => 'This field is required.',
         ];
